@@ -1,0 +1,11 @@
+
+- 	In the description it says: "you must construct the actual RNN yourself (e.g. don’t use tensorflow’s or any other RNN library)"
+	However, we are urged to use Tensorflow features such as:
+		- tf.nn.sparse_softmax_cross_entropy_with_logits
+		- The tf Adam optimizer
+		- tf.contrib.layers.xavier_initializer()
+		- etc.		
+	So to what extend can't we use Tensorflow?
+	
+-	What input data should we use for task 1? Nothing is provided in the task 1 project description
+
