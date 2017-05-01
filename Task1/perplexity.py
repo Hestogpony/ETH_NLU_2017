@@ -1,29 +1,45 @@
 import numpy as np
+import math
 
 
-def get_sentence_dictionary():
+def get_word_dict():
     pass
 
 
-def perplexity(task_letter, predicted_softmax_vecs, true_id):
-    """
-    ignore <pad> but include <eos>
-    """
-    file = open("group02.perplexity" + task_letter, mode="w")
-    sentence_dictionary = get_sentence_dictionary()
+def eval_neural_network(input_sentence):
+    pass
 
+
+# task_letter: [A, B or C]
+def output_perplexity(task_letter):
+    output_file = open("group02.perplexity" + task_letter, mode="w")
+    word_dictionary = get_word_dict()
+    test_sentences = open("data/sentences.eval", mode="r")
+
+    for test_sentence in test_sentences.readlines():
+        # # predicted_softmax_vecs: 30 X 20.000 X 1 Output Vector with softmax probabilities
+        predicted_softmax_vecs = eval_neural_network(test_sentence)
+        perp = perplexity(predicted_softmax_vecs, test_sentence, word_dictionary)
+        output_file.write(str(perp) + "\n")
+
+    output_file.close()
+
+
+# predicted_softmax_vecs: 30 X 20.000 X 1 Output Vector with softmax probabilities
+# sentence: 30 X 1 Vector of words in sentence
+# word_dictionary: dictionary of 20k most common words incl. <pad>, <unk>, <bos> and <eos>.
+def perplexity(predicted_softmax_vecs, sentence, word_dictionary):
     i = 0                       # Word index in current sentence
-    total_perplexity = 1        # Initial Perplexity
-    while dict[true_id] is not "<pad>":
-        """ bla bla bla """
-        total_perplexity *= predicted_softmax_vecs[i][true_id]
+    perp_sum = 0
 
-    file.write(total_perplexity + "\n")
-    # file.writelines(OUTPUT_STUFF)
-    file.close()
+    while word_dictionary[sentence[i]] is not "<pad>":
+        word_probability = predicted_softmax_vecs[i][sentence[i+1]]
+        perp_sum += math.log(word_probability)
+        i += 1
 
-
-perplexity("A", np.array([0.1, 0.2, 0.7], dtype=np.float32), np.array([0, 1, 3], dtype=np.float32))
+    # perp = 2^{(-1/n)*\sum^{n}_{t}(log(p(w_t | w_1, ... , w_t-1))} - As specified in assignment doc
+    perp = math.pow(2, (-1/i) * perp_sum)
+    return perp
 
 
 
