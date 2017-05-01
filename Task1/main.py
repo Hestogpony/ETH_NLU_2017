@@ -5,17 +5,8 @@ from collections import Counter
 import pickle
 import os
 
-import load_embeddings
 
-cfg = {
-    "path": {
-        "embeddings": "./data/wordembeddings-dim100.word2vec",
-        "train": "./data/sentences.train",
-        "test": "./data/sentences.eval",
-    },
-    "vocab_size": 20000,
-    "sentence_length": 30,
-}
+from config import cfg
 
 
 class Reader(object):
