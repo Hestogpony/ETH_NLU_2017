@@ -12,7 +12,7 @@ def eval_neural_network(input_sentence):
 
 # task_letter: [A, B or C]
 def output_perplexity(task_letter):
-    output_file = open("group02.perplexity" + task_letter, mode="w")
+    output_file = open("output/group02.perplexity" + task_letter, mode="w")
     word_dictionary = get_word_dict()
     test_sentences = open("data/sentences.eval", mode="r")
 
