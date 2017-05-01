@@ -1,10 +1,12 @@
 import sys
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
 import numpy as np
 from collections import Counter
 import pickle
-import os
 
+import load_embeddings
 
 from config import cfg
 
@@ -141,9 +143,10 @@ def main():
     reader.one_hot_encode(reader.id_data)
 
     sess = tf.Session()
-    embeddings = tf.placeholder(dtype=tf.float32, shape=[
-                                reader.vocab_size, 100])
-    load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings, path=cfg[
+    # embeddings = tf.placeholder(dtype=tf.float32, shape=[
+                                # reader.vocab_size, 100])
+    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, 100)))
+    embeddings = load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings_blank, path=cfg[
                    "path"]["embeddings"], dim_embedding=100)
 
 
