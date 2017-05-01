@@ -10,4 +10,5 @@ cfg = {
     "batch_size": 64,
     "embeddings_size" : 100,
     "lstm_size" : 512,
+
 }
