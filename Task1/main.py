@@ -1,22 +1,14 @@
 import sys
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
 import numpy as np
 from collections import Counter
 import pickle
-import os
 
-#import load_embeddings
+import load_embeddings
 
-cfg = {
-    "path": {
-        "embeddings": "./data/wordembeddings-dim100.word2vec",
-        "train": "./data/sentences.train",
-        "test": "./data/sentences.eval",
-        # what is the continuation dataset?
-    },
-    "vocab_size": 20000,
-    "sentence_length": 30,
-}
+from config import cfg
 
 
 class Reader(object):
@@ -108,40 +100,7 @@ class Reader(object):
         sess = tf.Session()
         self.one_hot_data = sess.run(output, feed_dict={inp: input_matrix})
         # dtype should be float32
-        # one_hot_data = np.array(shape=(input_matrix.shape[0],input_matrix.shape[1], self.vocab_size), dtype = np.float32)
         print(self.one_hot_data.shape)
-
-
-# 1. Read inputs to a dict What is the input to a tensorflow model?
-# Data tensor dimensions: Sentences, words, embedding size = (n, 30, 100)
-# 1.5 Create word embeddings (with word2vec) of dimension 100.
-#   Experiment A: word embeddings in the same model as the LSTM --> should lead to bad results
-#   Experiment B: pretrained word embeddings
-#       They are provided as word2vec format, this is probably part of tensorflow
-#
-#   Experiment C: The same thing, use the pretrained ones
-#   We use a vocab of only 20K words, the most recent ones in the training set
-# 2. Build the tensorflow graph
-#   - Input: pad sentences shorter than 30 words
-#   - architecture
-#   - output to one-hot
-#   - loss
-#   - backpropagation
-# 3. Create the batches, size 64 -> Tensorflow does that for you!
-#
-# one hot encodings created on the fly
-#
-# 3.1. create the word embedding representation on the fly. Save space, keep word embeddings only in cache instead of memory or disk
-# But we repeat it each iteration
-#
-# 4. Train the model
-# 5. Use new test data
-#
-# 6. Output + Postprocessing: Perplexity sentence-wise on the test set
-
-# Command line parameters: restrict data size, maximum iterations
-# import sys
-#
 
 
 def main():
@@ -150,6 +109,13 @@ def main():
     reader.build_dict(cfg["path"]["train"])
     reader.read_sentences(cfg["path"]["train"])
     reader.one_hot_encode(reader.id_data)
+
+    sess = tf.Session()
+    # embeddings = tf.placeholder(dtype=tf.float32, shape=[
+                                # reader.vocab_size, 100])
+    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, cfg["embeddings_size"])))
+    embeddings = load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings_blank, path=cfg[
+                   "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
 
 if __name__ == "__main__":
