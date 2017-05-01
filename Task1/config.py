@@ -7,5 +7,7 @@ cfg = {
     },
     "vocab_size": 20000,
     "sentence_length": 30,
-    "batch_size": 64
+    "batch_size": 64,
+    "embeddings_size" : 100,
+    "lstm_size" : 512,
 }

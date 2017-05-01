@@ -100,39 +100,7 @@ class Reader(object):
         sess = tf.Session()
         self.one_hot_data = sess.run(output, feed_dict={inp: input_matrix})
         # dtype should be float32
-        # print(self.one_hot_data.shape)
-
-
-# 1. Read inputs to a dict What is the input to a tensorflow model?
-# Data tensor dimensions: Sentences, words, embedding size = (n, 30, 100)
-# 1.5 Create word embeddings (with word2vec) of dimension 100.
-#   Experiment A: word embeddings in the same model as the LSTM --> should lead to bad results
-#   Experiment B: pretrained word embeddings
-#       They are provided as word2vec format, this is probably part of tensorflow
-#
-#   Experiment C: The same thing, use the pretrained ones
-#   We use a vocab of only 20K words, the most recent ones in the training set
-# 2. Build the tensorflow graph
-#   - Input: pad sentences shorter than 30 words
-#   - architecture
-#   - output to one-hot
-#   - loss
-#   - backpropagation
-# 3. Create the batches, size 64 -> Tensorflow does that for you!
-#
-# one hot encodings created on the fly
-#
-# 3.1. create the word embedding representation on the fly. Save space, keep word embeddings only in cache instead of memory or disk
-# But we repeat it each iteration
-#
-# 4. Train the model
-# 5. Use new test data
-#
-# 6. Output + Postprocessing: Perplexity sentence-wise on the test set
-
-# Command line parameters: restrict data size, maximum iterations
-# import sys
-#
+        print(self.one_hot_data.shape)
 
 
 def main():
@@ -145,9 +113,9 @@ def main():
     sess = tf.Session()
     # embeddings = tf.placeholder(dtype=tf.float32, shape=[
                                 # reader.vocab_size, 100])
-    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, 100)))
+    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, cfg["embeddings_size"])))
     embeddings = load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings_blank, path=cfg[
-                   "path"]["embeddings"], dim_embedding=100)
+                   "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
 
 if __name__ == "__main__":
