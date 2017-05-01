@@ -5,14 +5,13 @@ from collections import Counter
 import pickle
 import os
 
-#import load_embeddings
+import load_embeddings
 
 cfg = {
     "path": {
         "embeddings": "./data/wordembeddings-dim100.word2vec",
         "train": "./data/sentences.train",
         "test": "./data/sentences.eval",
-        # what is the continuation dataset?
     },
     "vocab_size": 20000,
     "sentence_length": 30,
@@ -108,8 +107,7 @@ class Reader(object):
         sess = tf.Session()
         self.one_hot_data = sess.run(output, feed_dict={inp: input_matrix})
         # dtype should be float32
-        # one_hot_data = np.array(shape=(input_matrix.shape[0],input_matrix.shape[1], self.vocab_size), dtype = np.float32)
-        print(self.one_hot_data.shape)
+        # print(self.one_hot_data.shape)
 
 
 # 1. Read inputs to a dict What is the input to a tensorflow model?
@@ -150,6 +148,12 @@ def main():
     reader.build_dict(cfg["path"]["train"])
     reader.read_sentences(cfg["path"]["train"])
     reader.one_hot_encode(reader.id_data)
+
+    sess = tf.Session()
+    embeddings = tf.placeholder(dtype=tf.float32, shape=[
+                                reader.vocab_size, 100])
+    load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings, path=cfg[
+                   "path"]["embeddings"], dim_embedding=100)
 
 
 if __name__ == "__main__":
