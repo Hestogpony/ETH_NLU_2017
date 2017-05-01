@@ -1,0 +1,4 @@
+*/data/*
+*.pyc
+*mnist_softmax.py
+*DS_Store
