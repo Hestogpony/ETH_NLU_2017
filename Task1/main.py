@@ -1,11 +1,15 @@
 import sys
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
 import numpy as np
 from collections import Counter
 import pickle
-import os
+
+import load_embeddings
 
 from config import cfg
+
 
 class Reader(object):
 
@@ -96,8 +100,7 @@ class Reader(object):
         sess = tf.Session()
         self.one_hot_data = sess.run(output, feed_dict={inp: input_matrix})
         # dtype should be float32
-        # one_hot_data = np.array(shape=(input_matrix.shape[0],input_matrix.shape[1], self.vocab_size), dtype = np.float32)
-        print(self.one_hot_data.shape)
+        # print(self.one_hot_data.shape)
 
 
 # 1. Read inputs to a dict What is the input to a tensorflow model?
@@ -138,6 +141,13 @@ def main():
     reader.build_dict(cfg["path"]["train"])
     reader.read_sentences(cfg["path"]["train"])
     reader.one_hot_encode(reader.id_data)
+
+    sess = tf.Session()
+    # embeddings = tf.placeholder(dtype=tf.float32, shape=[
+                                # reader.vocab_size, 100])
+    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, 100)))
+    embeddings = load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings_blank, path=cfg[
+                   "path"]["embeddings"], dim_embedding=100)
 
 
 if __name__ == "__main__":
