@@ -84,19 +84,14 @@ def train_model(data, embeddings=None):
 
     concatenated_costs = tf.stack(values=cost)
     optimizer = tf.train.AdamOptimizer()
-    #gvs = optimizer.compute_gradients(concatenated_costs)
-    #capped_gvs = tf.clip_by_global_norm(t_list=[x[0] for x in gvs], clip_norm=10)
-    #train_op = optimizer.apply_gradients(zip(capped_gvs, [x[1] for x in gvs]))
-    train_op = optimizer.minimize(concatenated_costs)
 
-    # 1. Batching
-    # data_tensor = tf.placeholder(dtype=tf.float32, shape=[data.shape[0],cfg["sentence_length"], cfg["vocab_size"]])
-    # list_of_sentences = tf.split(value=data_tensor, num_or_size_splits=data.shape[0], axis=0)
+    #Clipped gradients
+    gvs = optimizer.compute_gradients(concatenated_costs)
+    list_clipped, _ = tf.clip_by_global_norm(t_list=[x[0] for x in gvs], clip_norm=10) # second output not used
+    train_op = optimizer.apply_gradients(zip(list_clipped, [x[1] for x in gvs]))
 
-    # batches = tf.train.batch(tensors=list_of_sentences, batch_size=cfg["batch_size"], allow_smaller_final_batch=False)
-    # s = tf.Session()
-    # batches_np = s.run(batches, feed_dict={data_tensor:data})
-    # 
+    # Unrestricted gradients
+    # train_op = optimizer.minimize(concatenated_costs)
 
     sess = tf.InteractiveSession()
     tf.global_variables_initializer().run()

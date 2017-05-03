@@ -7,9 +7,9 @@ cfg = {
     },
     "vocab_size": 20000,
     "sentence_length": 30,
-    "batch_size": 2,
+    "batch_size": 2, #todo 64
     "embeddings_size" : 100,
-    "lstm_size" : 512,
+    "lstm_size" : 8, #todo 512
     "max_sentences" : -1,
     "max_iterations" : 100,
 }
