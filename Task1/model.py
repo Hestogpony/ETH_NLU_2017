@@ -105,18 +105,18 @@ def train_model(data, embeddings=None):
         start = time.time()
         batch = data[batch_idx]
 
-        print("Starting batch %d" % i)
+        print(("Starting batch %d" % i))
 
         sess.run(fetches=train_op, feed_dict={inp:batch})
 
-        print('Batch %d completed in %d seconds' % (i, time.time() - start))
+        print(('Batch %d completed in %d seconds' % (i, time.time() - start)))
         # print('\tCosts: ' + str(costs))
 
         # file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
         # file_writer.add_summary(summary)
 
 def define_minibatches(length):
-    indices = np.array(range(length), dtype=np.int_)
+    indices = np.array(list(range(length)), dtype=np.int_)
     # permute
     rest = length % cfg["batch_size"]
 

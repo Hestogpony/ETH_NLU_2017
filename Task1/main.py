@@ -38,8 +38,8 @@ class Reader(object):
             # 4 spots are reserved for the special tags
             vocab_with_counts = cnt.most_common(self.vocab_size - 4)
             vocab = [i[0] for i in vocab_with_counts]
-            ids = xrange(self.vocab_size - 4)
-            self.vocab_dict = dict(zip(vocab, ids))
+            ids = range(self.vocab_size - 4)
+            self.vocab_dict = dict(list(zip(vocab, ids)))
 
             self.vocab_dict["<bos>"] = cfg["vocab_size"] - 4
             self.vocab_dict["<eos>"] = cfg["vocab_size"] - 3
