@@ -7,6 +7,7 @@ from collections import Counter
 import pickle
 
 import load_embeddings
+import model
 
 from config import cfg
 
@@ -113,9 +114,11 @@ def main():
     sess = tf.Session()
     # embeddings = tf.placeholder(dtype=tf.float32, shape=[
                                 # reader.vocab_size, 100])
-    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, cfg["embeddings_size"])))
-    embeddings = load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings_blank, path=cfg[
-                   "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
+    # embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, cfg["embeddings_size"])))
+    # embeddings = load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings_blank, path=cfg[
+    #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
+
+    model.train_model(reader.one_hot_data)
 
 
 if __name__ == "__main__":

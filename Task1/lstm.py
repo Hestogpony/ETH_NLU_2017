@@ -33,7 +33,7 @@ from tensorflow.contrib.layers import xavier_initializer as xavier
 from config import cfg
 
 class LstmCell:
-    def __init__(self):
+    def __init__(self, scope):
 
         # Some shortcuts for the dimensions we need
         HID_HID = [cfg['lstm_size'], cfg['lstm_size']]
@@ -50,29 +50,29 @@ class LstmCell:
 
         # W are the matrices which multiply the input, and U are the matrices
         # which multiply the previous hidden state
-
+        with scope:
         # Input variables
-        self.Wi = tf.get_variable('Wi', IN_HID, initializer=xavier())
-        self.Ui = tf.get_variable('Ui', HID_HID, initializer=xavier())
-        self.bi = tf.get_variable('bi', HID, initializer=xavier())
+            self.Wi = tf.get_variable('Wi', IN_HID, initializer=xavier())
+            self.Ui = tf.get_variable('Ui', HID_HID, initializer=xavier())
+            self.bi = tf.get_variable('bi', HID, initializer=xavier())
 
-        # Modulation variables
-        self.Wm = tf.get_variable('Wm', IN_HID, initializer=xavier())
-        self.Um = tf.get_variable('Um', HID_HID, initializer=xavier())
-        self.bm = tf.get_variable('bm', HID, initializer=xavier())
+            # Modulation variables
+            self.Wm = tf.get_variable('Wm', IN_HID, initializer=xavier())
+            self.Um = tf.get_variable('Um', HID_HID, initializer=xavier())
+            self.bm = tf.get_variable('bm', HID, initializer=xavier())
 
-        # Forget variables
-        self.Wf = tf.get_variable('Wf', IN_HID, initializer=xavier())
-        self.Uf = tf.get_variable('Uf', HID_HID, initializer=xavier())
-        self.bf = tf.get_variable('bf', HID, initializer=xavier())
+            # Forget variables
+            self.Wf = tf.get_variable('Wf', IN_HID, initializer=xavier())
+            self.Uf = tf.get_variable('Uf', HID_HID, initializer=xavier())
+            self.bf = tf.get_variable('bf', HID, initializer=xavier())
 
-        # Reveal variables
-        self.Wr = tf.get_variable('Wr', IN_HID, initializer=xavier())
-        self.Ur = tf.get_variable('Ur', HID_HID, initializer=xavier())
-        self.br = tf.get_variable('br', HID, initializer=xavier())
+            # Reveal variables
+            self.Wr = tf.get_variable('Wr', IN_HID, initializer=xavier())
+            self.Ur = tf.get_variable('Ur', HID_HID, initializer=xavier())
+            self.br = tf.get_variable('br', HID, initializer=xavier())
 
 
-    def __call__(self, X, state, scope=None):
+    def __call__(self, X, state):
         '''
         We follow the tf documentation on RNNCell:
           * **x** has shape batch_size x input_size

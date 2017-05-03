@@ -6,19 +6,13 @@ from config import cfg
 
 
 def train_model(data, embeddings=None):
-    
-    # 1. Batching
+
+    # This is one mini-batch
     inp = tf.placeholder(dtype=tf.float32, shape=[None,cfg["sentence_length"], cfg["vocab_size"]])
-    batch = tf.train.batch(
-        tensors=inp,
-        batch_size=cfg["batch_size"],
-        #capacity=32,
-        allow_smaller_final_batch=True,
-    )
 
     # from 3D tensor to 2D tensor, dim batch_Size x vocab_size
     # returns a list of 2D tensors
-    batch_positionwise = tf.split(value=batch, num_or_size_splits = cfg["sentence_length"], axis=1)
+    batch_positionwise = tf.split(value=inp, num_or_size_splits = cfg["sentence_length"], axis=1)
 
     # We can discard the last 2D tensor from batch_positionwise
     # Cut the <eos> tags for the input data
@@ -43,49 +37,69 @@ def train_model(data, embeddings=None):
     cost = []
 
     for i in range(cfg["sentence_length"] - 1):
-        lstm_layer.append(LstmCell())
+        scope = tf.variable_scope('lstm' + str(i))
+        lstm_layer.append(lstm.LstmCell(scope))
 
     for i in range(cfg["sentence_length"] - 1):
 
         #3. Fully connected of 100
-        W_emb.append(tf.get_variable(dtype=dtype, shape=[cfg["vocab_size"], cfg["embeddings_size"]], initializer=initializer))
-        bias_emb.append(tf.get_variable(dtype=dtype, shape=[cfg["embeddings_size"]], initializer=initializer))
+        W_emb.append(tf.get_variable(name=str(i)+'W_emb', dtype=dtype, shape=[cfg["vocab_size"], cfg["embeddings_size"]], initializer=initializer))
+        bias_emb.append(tf.get_variable(name=str(i)+'bias_emb', dtype=dtype, shape=[cfg["embeddings_size"]], initializer=initializer))
 
 
-        fc_emb_layer.append(tf.nn.relu(tf.matmul(batch_positionwise[i], W_emb[i]) + bias_emb[i]))
+        fc_emb_layer.append(tf.nn.relu(tf.matmul(tf.squeeze(batch_positionwise[i]), W_emb[i]) + bias_emb[i]))
 
         #4. LSTM dim 512
         if i == 0:
-            lstm_out.append(lstm_layer[i](X=fc_emb_layer[i], state=(tf.zeros(shape=[None,cfg["lstm_size"]], tf.zeros(shape=[None,cfg["lstm_size"]]))) ) )
+            lstm_out.append(lstm_layer[i](X=fc_emb_layer[i], 
+                state=(tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]), 
+                    tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]))
+                ) 
+            ) 
         else:
             lstm_out.append(lstm_layer[i](X=fc_emb_layer[i], state=lstm_out[i-1]))
 
         #5. Linear FC output layer
         
         #Output layer
-        W_out.append( tf.get_variable(dtype=dtype, shape=[cfg["vocab_size"],cfg["lstm_size"]], initializer=initializer) )
-        bias_out.append( tf.get_variable(dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer) )
-        out_layer.append( W_out[i] * lstm_out[i] + bias_out[i] )
+        W_out.append( tf.get_variable(name=str(i)+'W_out', dtype=dtype, shape=[cfg["lstm_size"], cfg["vocab_size"]], initializer=initializer) )
+        bias_out.append( tf.get_variable(name=str(i)+'bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer) )
+        out_layer.append( tf.matmul(lstm_out[i][0], W_out[i]) + bias_out[i] )
 
         #6. Softmax output + cat cross entropy loss
         
         # we ommit the 0-th word in each sentence (namely the <bos> tag).
         # The labels start position 1
-        y_hat.append( tf.nn.sparse_softmax_cross_entropy_with_logits(labels=batch_positionwise[i+1], logits=out_layer[i]) )
+        y_hat.append( tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.cast(tf.squeeze(batch_positionwise[i+1]), dtype=tf.int32), logits=out_layer[i]) )
 
         cost.append(tf.reduce_mean(y_hat[i]))   
 
 
-    concatenated_costs = tf.concat(values=cost, axis=0)
+    concatenated_costs = tf.stack(values=cost)
     optimizer = tf.train.AdamOptimizer()
     gvs = optimizer.compute_gradients(concatenated_costs)
     capped_gvs = tf.clip_by_global_norm(t_list=[x[0] for x in gvs], clip_norm=10)
     train_op = optimizer.apply_gradients(zip(capped_gvs, [x[1] for x in gvs]))
     
-    sess = tf.Session()
-    sess.run(fetches=train_op, feed_dict={inp:data})
+    # 1. Batching
+    data_tensor = tf.placeholder(dtype=tf.float32, shape=[None,cfg["sentence_length"], cfg["vocab_size"]])
+    list_of_sentences = tf.split(value=data_tensor, num_or_size_splits=data.shape[0], axis=0)
 
- def test_model(data, params):
-    # Forward Prop:
-    # Same network, with trained parameters
-    # - Softmax outputs --> Passed to complexity functions
+    batches = tf.train.batch(tensors=list_of_sentences, batch_size=cfg["batch_size"], allow_smaller_final_batch=False)
+
+    for batch in batches:
+
+        sess = tf.Session()
+        summary, _ = sess.run(fetches=train_op, feed_dict={inp:batch})
+
+        file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
+        file_writer.add_summary(summary)
+
+ # def test_model(data, params):
+ #    # Forward Prop:
+ #    # Same network, with trained parameters
+ #    # - Softmax outputs --> Passed to complexity functions
+ #    pass
+
+
+
