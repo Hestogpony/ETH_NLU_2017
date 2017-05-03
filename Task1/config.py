@@ -10,5 +10,6 @@ cfg = {
     "batch_size": 2,
     "embeddings_size" : 100,
     "lstm_size" : 512,
-
+    "max_sentences" : -1,
+    "max_iterations" : 100,
 }

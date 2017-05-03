@@ -54,6 +54,7 @@ def train_model(data, embeddings=None):
 
         #4. LSTM dim 512
         if i == 0:
+            # (batch_size x lstm_size, batch_size x lstm_size)
             lstm_out.append(lstm_layer[i](X=fc_emb_layer[i],
                 state=(tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]),
                     tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]))
@@ -96,35 +97,36 @@ def train_model(data, embeddings=None):
     # s = tf.Session()
     # batches_np = s.run(batches, feed_dict={data_tensor:data})
     # 
-    batch_indices = define_minibatches(data.shape[0])
 
     sess = tf.InteractiveSession()
     tf.global_variables_initializer().run()
 
-    for i, batch_idx in enumerate(batch_indices):
-        start = time.time()
-        batch = data[batch_idx]
+    for e in range(cfg["max_iterations"]):
+        batch_indices = define_minibatches(data.shape[0])
+        for i, batch_idx in enumerate(batch_indices):
+            start = time.time()
+            batch = data[batch_idx]
 
-        print(("Starting batch %d" % i))
+            print(("Starting batch %d" % i))
 
-        sess.run(fetches=train_op, feed_dict={inp:batch})
+            sess.run(fetches=train_op, feed_dict={inp:batch})
 
-        print(('Batch %d completed in %d seconds' % (i, time.time() - start)))
-        # print('\tCosts: ' + str(costs))
+            print(('Batch %d completed in %d seconds' % (i, time.time() - start)))
+            # print('\tCosts: ' + str(costs))
 
-        # file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
-        # file_writer.add_summary(summary)
+            # file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
+            # file_writer.add_summary(summary)
 
 def define_minibatches(length):
-    indices = np.array(list(range(length)), dtype=np.int_)
-    # permute
-    rest = length % cfg["batch_size"]
-
+    # create a random permutation
+    indices = np.random.permutation(length)
+    
     # Cut out the last sentences in case data set is not divisible by the batch size
+    rest = length % cfg["batch_size"]
     if rest is not 0:
         indices = indices[:-rest]
 
-    batches = np.split(indices, indices_or_sections = cfg["batch_size"])
+    batches = np.split(indices, indices_or_sections = length/cfg["batch_size"])
     return batches
 
 

@@ -122,12 +122,22 @@ def main():
 
 
 if __name__ == "__main__":
-    # kwargs = {}
-    if len(sys.argv) > 1:
-        cfg["max_sentences"] = int(sys.argv[1])
-    if len(sys.argv) > 2:
-        cfg["max_iterations"] = int(sys.argv[2])
-    if len(sys.argv) > 3:
-        cfg["tag"] = str(sys.argv[3])
-    main()
-    # main(**kwargs)
+    if ('--help' in sys.argv) or ('-h' in sys.argv):
+        print("Language model with LSTM")
+        print("Usage: %s max_sentences max_iterations [tag]" % sys.argv[0])
+        print()
+        print("max_sentences: maximum number of sentences to read (default: -1, reads all available sentences)")
+        print()
+        print("max_iterations: maximum number of training iterations (default: 100)")
+        print()
+        print("TAG: Describe the current setup (network params etc.)")
+    else:
+        # kwargs = {}
+        if len(sys.argv) > 1:
+            cfg["max_sentences"] = int(sys.argv[1])
+        if len(sys.argv) > 2:
+            cfg["max_iterations"] = int(sys.argv[2])
+        if len(sys.argv) > 3:
+            cfg["tag"] = str(sys.argv[3])
+        main()
+        # main(**kwargs)
