@@ -1,5 +1,7 @@
 import tensorflow as tf
 import numpy as np
+import time
+
 
 import lstm
 from config import cfg
@@ -90,10 +92,15 @@ def train_model(data, embeddings=None):
     s = tf.Session()
     batches_np = s.run(batches, feed_dict={data_tensor:data})
 
-    for batch in batches_np:
+    for i, batch in enumerate(batches_np):
+
+        start = time.time()
 
         sess = tf.Session()
-        summary, _ = sess.run(fetches=train_op, feed_dict={inp:batch})
+        summary, costs = sess.run(fetches=train_op, feed_dict={inp:batch})
+
+        print('Batch %d completed in %d seconds' % (i, time.time() - start))
+        print('\tCosts: ' + str(costs))
 
         file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
         file_writer.add_summary(summary)
