@@ -118,7 +118,13 @@ def main():
     # embeddings = load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings_blank, path=cfg[
     #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
-    model.train_model(reader.one_hot_data)
+    #Training
+    train_model = model.Model()
+    train_model.build_forward_prop(data=reader.one_hot_data, batch_size=cfg["batch_size"])
+    train_model.build_backprop(data=reader.one_hot_data)
+    train_model.train(data=reader.one_hot_data)
+
+    #Testing
 
 
 if __name__ == "__main__":
