@@ -9,6 +9,7 @@ from config import cfg
 
 def train_model(data, embeddings=None):
 
+    print("defining the model...")
     # This is one mini-batch
     inp = tf.placeholder(dtype=tf.float32, shape=[None,cfg["sentence_length"], cfg["vocab_size"]])
 
@@ -72,7 +73,10 @@ def train_model(data, embeddings=None):
 
         # we ommit the 0-th word in each sentence (namely the <bos> tag).
         # The labels start position 1
-        y_hat.append( tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.cast(tf.squeeze(batch_positionwise[i+1]), dtype=tf.int32), logits=out_layer[i]) )
+        y_hat.append( 
+            tf.nn.sparse_softmax_cross_entropy_with_logits(
+                labels=tf.argmax(tf.squeeze(batch_positionwise[i+1]), axis=1),
+                logits=out_layer[i]) )
 
         cost.append(tf.reduce_mean(y_hat[i]))
 
@@ -85,25 +89,45 @@ def train_model(data, embeddings=None):
     train_op = optimizer.minimize(concatenated_costs)
 
     # 1. Batching
-    data_tensor = tf.placeholder(dtype=tf.float32, shape=[data.shape[0],cfg["sentence_length"], cfg["vocab_size"]])
-    list_of_sentences = tf.split(value=data_tensor, num_or_size_splits=data.shape[0], axis=0)
+    # data_tensor = tf.placeholder(dtype=tf.float32, shape=[data.shape[0],cfg["sentence_length"], cfg["vocab_size"]])
+    # list_of_sentences = tf.split(value=data_tensor, num_or_size_splits=data.shape[0], axis=0)
 
-    batches = tf.train.batch(tensors=list_of_sentences, batch_size=cfg["batch_size"], allow_smaller_final_batch=False)
-    s = tf.Session()
-    batches_np = s.run(batches, feed_dict={data_tensor:data})
+    # batches = tf.train.batch(tensors=list_of_sentences, batch_size=cfg["batch_size"], allow_smaller_final_batch=False)
+    # s = tf.Session()
+    # batches_np = s.run(batches, feed_dict={data_tensor:data})
+    # 
+    batch_indices = define_minibatches(data.shape[0])
 
-    for i, batch in enumerate(batches_np):
+    sess = tf.InteractiveSession()
+    tf.global_variables_initializer().run()
 
+    for i, batch_idx in enumerate(batch_indices):
         start = time.time()
+        batch = data[batch_idx]
 
-        sess = tf.Session()
-        summary, costs = sess.run(fetches=train_op, feed_dict={inp:batch})
+        print("Starting batch %d" % i)
+
+        sess.run(fetches=train_op, feed_dict={inp:batch})
 
         print('Batch %d completed in %d seconds' % (i, time.time() - start))
-        print('\tCosts: ' + str(costs))
+        # print('\tCosts: ' + str(costs))
 
-        file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
-        file_writer.add_summary(summary)
+        # file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
+        # file_writer.add_summary(summary)
+
+def define_minibatches(length):
+    indices = np.array(range(length), dtype=np.int_)
+    # permute
+    rest = length % cfg["batch_size"]
+
+    # Cut out the last sentences in case data set is not divisible by the batch size
+    if rest is not 0:
+        indices = indices[:-rest]
+
+    batches = np.split(indices, indices_or_sections = cfg["batch_size"])
+    return batches
+
+
 
  # def test_model(data, params):
  #    # Forward Prop:

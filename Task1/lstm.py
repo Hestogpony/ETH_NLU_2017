@@ -38,7 +38,7 @@ class LstmCell:
         # Some shortcuts for the dimensions we need
         HID_HID = [cfg['lstm_size'], cfg['lstm_size']]
         IN_HID = [cfg['embeddings_size'], cfg['lstm_size']]
-        HID = cfg['lstm_size']
+        HID = [1, cfg['lstm_size']]
 
         # The hidden vector is the output
         self.output_size = HID
