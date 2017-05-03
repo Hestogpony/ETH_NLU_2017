@@ -1,4 +1,14 @@
 */data/*
 *.pyc
+
+# tensorflow examples
 *mnist*
+
+# OS X indexing files
 *DS_Store
+
+# backup data from converting to python 3
+*bak
+
+# dictionairy pickle
+*.p
