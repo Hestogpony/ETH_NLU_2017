@@ -101,7 +101,7 @@ class Reader(object):
         sess = tf.Session()
         self.one_hot_data = sess.run(output, feed_dict={inp: input_matrix})
         # dtype should be float32
-        print(self.one_hot_data.shape)
+        # print(self.one_hot_data.shape)
 
 
 def main():
