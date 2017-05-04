@@ -179,7 +179,7 @@ class Model(object):
                 eval_size = cfg["batch_size"] - cut_last_batch
 
             for j in range(eval_size):
-                perp = perplexity(estimates[j], np.argmax(batch[j], -1), vocab_dict)
+                perp = perplexity(estimates[j], batch[j], vocab_dict)
                 out_test.write(str(perp) + '\n')
 
                 # print(('Test batch %d completed in %d seconds' % (i, time.time() - start)))

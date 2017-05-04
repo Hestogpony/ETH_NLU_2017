@@ -120,7 +120,7 @@ class Reader(object):
 
         padding = cfg["batch_size"] - (sentences % cfg["batch_size"])
 
-        extension = np.full(shape=(padding, cfg["sentence_length"]), fill_value=self.vocab_dict["tag"], dtype=np.float32)
+        extension = np.full(shape=(padding, cfg["sentence_length"]), fill_value=self.vocab_dict["pad"], dtype=np.float32)
         self.id_data = np.concatenate((self.id_data, extension), axis=0)
 
         return padding
