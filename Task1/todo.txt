@@ -1,5 +1,2 @@
 - Write the ongoing losses to a file to monitor progress
 - Figure out this whole tensorboard and summary business
-- Create the forward propagation model
-- Make the forward prop model, specifically the lstm, independent of the batch size. Right now, the initial state of each lstm is dep. on batch size. We don't want to build the tensorflow graph for testing, where batch size is usually one (or at least needs to be variable due to last batch being of different size)
- - MInibatch creation: Include flag for random permutation or not

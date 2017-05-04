@@ -25,15 +25,17 @@ class Reader(object):
         print("building dictionary...")
 
         # load the dictionary if it's there
-        if os.path.isfile("dict.p"):
-            self.vocab_dict = pickle.load(open("dict.p", "rb"))
+        if os.path.isfile(cfg["dictionary_name"]):
+            self.vocab_dict = pickle.load(open(cfg["dictionary_name"], "rb"))
             return None
 
         cnt = Counter()
         with open(path, 'r') as f:
             for line in f:
                 for word in line.split():
-                    cnt[word] += 1
+                    if word not in {"bos","eos","unk","pad"}:
+                        cnt[word] += 1
+
             # most_common returns tuples (word, count)
             # 4 spots are reserved for the special tags
             vocab_with_counts = cnt.most_common(self.vocab_size - 4)
@@ -41,15 +43,15 @@ class Reader(object):
             ids = range(self.vocab_size - 4)
             self.vocab_dict = dict(list(zip(vocab, ids)))
 
-            self.vocab_dict["<bos>"] = cfg["vocab_size"] - 4
-            self.vocab_dict["<eos>"] = cfg["vocab_size"] - 3
-            self.vocab_dict["<unk>"] = cfg["vocab_size"] - 2
-            self.vocab_dict["<pad>"] = cfg["vocab_size"] - 1
+            self.vocab_dict["bos"] = cfg["vocab_size"] - 4
+            self.vocab_dict["eos"] = cfg["vocab_size"] - 3
+            self.vocab_dict["unk"] = cfg["vocab_size"] - 2
+            self.vocab_dict["pad"] = cfg["vocab_size"] - 1
 
             pickle.dump(self.vocab_dict, open("dict.p", "wb"))
 
     def read_sentences(self, path):
-        """ Include the tags <bos>, <eos>, <pad>, <unk> """
+        """ Include the tags bos, eos, pad, unk """
         # Read sentences, convert to IDs according to the dict, pad them
         print("reading sentences...")
         with open(path, 'r') as f:
@@ -72,9 +74,9 @@ class Reader(object):
         """
         tokens      list of words
         """
-        tokens.insert(0, "<bos>")
-        tokens.append("<eos>")
-        tokens.extend((cfg["sentence_length"] - len(tokens)) * ["<pad>"])
+        tokens.insert(0, "bos")
+        tokens.append("eos")
+        tokens.extend((cfg["sentence_length"] - len(tokens)) * ["pad"])
         return tokens
 
     def convert_sentence(self, tokens):
@@ -84,7 +86,7 @@ class Reader(object):
             if word in self.vocab_dict:
                 sentence[idx] = self.vocab_dict[word]
             else:
-                sentence[idx] = self.vocab_dict["<unk>"]
+                sentence[idx] = self.vocab_dict["unk"]
         return sentence
 
     # use the tensorflow library
@@ -105,14 +107,15 @@ class Reader(object):
 
     def pad_one_hot_to_batch_size(self):
         print("padding the one hot encoded data with zeros to make it divisible by the batch size...")
-        if cfg["batch_size"] is 1:
+        sentences = len(self.one_hot_data)
+        if cfg["batch_size"] is 1 or sentences % cfg["batch_size"] is 0:
             return
 
-        sentences = len(self.one_hot_data)
         padding = cfg["batch_size"] - (sentences % cfg["batch_size"])
-        if padding is not 0:
-            extension = np.zeros(shape=(padding, cfg["sentence_length"], cfg["vocab_size"]), dtype=np.float32)
-            self.one_hot_data = np.concatenate((self.one_hot_data, extension), axis=0)
+        extension = np.zeros(shape=(padding, cfg["sentence_length"], cfg["vocab_size"]), dtype=np.float32)
+        self.one_hot_data = np.concatenate((self.one_hot_data, extension), axis=0)
+
+        return padding
 
 def main():
     # Read train data
@@ -123,15 +126,14 @@ def main():
     train_reader.one_hot_encode()
 
     # Read given embeddings
-    # sess = tf.Session()
-    # embeddings = tf.placeholder(dtype=tf.float32, shape=[
-                                # reader.vocab_size, 100])
-    # embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, cfg["embeddings_size"])))
-    # embeddings = load_embeddings.load_embedding(session=sess, vocab=reader.vocab_dict, emb=embeddings_blank, path=cfg[
-    #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
+    sess = tf.Session()
+    embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
+    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
+    embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
+                   "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
     #Training
-    m = model.Model()
+    m = model.Model(embeddings=embeddings)
     m.build_forward_prop()
     m.build_backprop()
     m.train(data=train_reader.one_hot_data)
@@ -140,27 +142,27 @@ def main():
     test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_sentences"]) #TODO take out the sentence limit
     test_reader.read_sentences(cfg["path"]["test"])
     test_reader.one_hot_encode()
-    test_reader.pad_one_hot_to_batch_size()
+    padding_size = test_reader.pad_one_hot_to_batch_size()
 
     #Testing
     m.build_test()
     #Revert dictionary for perplexity
     reverted_dict = dict([(y,x) for x,y in test_reader.vocab_dict.items()])
-    m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict)
+    m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
     
 
 
 if __name__ == "__main__":
     if ('--help' in sys.argv) or ('-h' in sys.argv):
+        print("")
         print("Language model with LSTM")
-        print("Usage: %s max_sentences max_iterations [tag]" % sys.argv[0])
-        print()
+        print("Usage: %s [max_sentences [max_iterations [tag]]]" % sys.argv[0])
+        print("")
         print("max_sentences: maximum number of sentences to read (default: -1, reads all available sentences)")
-        print()
         print("max_iterations: maximum number of training iterations (default: 100)")
-        print()
-        print("TAG: Describe the current setup (network params etc.)")
+        print("dictionary_name: define alternative dictionary name. (default: dict.p)")
+        print("")
     else:
         # kwargs = {}
         if len(sys.argv) > 1:
@@ -168,6 +170,8 @@ if __name__ == "__main__":
         if len(sys.argv) > 2:
             cfg["max_iterations"] = int(sys.argv[2])
         if len(sys.argv) > 3:
-            cfg["tag"] = str(sys.argv[3])
+            cfg["dictionary_name"] = str(sys.argv[3])
+        else: 
+            cfg["dictionary_name"] = "dict.p"
         main()
         # main(**kwargs)

@@ -5,10 +5,10 @@ cfg = {
         "test": "./data/sentences.eval",
         "continuation": "./data/sentences.continuation",
     },
-    "vocab_size": 200, #20000
+    "vocab_size": 20000, #20000
     "sentence_length": 30,
-    "batch_size": 2, #todo 64
-    "embeddings_size" : 10, #100
+    "batch_size": 16, #todo 64
+    "embeddings_size" : 100, #100
     "lstm_size" : 8, #todo 512
     "max_sentences" : -1,
     "max_iterations" : 100,

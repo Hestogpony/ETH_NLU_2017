@@ -32,16 +32,13 @@ def perplexity(predicted_softmax_vecs, input_sentence, word_dictionary):
     """
     predicted_softmax_vecs      dim 29 X 20.000 , output Vector with softmax probabilities
     input_sentence              dim 30 , vector of words in sentence
-    word_dictionary             dictionary of 20k most common words incl. <pad>, <unk>, <bos> and <eos>. id -> word
+    word_dictionary             dictionary of 20k most common words incl. pad, unk, bos and eos. id -> word
     """
 
     i = 0                       # Word index in current sentence
     perp_sum = 0
 
-    print("predicted_softmax_vecs " + str(predicted_softmax_vecs.shape))
-    print("input_sentence " + str(input_sentence.shape))
-
-    while word_dictionary[input_sentence[i]] is not "<pad>" and i < cfg["sentence_length"]-1: # only 29 output nodes
+    while word_dictionary[input_sentence[i]] is not "pad" and i < cfg["sentence_length"]-1: # only 29 output nodes
         word_probability = predicted_softmax_vecs[i][input_sentence[i+1]]
         perp_sum += math.log(word_probability)
         i += 1

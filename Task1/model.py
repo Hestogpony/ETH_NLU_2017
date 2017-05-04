@@ -29,16 +29,20 @@ class Model(object):
         initializer = tf.contrib.layers.xavier_initializer()
         dtype = tf.float32
 
-
-        W_emb = []
-        bias_emb = []
+        #init with given word embeddings if provided
+        if embeddings:
+            W_emb.append = tf.Variable(name='W_emb', dtype=dtype, initial_value=embeddings, expected_shape=[cfg["vocab_size"], cfg["embeddings_size"]])
+        else:
+            W_emb = tf.get_variable(name='W_emb', dtype=dtype, shape=[cfg["vocab_size"], cfg["embeddings_size"]], initializer=initializer)
+        
+        bias_emb = tf.get_variable(name='bias_emb', dtype=dtype, shape=[cfg["embeddings_size"]], initializer=initializer)
         fc_emb_layer = []
 
         lstm_layer = []
         lstm_out = []
 
-        W_out = []
-        bias_out = []
+        W_out =  tf.get_variable(name='W_out', dtype=dtype, shape=[cfg["lstm_size"], cfg["vocab_size"]], initializer=initializer)
+        bias_out = tf.get_variable(name='bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer)
         self.out_layer = []
 
 
@@ -49,17 +53,8 @@ class Model(object):
         for i in range(cfg["sentence_length"] - 1):
 
             #3. Fully connected of 100
-            
-            #init with given word embeddings if provided
-            if embeddings:
-                W_emb.append(tf.Variable(name=str(i)+'W_emb', dtype=dtype, initial_value=embeddings, expected_shape=[cfg["vocab_size"], cfg["embeddings_size"]]))
-            else:
-                W_emb.append(tf.get_variable(name=str(i)+'W_emb', dtype=dtype, shape=[cfg["vocab_size"], cfg["embeddings_size"]], initializer=initializer))
-            
-            bias_emb.append(tf.get_variable(name=str(i)+'bias_emb', dtype=dtype, shape=[cfg["embeddings_size"]], initializer=initializer))
 
-
-            fc_emb_layer.append(tf.nn.relu(tf.matmul(tf.squeeze(self.batch_positionwise[i]), W_emb[i]) + bias_emb[i]))
+            fc_emb_layer.append(tf.nn.relu(tf.matmul(tf.squeeze(self.batch_positionwise[i]), W_emb) + bias_emb))
 
             #4. LSTM dim 512
             if i == 0:
@@ -75,9 +70,7 @@ class Model(object):
             #5. Linear FC output layer
 
             #Output layer
-            W_out.append( tf.get_variable(name=str(i)+'W_out', dtype=dtype, shape=[cfg["lstm_size"], cfg["vocab_size"]], initializer=initializer) )
-            bias_out.append( tf.get_variable(name=str(i)+'bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer) )
-            self.out_layer.append( tf.matmul(lstm_out[i][0], W_out[i]) + bias_out[i] )
+            self.out_layer.append( tf.matmul(lstm_out[i][0], W_out) + bias_out )
 
 
     def build_backprop(self):
@@ -114,8 +107,8 @@ class Model(object):
     def build_test(self):
         print('building the test operations...')
 
-        #TODO roll the outputs
-        self.test_op = tf.nn.softmax(tf.stack(self.out_layer))
+        # Stack the individual output layers by sentence. Stacking with axis=0 would be by batch
+        self.test_op = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
 
 
     def train(self, data):
@@ -128,17 +121,17 @@ class Model(object):
                 start = time.time()
                 batch = data[batch_idx]
 
-                print(("Starting batch %d" % i))
+                # print(("Starting batch %d" % i))
 
                 sess.run(fetches=self.train_op, feed_dict={self.inp:batch})
 
-                print(('Batch %d completed in %d seconds' % (i, time.time() - start)))
+                # print(('Batch %d completed in %d seconds' % (i, time.time() - start)))
                 # print('\tCosts: ' + str(costs))
 
                 # file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
                 # file_writer.add_summary(summary)
 
-    def test(self, data, vocab_dict):
+    def test(self, data, vocab_dict, cut_last_batch=0):
         sess = tf.InteractiveSession()
         tf.global_variables_initializer().run()
 
@@ -154,15 +147,19 @@ class Model(object):
             start = time.time()
             batch = data[batch_idx]
 
-            print('Starting test batch %d' % i)
+            # print('Starting test batch %d' % i)
 
             estimates = sess.run(fetches=self.test_op, feed_dict={self.inp:batch})
-            print("estimates " + str(estimates.shape))
-            for i in range(len(batch_idx)):
-                perp = perplexity(estimates[i], np.argmax(batch[i], -1), vocab_dict)
+
+            eval_size = len(batch_idx)
+            if i == len(batch_indices) - 1:
+                eval_size = cfg["batch_size"] - cut_last_batch
+
+            for j in range(eval_size):
+                perp = perplexity(estimates[j], np.argmax(batch[j], -1), vocab_dict)
                 out_test.write(str(perp) + '\n')
 
-            print(('Test batch %d completed in %d seconds' % (i, time.time() - start)))
+            # print(('Test batch %d completed in %d seconds' % (i, time.time() - start)))
 
         out_test.close()
 
