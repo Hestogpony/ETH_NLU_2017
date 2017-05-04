@@ -11,7 +11,7 @@ class Model(object):
         self.embeddings = embeddings
 
 
-    def build_forward_prop(self, data, batch_size=1, embeddings=None):
+    def build_forward_prop(self, batch_size=1, embeddings=None):
 
         print("building the forward model...")
         # This is one mini-batch
@@ -73,18 +73,18 @@ class Model(object):
             self.out_layer.append( tf.matmul(lstm_out[i][0], W_out[i]) + bias_out[i] )
 
 
-    def build_backprop(self, data):
+    def build_backprop(self):
         print("building the backprop model...")
 
         y_hat = []
         cost = []
 
-        for i in range(cfg["sentence_length"] - 1):        
+        for i in range(cfg["sentence_length"] - 1):
             #6. Softmax output + cat cross entropy loss
 
             # we ommit the 0-th word in each sentence (namely the <bos> tag).
             # The labels start position 1
-            y_hat.append( 
+            y_hat.append(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     labels=tf.argmax(tf.squeeze(self.batch_positionwise[i+1]), axis=1),
                     logits=self.out_layer[i]) )
@@ -103,6 +103,12 @@ class Model(object):
 
         # Unrestricted gradients
         # train_op = optimizer.minimize(concatenated_costs)
+
+    def build_test(self):
+        print('building the test operations...')
+
+        self.test_op = tf.nn.softmax(tf.stack(self.out_layer))
+
 
     def train(self, data):
         sess = tf.InteractiveSession()
@@ -124,13 +130,40 @@ class Model(object):
                 # file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
                 # file_writer.add_summary(summary)
 
+    def test(self, data, word_dict):
+
+        print('Testing...')
+
+        out_test = open('perplexity.txt', 'w')
+
+        # Assume that the data we got is evenly divisible by the batch size.
+        # The reader has taken care of that by padding with extra dummy inputs
+        # that we can ignore. Additionally, do not randomly permute the data.
+        batch_indices = define_minibatches(data.shape[0], False)
+        for i, batch_idx in enumerate(batch_indices):
+            start = time.time()
+            batch = data[batch_idx]
+
+            print('Starting test batch %d' % i)
+
+            estimates = sess.run(fetches=self.test_op, feed_dict={self.inp:batch})
+            for i in range(len(batch_idx)):
+                perp = perplexity(estimates[i], np.argmax(batch[i], -1), word_dict)
+                out_test.write(str(perp) + '\n')
+
+            print(('Test batch %d completed in %d seconds' % (i, time.time() - start)))
+
+        out_test.close()
 
 
+def define_minibatches(length, permute=True):
+    if permute:
+        # create a random permutation (for training over multiple epochs)
+        indices = np.random.permutation(length)
+    else:
+        # use the indices in a sequential manner (for testing)
+        indices = np.arange(length)
 
-def define_minibatches(length):
-    # create a random permutation
-    indices = np.random.permutation(length)
-    
     # Cut out the last sentences in case data set is not divisible by the batch size
     rest = length % cfg["batch_size"]
     if rest is not 0:
