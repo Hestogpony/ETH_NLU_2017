@@ -5,13 +5,14 @@ import time
 
 import lstm
 from config import cfg
+from perplexity import perplexity
 
 class Model(object):
     def __init__(self, embeddings=None):
         self.embeddings = embeddings
 
 
-    def build_forward_prop(self, batch_size=1, embeddings=None):
+    def build_forward_prop(self, embeddings=None):
 
         print("building the forward model...")
         # This is one mini-batch
@@ -64,8 +65,8 @@ class Model(object):
             if i == 0:
                 # (batch_size x lstm_size, batch_size x lstm_size)
                 lstm_out.append(lstm_layer[i](X=fc_emb_layer[i],
-                    state=(tf.zeros(shape=[batch_size, cfg["lstm_size"]]),
-                        tf.zeros(shape=[batch_size, cfg["lstm_size"]]))
+                    state=(tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]),
+                        tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]))
                     )
                 )
             else:
@@ -113,6 +114,7 @@ class Model(object):
     def build_test(self):
         print('building the test operations...')
 
+        #TODO roll the outputs
         self.test_op = tf.nn.softmax(tf.stack(self.out_layer))
 
 
@@ -121,7 +123,7 @@ class Model(object):
         tf.global_variables_initializer().run()
 
         for e in range(cfg["max_iterations"]):
-            batch_indices = define_minibatches(data.shape[0])v
+            batch_indices = define_minibatches(data.shape[0])
             for i, batch_idx in enumerate(batch_indices):
                 start = time.time()
                 batch = data[batch_idx]
@@ -136,7 +138,9 @@ class Model(object):
                 # file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
                 # file_writer.add_summary(summary)
 
-    def test(self, data, word_dict):
+    def test(self, data, vocab_dict):
+        sess = tf.InteractiveSession()
+        tf.global_variables_initializer().run()
 
         print('Testing...')
 
@@ -153,8 +157,9 @@ class Model(object):
             print('Starting test batch %d' % i)
 
             estimates = sess.run(fetches=self.test_op, feed_dict={self.inp:batch})
+            print("estimates " + str(estimates.shape))
             for i in range(len(batch_idx)):
-                perp = perplexity(estimates[i], np.argmax(batch[i], -1), word_dict)
+                perp = perplexity(estimates[i], np.argmax(batch[i], -1), vocab_dict)
                 out_test.write(str(perp) + '\n')
 
             print(('Test batch %d completed in %d seconds' % (i, time.time() - start)))

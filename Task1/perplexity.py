@@ -1,6 +1,7 @@
 import numpy as np
 import math
 
+from config import cfg
 
 def get_word_dict():
     pass
@@ -29,14 +30,18 @@ def output_perplexity(task_letter):
 
 def perplexity(predicted_softmax_vecs, input_sentence, word_dictionary):
     """
-    predicted_softmax_vecs      30 X 20.000 X 1 Output Vector with softmax probabilities
-    input_sentence              30 X 1 Vector of words in sentence
-    word_dictionary             dictionary of 20k most common words incl. <pad>, <unk>, <bos> and <eos>.
+    predicted_softmax_vecs      dim 29 X 20.000 , output Vector with softmax probabilities
+    input_sentence              dim 30 , vector of words in sentence
+    word_dictionary             dictionary of 20k most common words incl. <pad>, <unk>, <bos> and <eos>. id -> word
     """
+
     i = 0                       # Word index in current sentence
     perp_sum = 0
 
-    while word_dictionary[input_sentence[i]] is not "<pad>":
+    print("predicted_softmax_vecs " + str(predicted_softmax_vecs.shape))
+    print("input_sentence " + str(input_sentence.shape))
+
+    while word_dictionary[input_sentence[i]] is not "<pad>" and i < cfg["sentence_length"]-1: # only 29 output nodes
         word_probability = predicted_softmax_vecs[i][input_sentence[i+1]]
         perp_sum += math.log(word_probability)
         i += 1

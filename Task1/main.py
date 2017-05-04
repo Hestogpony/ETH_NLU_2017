@@ -14,17 +14,17 @@ from config import cfg
 
 class Reader(object):
 
-    def __init__(self, vocab_size, max_sentences=-1):
+    def __init__(self, vocab_size, max_sentences=-1, vocab_dict={}):
         self.vocab_size = vocab_size
         self.max_sentences = max_sentences
-        self.vocab_dict = {}
+        self.vocab_dict = vocab_dict
         # self.id_data
 
     def build_dict(self, path):
         """ Ordered by word count, only the 20k most frequent words are being used """
-        print("building dictionairy...")
+        print("building dictionary...")
 
-        # load the dictionairy if it's there
+        # load the dictionary if it's there
         if os.path.isfile("dict.p"):
             self.vocab_dict = pickle.load(open("dict.p", "rb"))
             return None
@@ -88,7 +88,7 @@ class Reader(object):
         return sentence
 
     # use the tensorflow library
-    def one_hot_encode(self, input_matrix):
+    def one_hot_encode(self):
         """
         input_matrix           ndarray dim: #sentences x 30
         return                 matrix dim: #sentences x 30 x vocab_size
@@ -99,7 +99,7 @@ class Reader(object):
                             "vocab_size"], axis=-1, dtype=tf.float32)
 
         sess = tf.Session()
-        self.one_hot_data = sess.run(output, feed_dict={inp: input_matrix})
+        self.one_hot_data = sess.run(output, feed_dict={inp: self.id_data})
         # dtype should be float32
         # print(self.one_hot_data.shape)
 
@@ -111,17 +111,19 @@ class Reader(object):
         sentences = len(self.one_hot_data)
         padding = cfg["batch_size"] - (sentences % cfg["batch_size"])
         if padding is not 0:
-            extension = numpy.zeros(shape=(padding, cfg["sentence_length"], cfg["vocab_size"]), dtype=tf.float32)
+            extension = np.zeros(shape=(padding, cfg["sentence_length"], cfg["vocab_size"]), dtype=np.float32)
             self.one_hot_data = np.concatenate((self.one_hot_data, extension), axis=0)
 
 def main():
-    reader = Reader(vocab_size=cfg["vocab_size"],
+    # Read train data
+    train_reader = Reader(vocab_size=cfg["vocab_size"],
                     max_sentences=cfg["max_sentences"])
-    reader.build_dict(cfg["path"]["train"])
-    reader.read_sentences(cfg["path"]["train"])
-    reader.one_hot_encode(reader.id_data)
+    train_reader.build_dict(cfg["path"]["train"])
+    train_reader.read_sentences(cfg["path"]["train"])
+    train_reader.one_hot_encode()
 
-    sess = tf.Session()
+    # Read given embeddings
+    # sess = tf.Session()
     # embeddings = tf.placeholder(dtype=tf.float32, shape=[
                                 # reader.vocab_size, 100])
     # embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(reader.vocab_size, cfg["embeddings_size"])))
@@ -129,12 +131,24 @@ def main():
     #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
     #Training
-    train_model = model.Model()
-    train_model.build_forward_prop(data=reader.one_hot_data, batch_size=cfg["batch_size"])
-    train_model.build_backprop(data=reader.one_hot_data)
-    train_model.train(data=reader.one_hot_data)
+    m = model.Model()
+    m.build_forward_prop()
+    m.build_backprop()
+    m.train(data=train_reader.one_hot_data)
+
+    # Read test data
+    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_sentences"]) #TODO take out the sentence limit
+    test_reader.read_sentences(cfg["path"]["test"])
+    test_reader.one_hot_encode()
+    test_reader.pad_one_hot_to_batch_size()
 
     #Testing
+    m.build_test()
+    #Revert dictionary for perplexity
+    reverted_dict = dict([(y,x) for x,y in test_reader.vocab_dict.items()])
+    m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict)
+
+    
 
 
 if __name__ == "__main__":
