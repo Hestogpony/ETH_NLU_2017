@@ -40,7 +40,7 @@ class Reader(object):
             # 4 spots are reserved for the special tags
             vocab_with_counts = cnt.most_common(self.vocab_size - 4)
             vocab = [i[0] for i in vocab_with_counts]
-            ids = range(self.vocab_size - 4)
+            ids = list(range(self.vocab_size - 4))
             self.vocab_dict = dict(list(zip(vocab, ids)))
 
             self.vocab_dict["bos"] = cfg["vocab_size"] - 4
@@ -147,7 +147,7 @@ def main():
     #Testing
     m.build_test()
     #Revert dictionary for perplexity
-    reverted_dict = dict([(y,x) for x,y in test_reader.vocab_dict.items()])
+    reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
     m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
     
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     if ('--help' in sys.argv) or ('-h' in sys.argv):
         print("")
         print("Language model with LSTM")
-        print("Usage: %s [max_sentences [max_iterations [tag]]]" % sys.argv[0])
+        print(("Usage: %s [max_sentences [max_iterations [tag]]]" % sys.argv[0]))
         print("")
         print("max_sentences: maximum number of sentences to read (default: -1, reads all available sentences)")
         print("max_iterations: maximum number of training iterations (default: 100)")
