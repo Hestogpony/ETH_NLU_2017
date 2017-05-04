@@ -34,7 +34,7 @@ class Model(object):
             W_emb.append = tf.Variable(name='W_emb', dtype=dtype, initial_value=embeddings, expected_shape=[cfg["vocab_size"], cfg["embeddings_size"]])
         else:
             W_emb = tf.get_variable(name='W_emb', dtype=dtype, shape=[cfg["vocab_size"], cfg["embeddings_size"]], initializer=initializer)
-        
+
         bias_emb = tf.get_variable(name='bias_emb', dtype=dtype, shape=[cfg["embeddings_size"]], initializer=initializer)
         fc_emb_layer = []
 
@@ -77,7 +77,7 @@ class Model(object):
         print("building the backprop model...")
 
         y_hat = []
-        cost = []
+        loss = []
 
         for i in range(cfg["sentence_length"] - 1):
             #6. Softmax output + cat cross entropy loss
@@ -90,19 +90,20 @@ class Model(object):
                     logits=self.out_layer[i]) )
 
             # Loss for one output position, reduced over the minibatch
-            cost.append(tf.reduce_mean(y_hat[i]))
+            loss.append(tf.reduce_mean(y_hat[i]))
 
 
-        concatenated_costs = tf.stack(values=cost)
+        concatenated_losses = tf.stack(values=loss)
         optimizer = tf.train.AdamOptimizer()
 
         #Clipped gradients
-        gvs = optimizer.compute_gradients(concatenated_costs)
+        gvs = optimizer.compute_gradients(concatenated_losses)
         list_clipped, _ = tf.clip_by_global_norm(t_list=[x[0] for x in gvs], clip_norm=10) # second output not used
         self.train_op = optimizer.apply_gradients(list(zip(list_clipped, [x[1] for x in gvs])))
 
-        # Unrestricted gradients
-        # train_op = optimizer.minimize(concatenated_costs)
+        # Make available for other operations.
+        self.losses = concatenated_losses
+
 
     def build_test(self):
         print('building the test operations...')
@@ -110,26 +111,43 @@ class Model(object):
         # Stack the individual output layers by sentence. Stacking with axis=0 would be by batch
         self.test_op = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
 
+    def test_loss(self, data):
 
-    def train(self, data):
+        sess = tf.InteractiveSession()
+        tf.global_variables_initializer().run()
+
+        batch_indices = define_minibatches(data.shape[0], False)
+        batched_losses = []
+        for i, batch_idx in enumerate(batch_indices):
+            batch = data[batch_idx]
+            this_loss = sess.run(self.losses, feed_dict={self.inp:batch})
+
+            # Sum over sentence positions, getting one loss per sentence
+            batched_losses.append(np.sum(this_loss, axis=-1))
+
+        return np.mean(batched_losses)
+
+    # Test data is available for measurements
+    def train(self, train_data, test_data):
         sess = tf.InteractiveSession()
         tf.global_variables_initializer().run()
 
         for e in range(cfg["max_iterations"]):
-            batch_indices = define_minibatches(data.shape[0])
+            print("Starting epoch %d..." % e)
+            start = time.time()
+
+            batch_indices = define_minibatches(train_data.shape[0])
             for i, batch_idx in enumerate(batch_indices):
-                start = time.time()
-                batch = data[batch_idx]
-
-                # print(("Starting batch %d" % i))
-
+                batch = train_data[batch_idx]
                 sess.run(fetches=self.train_op, feed_dict={self.inp:batch})
 
-                # print(('Batch %d completed in %d seconds' % (i, time.time() - start)))
-                # print('\tCosts: ' + str(costs))
+                # Log test loss every so often
+                if cfg["out_batch"] > 0 and i % cfg["out_batch"] + 1 != 0 :
 
-                # file_writer = tf.summary.FileWriter('./train_graph', sess.graph)
-                # file_writer.add_summary(summary)
+                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data)))
+
+            print("Epoch completed in %d seconds." % (time.time() - start))
+
 
     def test(self, data, vocab_dict, cut_last_batch=0):
         sess = tf.InteractiveSession()

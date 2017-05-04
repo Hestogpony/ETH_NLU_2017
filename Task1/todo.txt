@@ -1,2 +1,1 @@
-- Write the ongoing losses to a file to monitor progress
 - Figure out this whole tensorboard and summary business

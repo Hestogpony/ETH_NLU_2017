@@ -136,7 +136,6 @@ def main():
     m = model.Model(embeddings=embeddings)
     m.build_forward_prop()
     m.build_backprop()
-    m.train(data=train_reader.one_hot_data)
 
     # Read test data
     test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_sentences"]) #TODO take out the sentence limit
@@ -148,20 +147,22 @@ def main():
     m.build_test()
     #Revert dictionary for perplexity
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
-    m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
-    
+
+    m.train(train_data=train_reader.one_hot_data, test_data=test_reader.one_hot_data)
+    m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
 
 if __name__ == "__main__":
     if ('--help' in sys.argv) or ('-h' in sys.argv):
         print("")
         print("Language model with LSTM")
-        print(("Usage: %s [max_sentences [max_iterations [tag]]]" % sys.argv[0]))
+        print("Usage: %s [max_sentences [max_iterations [tag [out_batch]]]]" % sys.argv[0])
         print("")
         print("max_sentences: maximum number of sentences to read (default: -1, reads all available sentences)")
         print("max_iterations: maximum number of training iterations (default: 100)")
         print("dictionary_name: define alternative dictionary name. (default: dict.p)")
+        print("out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
         print("")
     else:
         # kwargs = {}
@@ -171,7 +172,9 @@ if __name__ == "__main__":
             cfg["max_iterations"] = int(sys.argv[2])
         if len(sys.argv) > 3:
             cfg["dictionary_name"] = str(sys.argv[3])
-        else: 
+        else:
             cfg["dictionary_name"] = "dict.p"
+        if len(sys.argv) > 4:
+            cfg["out_batch"] = int(sys.argv[4])
         main()
         # main(**kwargs)
