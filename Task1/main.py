@@ -103,6 +103,16 @@ class Reader(object):
         # dtype should be float32
         # print(self.one_hot_data.shape)
 
+    def pad_one_hot_to_batch_size(self):
+        print("padding the one hot encoded data with zeros to make it divisible by the batch size...")
+        if cfg["batch_size"] is 1:
+            return
+
+        sentences = len(self.one_hot_data)
+        padding = cfg["batch_size"] - (sentences % cfg["batch_size"])
+        if padding is not 0:
+            extension = numpy.zeros(shape=(padding, cfg["sentence_length"], cfg["vocab_size"]), dtype=tf.float32)
+            self.one_hot_data = np.concatenate((self.one_hot_data, extension), axis=0)
 
 def main():
     reader = Reader(vocab_size=cfg["vocab_size"],
