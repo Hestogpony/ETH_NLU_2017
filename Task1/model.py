@@ -15,11 +15,12 @@ class Model(object):
 
         print("building the forward model...")
         # This is one mini-batch
-        self.input = tf.placeholder(dtype=tf.float32, shape=[None, cfg["sentence_length"], cfg["vocab_size"]])
+        self.input = tf.placeholder(dtype=tf.int32, shape=[None, cfg["sentence_length"]])
+        one_hot = tf.one_hot(indices=self.input, depth=cfg["vocab_size"], axis=-1, dtype=tf.float32)
 
         # from 3D tensor to 2D tensor, dim batch_Size x vocab_size
         # returns a list of 2D tensors
-        self.input_words = tf.split(value=self.input, num_or_size_splits=cfg["sentence_length"], axis=1)
+        self.input_words = tf.split(value=one_hot, num_or_size_splits=cfg["sentence_length"], axis=1)
 
         # We can discard the last 2D tensor from batch_positionwise
         # Cut the <eos> tags for the input data
@@ -128,6 +129,10 @@ class Model(object):
 
     # Test data is available for measurements
     def train(self, train_data, test_data):
+        """
+        train_data          id_data, 2D
+        test_data           id_data, 2D
+        """
         sess = tf.InteractiveSession()
         tf.global_variables_initializer().run()
 
@@ -138,8 +143,7 @@ class Model(object):
             batch_indices = define_minibatches(train_data.shape[0])
             for i, batch_idx in enumerate(batch_indices):
                 batch = train_data[batch_idx]
-                batch_one_hot = one_hot_encode_data(batch)
-                sess.run(fetches=self.train_op, feed_dict={self.input: batch_one_hot})
+                sess.run(fetches=self.train_op, feed_dict={self.input: batch})
 
                 # Log test loss every so often
                 if cfg["out_batch"] > 0 and i % cfg["out_batch"] + 1 != 0:
@@ -148,6 +152,9 @@ class Model(object):
             print("Epoch completed in %d seconds." % (time.time() - start))
 
     def test(self, data, vocab_dict, cut_last_batch=0):
+        """
+        data            id_data, 2D
+        """
         sess = tf.InteractiveSession()
         tf.global_variables_initializer().run()
 
@@ -195,24 +202,3 @@ def define_minibatches(length, permute=True):
 
     batches = np.split(indices, indices_or_sections=len(indices) / cfg["batch_size"])
     return batches
-
-def one_hot_encode_data(data):
-    """
-    input_matrix           ndarray dim: #sentences x 30
-    return                 matrix dim: #sentences x 30 x vocab_size
-    """
-    inp = tf.placeholder(tf.int32, [None, cfg["sentence_length"]])
-    output = tf.one_hot(indices=inp, depth=cfg[
-        "vocab_size"], axis=-1, dtype=tf.float32)
-
-    sess = tf.Session()
-    return sess.run(output, feed_dict={inp: data})
-    # dtype should be float32
-    # print(self.one_hot_data.shape)
-
-
-    # def test_model(data, params):
-    #    # Forward Prop:
-    #    # Same network, with trained parameters
-    #    # - Softmax outputs --> Passed to complexity functions
-    #    pass

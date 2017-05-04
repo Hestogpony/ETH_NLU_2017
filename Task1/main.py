@@ -109,15 +109,19 @@ class Reader(object):
         # dtype should be float32
         # print(self.one_hot_data.shape)
 
-    def pad_one_hot_to_batch_size(self):
-        print("padding the one hot encoded data with zeros to make it divisible by the batch size...")
-        sentences = len(self.one_hot_data)
+    def pad_id_data_to_batch_size(self):
+        """
+        Extend the id_data array so the batch size divides its length
+        """
+        print("padding the id data with 'pad' to make it divisible by the batch size...")
+        sentences = len(self.id_data)
         if cfg["batch_size"] is 1 or sentences % cfg["batch_size"] is 0:
             return
 
         padding = cfg["batch_size"] - (sentences % cfg["batch_size"])
-        extension = np.zeros(shape=(padding, cfg["sentence_length"], cfg["vocab_size"]), dtype=np.float32)
-        self.one_hot_data = np.concatenate((self.one_hot_data, extension), axis=0)
+
+        extension = np.full(shape=(padding, cfg["sentence_length"]), fill_value=self.vocab_dict["tag"], dtype=np.float32)
+        self.id_data = np.concatenate((self.id_data, extension), axis=0)
 
         return padding
 
@@ -130,22 +134,22 @@ def main():
     # train_reader.one_hot_encode()
 
     # Read given embeddings
-    sess = tf.Session()
-    embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
-    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
+    # sess = tf.Session()
+    # embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
+    # embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
     # embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
     #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
     #Training
-    m = model.Model(embeddings=embeddings)
+    m = model.Model()
+    # m = model.Model(embeddings=embeddings)
     m.build_forward_prop()
     m.build_backprop()
 
     # Read test data
     test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
     test_reader.read_sentences(cfg["path"]["test"])
-    test_reader.one_hot_encode()
-    padding_size = test_reader.pad_one_hot_to_batch_size()
+    padding_size = test_reader.pad_id_data_to_batch_size()
 
     #Testing
     m.build_test()
@@ -153,8 +157,8 @@ def main():
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
 
-    m.train(train_data=train_reader.id_data, test_data=test_reader.one_hot_data)
-    m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
+    m.train(train_data=train_reader.id_data, test_data=test_reader.id_data)
+    m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
 
 if __name__ == "__main__":
