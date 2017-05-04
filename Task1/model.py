@@ -177,7 +177,7 @@ def define_minibatches(length, permute=True):
     if rest is not 0:
         indices = indices[:-rest]
 
-    batches = np.split(indices, indices_or_sections = length/cfg["batch_size"])
+    batches = np.split(indices, indices_or_sections = len(indices)/cfg["batch_size"])
     return batches
 
 
