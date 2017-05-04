@@ -99,7 +99,7 @@ class Model(object):
         #Clipped gradients
         gvs = optimizer.compute_gradients(concatenated_losses)
         list_clipped, _ = tf.clip_by_global_norm(t_list=[x[0] for x in gvs], clip_norm=10) # second output not used
-        self.train_op = optimizer.apply_gradients(zip(list_clipped, [x[1] for x in gvs]))
+        self.train_op = optimizer.apply_gradients(list(zip(list_clipped, [x[1] for x in gvs])))
 
         # Make available for other operations.
         self.losses = concatenated_losses

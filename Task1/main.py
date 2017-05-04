@@ -40,7 +40,7 @@ class Reader(object):
             # 4 spots are reserved for the special tags
             vocab_with_counts = cnt.most_common(self.vocab_size - 4)
             vocab = [i[0] for i in vocab_with_counts]
-            ids = range(self.vocab_size - 4)
+            ids = list(range(self.vocab_size - 4))
             self.vocab_dict = dict(list(zip(vocab, ids)))
 
             self.vocab_dict["bos"] = cfg["vocab_size"] - 4
@@ -146,7 +146,7 @@ def main():
     #Testing
     m.build_test()
     #Revert dictionary for perplexity
-    reverted_dict = dict([(y,x) for x,y in test_reader.vocab_dict.items()])
+    reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
 
     m.train(train_data=train_reader.one_hot_data, test_data=test_reader.one_hot_data)
