@@ -142,7 +142,7 @@ class Model(object):
                 sess.run(fetches=self.train_op, feed_dict={self.inp:batch})
 
                 # Log test loss every so often
-                if cfg["out_batch"] > 0 and i % cfg["out_batch"] + 1 != 0 :
+                if cfg["out_batch"] > 0 and i % (cfg["out_batch"] + 1) != 0 :
 
                     print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data)))
 
