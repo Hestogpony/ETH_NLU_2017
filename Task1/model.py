@@ -48,7 +48,13 @@ class Model(object):
         for i in range(cfg["sentence_length"] - 1):
 
             #3. Fully connected of 100
-            W_emb.append(tf.get_variable(name=str(i)+'W_emb', dtype=dtype, shape=[cfg["vocab_size"], cfg["embeddings_size"]], initializer=initializer))
+            
+            #init with given word embeddings if provided
+            if embeddings:
+                W_emb.append(tf.Variable(name=str(i)+'W_emb', dtype=dtype, initial_value=embeddings, expected_shape=[cfg["vocab_size"], cfg["embeddings_size"]]))
+            else:
+                W_emb.append(tf.get_variable(name=str(i)+'W_emb', dtype=dtype, shape=[cfg["vocab_size"], cfg["embeddings_size"]], initializer=initializer))
+            
             bias_emb.append(tf.get_variable(name=str(i)+'bias_emb', dtype=dtype, shape=[cfg["embeddings_size"]], initializer=initializer))
 
 
@@ -109,7 +115,7 @@ class Model(object):
         tf.global_variables_initializer().run()
 
         for e in range(cfg["max_iterations"]):
-            batch_indices = define_minibatches(data.shape[0])
+            batch_indices = define_minibatches(data.shape[0])v
             for i, batch_idx in enumerate(batch_indices):
                 start = time.time()
                 batch = data[batch_idx]
