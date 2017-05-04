@@ -58,16 +58,20 @@ class Reader(object):
             sentence_list = []
             if self.max_sentences == -1:
                 for line in f:
-                    tokens = self.add_tags(line.split())
-                    sentence = self.convert_sentence(tokens)
-                    sentence_list.append(sentence)
+                    tokens = line.split()
+                    if(len(tokens) <= cfg["sentence_length"] - 2):
+                        tokens = self.add_tags(tokens)
+                        sentence = self.convert_sentence(tokens)
+                        sentence_list.append(sentence)
             else:
                 for i in range(self.max_sentences):
                     # last token is the newline character
                     tokens = f.readline().split()[:-1]
-                    tokens = self.add_tags(tokens)
-                    sentence = self.convert_sentence(tokens)
-                    sentence_list.append(sentence)
+                    if(len(tokens) <= cfg["sentence_length"] - 2):
+                        tokens = self.add_tags(tokens)
+                        sentence = self.convert_sentence(tokens)
+                        sentence_list.append(sentence)
+                        
             self.id_data = np.array(sentence_list, dtype=np.int32)
 
     def add_tags(self, tokens):
@@ -138,7 +142,7 @@ def main():
     m.build_backprop()
 
     # Read test data
-    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_sentences"]) #TODO take out the sentence limit
+    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
     test_reader.read_sentences(cfg["path"]["test"])
     test_reader.one_hot_encode()
     padding_size = test_reader.pad_one_hot_to_batch_size()
@@ -160,6 +164,7 @@ if __name__ == "__main__":
         print("Usage: %s [max_sentences [max_iterations [tag [out_batch]]]]" % sys.argv[0])
         print("")
         print("max_sentences: maximum number of sentences to read (default: -1, reads all available sentences)")
+        print("max_test_sentences: maximum number of sentences to read (default: 10000, reads all available sentences)")
         print("max_iterations: maximum number of training iterations (default: 100)")
         print("dictionary_name: define alternative dictionary name. (default: dict.p)")
         print("out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
@@ -169,9 +174,11 @@ if __name__ == "__main__":
         if len(sys.argv) > 1:
             cfg["max_sentences"] = int(sys.argv[1])
         if len(sys.argv) > 2:
-            cfg["max_iterations"] = int(sys.argv[2])
+            cfg["max_test_sentences"] = int(sys.argv[2])
         if len(sys.argv) > 3:
-            cfg["dictionary_name"] = str(sys.argv[3])
+            cfg["max_iterations"] = int(sys.argv[3])
+        if len(sys.argv) > 4:
+            cfg["dictionary_name"] = str(sys.argv[4])
         else:
             cfg["dictionary_name"] = "dict.p"
         if len(sys.argv) > 4:
