@@ -3,13 +3,6 @@ import math
 
 from config import cfg
 
-def get_word_dict():
-    pass
-
-
-def eval_neural_network(input_sentence):
-    pass
-
 
 def output_perplexity(task_letter):
     """

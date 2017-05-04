@@ -58,16 +58,20 @@ class Reader(object):
             sentence_list = []
             if self.max_sentences == -1:
                 for line in f:
-                    tokens = self.add_tags(line.split())
-                    sentence = self.convert_sentence(tokens)
-                    sentence_list.append(sentence)
+                    tokens = line.split()
+                    if(len(tokens) <= cfg["sentence_length"] - 2):
+                        tokens = self.add_tags(tokens)
+                        sentence = self.convert_sentence(tokens)
+                        sentence_list.append(sentence)
             else:
                 for i in range(self.max_sentences):
                     # last token is the newline character
                     tokens = f.readline().split()[:-1]
-                    tokens = self.add_tags(tokens)
-                    sentence = self.convert_sentence(tokens)
-                    sentence_list.append(sentence)
+                    if(len(tokens) <= cfg["sentence_length"] - 2):
+                        tokens = self.add_tags(tokens)
+                        sentence = self.convert_sentence(tokens)
+                        sentence_list.append(sentence)
+                        
             self.id_data = np.array(sentence_list, dtype=np.int32)
 
     def add_tags(self, tokens):
@@ -105,15 +109,19 @@ class Reader(object):
         # dtype should be float32
         # print(self.one_hot_data.shape)
 
-    def pad_one_hot_to_batch_size(self):
-        print("padding the one hot encoded data with zeros to make it divisible by the batch size...")
-        sentences = len(self.one_hot_data)
+    def pad_id_data_to_batch_size(self):
+        """
+        Extend the id_data array so the batch size divides its length
+        """
+        print("padding the id data with 'pad' to make it divisible by the batch size...")
+        sentences = len(self.id_data)
         if cfg["batch_size"] is 1 or sentences % cfg["batch_size"] is 0:
             return
 
         padding = cfg["batch_size"] - (sentences % cfg["batch_size"])
-        extension = np.zeros(shape=(padding, cfg["sentence_length"], cfg["vocab_size"]), dtype=np.float32)
-        self.one_hot_data = np.concatenate((self.one_hot_data, extension), axis=0)
+
+        extension = np.full(shape=(padding, cfg["sentence_length"]), fill_value=self.vocab_dict["pad"], dtype=np.float32)
+        self.id_data = np.concatenate((self.id_data, extension), axis=0)
 
         return padding
 
@@ -123,25 +131,25 @@ def main():
                     max_sentences=cfg["max_sentences"])
     train_reader.build_dict(cfg["path"]["train"])
     train_reader.read_sentences(cfg["path"]["train"])
-    train_reader.one_hot_encode()
+    # train_reader.one_hot_encode()
 
     # Read given embeddings
-    sess = tf.Session()
-    embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
-    embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
-    embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
-                   "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
+    # sess = tf.Session()
+    # embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
+    # embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
+    # embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
+    #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
     #Training
-    m = model.Model(embeddings=embeddings)
+    m = model.Model()
+    # m = model.Model(embeddings=embeddings)
     m.build_forward_prop()
     m.build_backprop()
 
     # Read test data
-    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_sentences"]) #TODO take out the sentence limit
+    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
     test_reader.read_sentences(cfg["path"]["test"])
-    test_reader.one_hot_encode()
-    padding_size = test_reader.pad_one_hot_to_batch_size()
+    padding_size = test_reader.pad_id_data_to_batch_size()
 
     #Testing
     m.build_test()
@@ -149,8 +157,8 @@ def main():
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
 
-    m.train(train_data=train_reader.one_hot_data, test_data=test_reader.one_hot_data)
-    m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
+    m.train(train_data=train_reader.id_data, test_data=test_reader.id_data)
+    m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
 
 if __name__ == "__main__":
@@ -160,6 +168,7 @@ if __name__ == "__main__":
         print("Usage: %s [max_sentences [max_iterations [tag [out_batch]]]]" % sys.argv[0])
         print("")
         print("max_sentences: maximum number of sentences to read (default: -1, reads all available sentences)")
+        print("max_test_sentences: maximum number of sentences to read (default: 10000, reads all available sentences)")
         print("max_iterations: maximum number of training iterations (default: 100)")
         print("dictionary_name: define alternative dictionary name. (default: dict.p)")
         print("out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
@@ -169,9 +178,11 @@ if __name__ == "__main__":
         if len(sys.argv) > 1:
             cfg["max_sentences"] = int(sys.argv[1])
         if len(sys.argv) > 2:
-            cfg["max_iterations"] = int(sys.argv[2])
+            cfg["max_test_sentences"] = int(sys.argv[2])
         if len(sys.argv) > 3:
-            cfg["dictionary_name"] = str(sys.argv[3])
+            cfg["max_iterations"] = int(sys.argv[3])
+        if len(sys.argv) > 4:
+            cfg["dictionary_name"] = str(sys.argv[4])
         else:
             cfg["dictionary_name"] = "dict.p"
         if len(sys.argv) > 4:

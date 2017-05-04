@@ -14,4 +14,7 @@
 *.p
 
 # Output
-perplexity.txt
+**/perplexity.txt
+
+# Config file
+**/config.py
