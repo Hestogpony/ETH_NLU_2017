@@ -12,4 +12,5 @@ cfg = {
     "lstm_size" : 8, #todo 512
     "max_sentences" : -1,
     "max_iterations" : 100,
+    "out_batch": 1 #todo 100
 }

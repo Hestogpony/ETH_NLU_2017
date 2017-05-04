@@ -10,5 +10,8 @@
 # backup data from converting to python 3
 *bak
 
-# dictionairy pickle
+# dictionary pickle
 *.p
+
+# Output
+perplexity.txt
