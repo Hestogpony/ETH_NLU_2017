@@ -127,14 +127,14 @@ def main():
                     max_sentences=cfg["max_sentences"])
     train_reader.build_dict(cfg["path"]["train"])
     train_reader.read_sentences(cfg["path"]["train"])
-    train_reader.one_hot_encode()
+    # train_reader.one_hot_encode()
 
     # Read given embeddings
     sess = tf.Session()
     embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
     embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
-    embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
-                   "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
+    # embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
+    #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
     #Training
     m = model.Model(embeddings=embeddings)
@@ -153,7 +153,7 @@ def main():
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
 
-    m.train(train_data=train_reader.one_hot_data, test_data=test_reader.one_hot_data)
+    m.train(train_data=train_reader.id_data, test_data=test_reader.one_hot_data)
     m.test(data=test_reader.one_hot_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
 
