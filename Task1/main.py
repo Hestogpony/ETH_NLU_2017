@@ -1,5 +1,6 @@
 import sys
 import os
+import getopt
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
 import numpy as np
@@ -71,7 +72,7 @@ class Reader(object):
                         tokens = self.add_tags(tokens)
                         sentence = self.convert_sentence(tokens)
                         sentence_list.append(sentence)
-                        
+
             self.id_data = np.array(sentence_list, dtype=np.int32)
 
     def add_tags(self, tokens):
@@ -160,32 +161,57 @@ def main():
     m.train(train_data=train_reader.id_data, test_data=test_reader.id_data)
     m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
+def usage_and_quit():
+    print("Language model with LSTM")
+    print("Options:" % sys.argv[0])
+    print("")
+    print("--max_sentences: maximum number of sentences to read (default: -1, reads all available sentences)")
+    print("--max_test_sentences: maximum number of sentences to read (default: 10000, reads all available sentences)")
+    print("--max_iterations: maximum number of training iterations (default: 100)")
+    print("--dictionary_name: define alternative dictionary name. (default: dict.p)")
+    print("--out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
+    print("--fred / -f : use our implementation of the LSTM cell instead of Tensorflow's")
+    print("--size: The size of the model ('small' or 'big'), for testing purposes")
+    print("")
+    sys.exit()
 
 if __name__ == "__main__":
-    if ('--help' in sys.argv) or ('-h' in sys.argv):
-        print("")
-        print("Language model with LSTM")
-        print("Usage: %s [max_sentences [max_iterations [tag [out_batch]]]]" % sys.argv[0])
-        print("")
-        print("max_sentences: maximum number of sentences to read (default: -1, reads all available sentences)")
-        print("max_test_sentences: maximum number of sentences to read (default: 10000, reads all available sentences)")
-        print("max_iterations: maximum number of training iterations (default: 100)")
-        print("dictionary_name: define alternative dictionary name. (default: dict.p)")
-        print("out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
-        print("")
-    else:
-        # kwargs = {}
-        if len(sys.argv) > 1:
-            cfg["max_sentences"] = int(sys.argv[1])
-        if len(sys.argv) > 2:
-            cfg["max_test_sentences"] = int(sys.argv[2])
-        if len(sys.argv) > 3:
-            cfg["max_iterations"] = int(sys.argv[3])
-        if len(sys.argv) > 4:
-            cfg["dictionary_name"] = str(sys.argv[4])
-        else:
-            cfg["dictionary_name"] = "dict.p"
-        if len(sys.argv) > 4:
-            cfg["out_batch"] = int(sys.argv[4])
-        main()
-        # main(**kwargs)
+
+    try:
+        opts, args = getopt.gnu_getopt(sys.argv[1:], "fh",
+            ["max_sentences=", "max_test_sentences=", "max_iterations=",
+            "dictionary_name=", "out_batch=", "--help", "--fred", "--size"]
+    except getopt.GetoptError as err:
+        print(str(err))
+        usage_and_quit()
+
+    for o, a in opts:
+        if o == "--max_sentences":
+            cfg["max_sentences"] = int(a)
+        elif o == "--max_test_sentences":
+            cfg["max_test_sentences"] = int(a)
+        elif o == "--max_iterations":
+            cfg["max_iterations"] = int(a)
+        elif o == "--dictionary_name":
+            cfg["dictionary_name"] = str(a)
+        elif o == "--out_batch":
+            cfg["out_batch"] = int(a)
+        elif o in {"--fred", "-f"}:
+            cfg["use_fred"] = True
+        elif o in {"--help", "-h"}:
+            usage_and_quit()
+        elif o == "--size":
+            if str(a) == "small":
+                cfg["vocab_size"] = 200
+                cfg["batch_size"] = 4
+                cfg["embedding_size"] = 100
+                cfg["lstm_size"] = 64
+            elif str(a) == "big":
+                cfg["vocab_size"] = 20000
+                cfg["batch_size"] = 64
+                cfg["embedding_size"] = 100
+                cfg["lstm_size"] = 512
+
+    #print(cfg)
+
+    main()
