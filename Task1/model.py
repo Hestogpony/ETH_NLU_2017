@@ -7,9 +7,6 @@ import lstm
 from config import cfg
 from perplexity import perplexity
 
-USE_FRED = 0
-
-
 class Model(object):
     def __init__(self, embeddings=None):
         self.embeddings = embeddings
@@ -56,7 +53,7 @@ class Model(object):
         self.out_layer = []
 
         for i in range(cfg["sentence_length"] - 1):
-            if USE_FRED:
+            if cfg["use_fred"]:
                 scope = tf.variable_scope('lstm' + str(i))
                 lstm_layer.append(lstm.LstmCell(scope))
             else:
@@ -72,7 +69,7 @@ class Model(object):
             lstm_scope = tf.VariableScope(reuse=None, name="lstm"+str(i))
             # 4. LSTM dim 512
             if i == 0:
-                if USE_FRED:
+                if cfg["use_fred"]:
                     # (batch_size x lstm_size, batch_size x lstm_size)
                     lstm_out.append(lstm_layer[i](X=fc_emb_layer[i],
                                                   state=(tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]),
@@ -81,11 +78,11 @@ class Model(object):
                                     )
                 else:
                     zero_state = lstm_layer[i].zero_state(cfg["batch_size"], dtype=dtype)
-                    lstm_out.append(lstm_layer[i](inputs=fc_emb_layer[i], 
-                        state=zero_state, 
+                    lstm_out.append(lstm_layer[i](inputs=fc_emb_layer[i],
+                        state=zero_state,
                         scope=lstm_scope))
             else:
-                if USE_FRED:
+                if cfg["use_fred"]:
                     lstm_out.append(lstm_layer[i](X=fc_emb_layer[i], state=lstm_out[i - 1]))
                 else:
                     lstm_out.append(lstm_layer[i](inputs=fc_emb_layer[i], state=lstm_out[i-1][1], scope=lstm_scope))

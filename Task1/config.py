@@ -13,5 +13,6 @@ cfg = {
     "max_sentences" : -1,
     "max_test_sentences" : -1,
     "max_iterations" : 100,
-    "out_batch": 100
+    "out_batch": 100,
+    "use_fred": False
 }
