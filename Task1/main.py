@@ -141,24 +141,25 @@ def main():
     #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
 
     #Training
-    m = model.Model()
-    # m = model.Model(embeddings=embeddings)
-    m.build_forward_prop()
-    m.build_backprop()
+    with tf.device('/gpu:0'):
+        m = model.Model()
+        # m = model.Model(embeddings=embeddings)
+        m.build_forward_prop()
+        m.build_backprop()
 
-    # Read test data
-    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
-    test_reader.read_sentences(cfg["path"]["test"])
-    padding_size = test_reader.pad_id_data_to_batch_size()
+        # Read test data
+        test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
+        test_reader.read_sentences(cfg["path"]["test"])
+        padding_size = test_reader.pad_id_data_to_batch_size()
 
-    #Testing
-    m.build_test()
-    #Revert dictionary for perplexity
-    reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
+        #Testing
+        m.build_test()
+        #Revert dictionary for perplexity
+        reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
 
-    m.train(train_data=train_reader.id_data, test_data=test_reader.id_data)
-    m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
+        m.train(train_data=train_reader.id_data, test_data=test_reader.id_data)
+        m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
 
 
 if __name__ == "__main__":
