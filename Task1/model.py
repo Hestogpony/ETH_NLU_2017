@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.contrib.rnn import LSTMCell
 import numpy as np
 import time
 
@@ -6,10 +7,15 @@ import lstm
 from config import cfg
 from perplexity import perplexity
 
+USE_FRED = 0
+
 
 class Model(object):
     def __init__(self, embeddings=None):
         self.embeddings = embeddings
+        self.tfconfig = tf.ConfigProto()
+        self.tfconfig.gpu_options.allow_growth = True
+        #self.tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.95
 
     def build_forward_prop(self, embeddings=None):
 
@@ -50,8 +56,12 @@ class Model(object):
         self.out_layer = []
 
         for i in range(cfg["sentence_length"] - 1):
-            scope = tf.variable_scope('lstm' + str(i))
-            lstm_layer.append(lstm.LstmCell(scope))
+            if USE_FRED:
+                scope = tf.variable_scope('lstm' + str(i))
+                lstm_layer.append(lstm.LstmCell(scope))
+            else:
+                # Use tensorflows cell
+                lstm_layer.append(LSTMCell(num_units=cfg["lstm_size"], forget_bias=1.0, state_is_tuple=True, activation=tf.tanh))
 
         for i in range(cfg["sentence_length"] - 1):
 
@@ -59,16 +69,26 @@ class Model(object):
 
             fc_emb_layer.append(tf.nn.relu(tf.matmul(tf.squeeze(self.input_words[i]), W_emb) + bias_emb))
 
+            lstm_scope = tf.VariableScope(reuse=None, name="lstm"+str(i))
             # 4. LSTM dim 512
             if i == 0:
-                # (batch_size x lstm_size, batch_size x lstm_size)
-                lstm_out.append(lstm_layer[i](X=fc_emb_layer[i],
-                                              state=(tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]),
-                                                     tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]))
-                                              )
-                                )
+                if USE_FRED:
+                    # (batch_size x lstm_size, batch_size x lstm_size)
+                    lstm_out.append(lstm_layer[i](X=fc_emb_layer[i],
+                                                  state=(tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]),
+                                                         tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]))
+                                                  )
+                                    )
+                else:
+                    zero_state = lstm_layer[i].zero_state(cfg["batch_size"], dtype=dtype)
+                    lstm_out.append(lstm_layer[i](inputs=fc_emb_layer[i], 
+                        state=zero_state, 
+                        scope=lstm_scope))
             else:
-                lstm_out.append(lstm_layer[i](X=fc_emb_layer[i], state=lstm_out[i - 1]))
+                if USE_FRED:
+                    lstm_out.append(lstm_layer[i](X=fc_emb_layer[i], state=lstm_out[i - 1]))
+                else:
+                    lstm_out.append(lstm_layer[i](inputs=fc_emb_layer[i], state=lstm_out[i-1][1], scope=lstm_scope))
 
             # 5. Linear FC output layer
 
@@ -113,7 +133,7 @@ class Model(object):
 
     def test_loss(self, data):
 
-        sess = tf.InteractiveSession()
+        sess = tf.InteractiveSession(config=self.tfconfig)
         tf.global_variables_initializer().run()
 
         batch_indices = define_minibatches(data.shape[0], False)
@@ -133,7 +153,7 @@ class Model(object):
         train_data          id_data, 2D
         test_data           id_data, 2D
         """
-        sess = tf.InteractiveSession()
+        sess = tf.InteractiveSession(config=self.tfconfig)
         tf.global_variables_initializer().run()
 
         for e in range(cfg["max_iterations"]):
@@ -155,7 +175,7 @@ class Model(object):
         """
         data            id_data, 2D
         """
-        sess = tf.InteractiveSession()
+        sess = tf.InteractiveSession(config=self.tfconfig)
         tf.global_variables_initializer().run()
 
         print('Testing...')
