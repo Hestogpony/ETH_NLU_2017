@@ -237,6 +237,7 @@ if __name__ == "__main__":
                 cfg["embedding_size"] = 100
                 cfg["lstm_size"] = 512
                 cfg["dictionary_name"] = "dict_big.p"
+                cfg["out_batch"] = 1000
         elif 0 == "--experiment=":
             if str(a) == "a":
                 cfg["experiment"] = "a"
