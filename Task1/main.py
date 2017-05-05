@@ -65,7 +65,7 @@ class Reader(object):
             self.vocab_dict["unk"] = cfg["vocab_size"] - 2
             self.vocab_dict["pad"] = cfg["vocab_size"] - 1
 
-            pickle.dump(self.vocab_dict, open("dict.p", "wb"))
+            pickle.dump(self.vocab_dict, open(cfg["dictionary_name"], "wb"))
 
     def read_sentences(self, path):
         """ Include the tags bos, eos, pad, unk """
@@ -231,7 +231,6 @@ if __name__ == "__main__":
                 cfg["lstm_size"] = 64
                 cfg["dictionary_name"] = "dict_small.p"
             elif str(a) == "big":
-                print("big model")
                 cfg["vocab_size"] = 20000
                 cfg["batch_size"] = 64
                 cfg["embedding_size"] = 100
