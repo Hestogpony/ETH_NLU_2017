@@ -26,10 +26,6 @@ class Model(object):
         # returns a list of 2D tensors
         self.input_words = tf.split(value=one_hot, num_or_size_splits=cfg["sentence_length"], axis=1)
 
-        # We can discard the last 2D tensor from batch_positionwise
-        # Cut the <eos> tags for the input data
-        # x = tf.slice(input_=one_input_position_batch, begin=[0,0], size=[-1, cfg["sentence_length"] - 1])
-
         initializer = tf.contrib.layers.xavier_initializer()
         dtype = tf.float32
 
@@ -156,7 +152,7 @@ class Model(object):
 
         for e in range(cfg["max_iterations"]):
             print("Starting epoch %d..." % e)
-            start = time.time()
+            start_epoch = start_batches = time.time()
 
             batch_indices = define_minibatches(train_data.shape[0])
             for i, batch_idx in enumerate(batch_indices):
@@ -164,10 +160,12 @@ class Model(object):
                 sess.run(fetches=self.train_op, feed_dict={self.input: batch})
 
                 # Log test loss every so often
-                if cfg["out_batch"] > 0 and i % (cfg["out_batch"] + 1) == 0 :
+                if cfg["out_batch"] > 0 and i > 0 and (i % (cfg["out_batch"]) == 0) :
+                    print("\tBatch chunk %d - %d finished in %d seconds" % (i-cfg["out_batch"], i, time.time() - start_batches))
                     print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data)))
+                    start_batches = time.time()
 
-            print("Epoch completed in %d seconds." % (time.time() - start))
+            print("Epoch completed in %d seconds." % (time.time() - start_epoch))
 
     def test(self, data, vocab_dict, cut_last_batch=0):
         """

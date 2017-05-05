@@ -229,6 +229,7 @@ if __name__ == "__main__":
                 cfg["batch_size"] = 4
                 cfg["embedding_size"] = 100
                 cfg["lstm_size"] = 64
+                cfg["max_test_sentences"] = 20
                 cfg["dictionary_name"] = "dict_small.p"
             elif str(a) == "big":
                 cfg["vocab_size"] = 20000
