@@ -180,7 +180,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "fh",
             ["max_sentences=", "max_test_sentences=", "max_iterations=",
-            "dictionary_name=", "out_batch=", "help", "fred", "size"])
+            "dictionary_name=", "out_batch=", "size=", "help", "fred"])
     except getopt.GetoptError as err:
         print(str(err))
         usage_and_quit()
