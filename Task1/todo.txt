@@ -1,3 +1,1 @@
 - Figure out this whole tensorboard and summary business
-- Replace the LSTM with the tensorflow cell
-- Include a command line argument for the different experiments

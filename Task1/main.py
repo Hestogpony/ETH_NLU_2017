@@ -6,11 +6,27 @@ import tensorflow as tf
 import numpy as np
 from collections import Counter
 import pickle
+import time
 
 import load_embeddings
 import model
 
 from config import cfg
+
+class Logger(object):
+    def __init__(self, timestamp):
+        self.terminal = sys.stdout
+        self.log = open(timestamp + ".log", "w")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)  
+
+    def flush(self):
+        #this flush method is needed for python 3 compatibility.
+        #this handles the flush command by doing nothing.
+        #you might want to specify some extra behavior here.
+        pass
 
 
 class Reader(object):
@@ -127,6 +143,10 @@ class Reader(object):
         return padding
 
 def main():
+    # Write to both logfile and stdout
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    sys.stdout = Logger(timestamp)
+
     # Read train data
     train_reader = Reader(vocab_size=cfg["vocab_size"],
                     max_sentences=cfg["max_sentences"])
