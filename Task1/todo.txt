@@ -4,9 +4,8 @@
 - Print both train and test lost
 - Create figures of the losses
 
-- MAKE SURE THE READER AND MODEL OBJECT DON'T KEEP UNNECESSARY STUFF
 
-
+This should be solved now!
 Possible reasons for memory error:
 - loading the test data in between fucks up some allocated memory
 	test data size = 4 * 30 * 10000 = 1.2 MB with indicator
