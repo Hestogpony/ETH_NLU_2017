@@ -10,11 +10,12 @@ from perplexity import perplexity
 class Model(object):
     def __init__(self, embeddings=None):
         self.embeddings = embeddings
-        self.tfconfig = tf.ConfigProto()
-        self.tfconfig.gpu_options.allow_growth = True
+        # self.tfconfig = tf.ConfigProto()
+        # self.tfconfig.gpu_options.allow_growth = True
         #self.tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.95
 
     def build_forward_prop(self, embeddings=None):
+        # TODO: change model for experiment C
 
         print("building the forward model...")
         # This is one mini-batch

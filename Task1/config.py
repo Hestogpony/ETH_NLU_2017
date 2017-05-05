@@ -15,5 +15,6 @@ cfg = {
     "max_iterations" : 100,
     "out_batch": 100,
     "use_fred": False,
-    "dictionary_name": "dict.p"
+    "dictionary_name": "dict.p",
+    "experiment": "a"
 }

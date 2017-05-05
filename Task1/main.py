@@ -154,16 +154,18 @@ def main():
     train_reader.read_sentences(cfg["path"]["train"])
     # train_reader.one_hot_encode()
 
+    if cfg["experiment"] == "b" or cfg["experiment"] == "c":
     # Read given embeddings
-    # sess = tf.Session()
-    # embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
-    # embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
-    # embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
-    #                "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
+        sess = tf.Session()
+        embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
+        embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
+        embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
+                       "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
+        m = model.Model(embeddings=embeddings)
+    else:
+        m = model.Model()
 
-    #Training
-    m = model.Model()
-    # m = model.Model(embeddings=embeddings)
+    # Training
     m.build_forward_prop()
     m.build_backprop()
 
@@ -192,6 +194,7 @@ def usage_and_quit():
     print("--out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
     print("--fred / -f : use our implementation of the LSTM cell instead of Tensorflow's")
     print("--size: The size of the model ('small' or 'big'), for testing purposes")
+    print("--experiment: which experiment to perform('a','b' or 'c')")
     print("")
     sys.exit()
 
@@ -200,7 +203,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "fh",
             ["max_sentences=", "max_test_sentences=", "max_iterations=",
-            "dictionary_name=", "out_batch=", "size=", "help", "fred"])
+            "dictionary_name=", "out_batch=", "size=","experiment=", "help", "fred"])
     except getopt.GetoptError as err:
         print(str(err))
         usage_and_quit()
@@ -233,7 +236,14 @@ if __name__ == "__main__":
                 cfg["embedding_size"] = 100
                 cfg["lstm_size"] = 512
                 cfg["dictionary_name"] = "dict_big.p"
-
+        elif 0 == "--experiment=":
+            if str(a) == "a":
+                cfg["experiment"] = "a"
+            elif str(a) == "b":
+                cfg["experiment"] = "b"
+            elif str(a) == "c":
+                cfg["experiment"] = "c"
+                cfg["lstm_size"] = 1024
     #print(cfg)
 
     main()

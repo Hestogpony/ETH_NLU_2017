@@ -1,1 +1,5 @@
 - Figure out this whole tensorboard and summary business
+- Set up experiment C
+- Do task 1.2
+- Print both train and test lost
+- Create figures of the losses
