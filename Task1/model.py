@@ -125,16 +125,13 @@ class Model(object):
         # Stack the individual output layers by sentence. Stacking with axis=0 would be by batch
         self.test_op = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
 
-    def test_loss(self, data):
-
-        sess = tf.InteractiveSession(config=self.tfconfig)
-        tf.global_variables_initializer().run()
+    def test_loss(self, session, data):
 
         batch_indices = define_minibatches(data.shape[0], False)
         batched_losses = []
         for i, batch_idx in enumerate(batch_indices):
             batch = data[batch_idx]
-            this_loss = sess.run(self.losses, feed_dict={self.input: batch})
+            this_loss = session.run(self.losses, feed_dict={self.input: batch})
 
             # Sum over sentence positions, getting one loss per sentence
             batched_losses.append(np.sum(this_loss, axis=-1))
@@ -147,8 +144,11 @@ class Model(object):
         train_data          id_data, 2D
         test_data           id_data, 2D
         """
-        sess = tf.InteractiveSession(config=self.tfconfig)
-        tf.global_variables_initializer().run()
+        train_sess = tf.Session(config=self.tfconfig)
+        tf.global_variables_initializer().run(session=train_sess)
+        test_sess = tf.Session(config=self.tfconfig)
+        tf.global_variables_initializer().run(session=test_sess)
+        # print(tf.global_variables())
 
         for e in range(cfg["max_iterations"]):
             print("Starting epoch %d..." % e)
@@ -157,12 +157,12 @@ class Model(object):
             batch_indices = define_minibatches(train_data.shape[0])
             for i, batch_idx in enumerate(batch_indices):
                 batch = train_data[batch_idx]
-                sess.run(fetches=self.train_op, feed_dict={self.input: batch})
+                train_sess.run(fetches=self.train_op, feed_dict={self.input: batch})
 
                 # Log test loss every so often
                 if cfg["out_batch"] > 0 and i > 0 and (i % (cfg["out_batch"]) == 0) :
                     print("\tBatch chunk %d - %d finished in %d seconds" % (i-cfg["out_batch"], i, time.time() - start_batches))
-                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data)))
+                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(session=test_sess, data=test_data)))
                     start_batches = time.time()
 
             print("Epoch completed in %d seconds." % (time.time() - start_epoch))
