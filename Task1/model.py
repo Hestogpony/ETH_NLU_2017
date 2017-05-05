@@ -10,7 +10,7 @@ from perplexity import perplexity
 class Model(object):
     def __init__(self, embeddings=None):
         self.embeddings = embeddings
-        # self.tfconfig = tf.ConfigProto()
+        self.tfconfig = tf.ConfigProto()
         # self.tfconfig.gpu_options.allow_growth = True
         #self.tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.95
 
