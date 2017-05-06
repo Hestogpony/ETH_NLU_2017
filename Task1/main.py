@@ -20,7 +20,7 @@ class Logger(object):
 
     def write(self, message):
         self.terminal.write(message)
-        self.log.write(message)  
+        self.log.write(message)
 
     def flush(self):
         #this flush method is needed for python 3 compatibility.
@@ -144,7 +144,7 @@ class Reader(object):
 
 def main():
     # Write to both logfile and stdout
-    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = time.strftime('%Y-%m-%d--%H_%M_%S')
     sys.stdout = Logger(timestamp)
 
     # Read train data
@@ -225,12 +225,17 @@ if __name__ == "__main__":
             usage_and_quit()
         elif o == "--size":
             if str(a) == "small":
-                cfg["vocab_size"] = 200
-                cfg["batch_size"] = 4
-                cfg["embedding_size"] = 100
-                cfg["lstm_size"] = 64
+                cfg["max_sentences"] = 1000
                 cfg["max_test_sentences"] = 20
+
+                cfg["max_iterations"] = 10
+
+                cfg["vocab_size"] = 200
+                cfg["batch_size"] = 10
+                cfg["embedding_size"] = 100
+                cfg["lstm_size"] = 256
                 cfg["dictionary_name"] = "dict_small.p"
+                cfg["out_batch"] = 10
             elif str(a) == "big":
                 cfg["vocab_size"] = 20000
                 cfg["batch_size"] = 64
