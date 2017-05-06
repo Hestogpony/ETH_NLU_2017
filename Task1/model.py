@@ -212,7 +212,12 @@ class Model(object):
 def save_model(session):
     saver = tf.train.Saver()
     save_path = saver.save(session, cfg["save_model_path"])
-    print("Model saved in file: %s" % save_path)
+    print("Model saved in file: %s" % cfg["save_model_path"])
+
+def load_model(session):
+    saver = tf.train.Saver()
+    save_path = saver.restore(sess,cfg["save_model_path"])
+    print("Model from %s restored" % cfg["save_model_path"])
 
 def define_minibatches(length, permute=True):
     if permute:
