@@ -179,7 +179,7 @@ def main():
 
     m.train(train_data=train_reader.id_data, test_data=eval_reader.id_data, cut_last_test_batch=eval_padding_size)
 
-    '''
+
     # Read test data
     test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
     test_reader.read_sentences(cfg["path"]["test"])
@@ -188,8 +188,8 @@ def main():
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
     m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=test_padding_size)
-    '''
 
+    '''
     reverted_dict = dict([(y,x) for x,y in list(train_reader.vocab_dict.items())])
 
     # TESTING
@@ -201,7 +201,7 @@ def main():
         [d['``']]]
 
     m.generate(sents, reverted_dict)
-
+    '''
 
 def usage_and_quit():
     print("Language model with LSTM")
