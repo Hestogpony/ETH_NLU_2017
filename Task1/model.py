@@ -106,16 +106,12 @@ class Model(object):
         optimizer = tf.train.AdamOptimizer()
 
         # Clipped gradients
-        #gvs = optimizer.compute_gradients(self.total_loss)
-        #grads = [x[0] for x in gvs]
-        #vars = [x[1] for x in gvs]
+        gvs = optimizer.compute_gradients(self.total_loss)
+        grads = [x[0] for x in gvs]
+        vars = [x[1] for x in gvs]
 
-        #self.total_loss = tf.Print(self.total_loss, grads)
-
-        #clipped_grads, _ = tf.clip_by_global_norm(t_list=grads, clip_norm=10)  # second output not used
-        #self.train_op = optimizer.apply_gradients(list(zip(clipped_grads, vars)))
-
-        self.train_op = optimizer.minimize(self.total_loss)
+        clipped_grads, _ = tf.clip_by_global_norm(t_list=grads, clip_norm=10)  # second output not used
+        self.train_op = optimizer.apply_gradients(list(zip(clipped_grads, vars)))
 
     def build_test(self):
         print('building the test operations...')
