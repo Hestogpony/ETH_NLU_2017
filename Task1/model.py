@@ -14,8 +14,7 @@ class Model(object):
 
         self.model_session = tf.Session(config=self.tfconfig)
 
-        # self.tfconfig.gpu_options.allow_growth = True
-        #self.tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.95
+
 
     def build_forward_prop(self, embeddings=None):
 
@@ -23,6 +22,12 @@ class Model(object):
 
         # This is one mini-batch
         self.input = tf.placeholder(dtype=tf.int32, shape=[None, cfg["sentence_length"]])
+
+        # Initial states for the LSTM cell; we'll just pass zeros, but we use
+        # a placeholder since we don't know the batch size here yet
+        self.initial_hidden = tf.placeholder(dtype=tf.float32, shape=[None, cfg["lstm_size"]])
+        self.initial_cell = tf.placeholder(dtype=tf.float32, shape=[None, cfg["lstm_size"]])
+
         one_hot = tf.one_hot(indices=self.input, depth=cfg["vocab_size"], axis=-1, dtype=tf.float32)
 
         # from 3D tensor to 2D tensor, dim batch_Size x vocab_size
@@ -65,14 +70,11 @@ class Model(object):
 
         if cfg["use_fred"]:
             lstm_cell = lstm.LstmCell()
-            LSTM_INITIAL = (tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]),
-                            tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]))
         else:
             lstm_cell = LSTMCell(num_units=cfg["lstm_size"],
                                 forget_bias=1.0,
                                 state_is_tuple=True,
                                 activation=tf.tanh)
-            LSTM_INITIAL = lstm_cell.zero_state(cfg["batch_size"], dtype=dtype)
 
         for i in range(cfg["sentence_length"] - 1):
 
@@ -87,7 +89,11 @@ class Model(object):
             # the output.
 
             if i == 0:
-                lstm_out.append(lstm_cell(fc_emb_layer[i], LSTM_INITIAL, lstm_scope)[1])
+                lstm_out.append(
+                    lstm_cell(
+                        fc_emb_layer[i],
+                        (self.initial_hidden, self.initial_cell),
+                        lstm_scope)[1])
                 lstm_scope.reuse_variables()
             else:
                 lstm_out.append(lstm_cell(fc_emb_layer[i], lstm_out[i - 1], lstm_scope)[1])
@@ -128,13 +134,23 @@ class Model(object):
         # Stack the individual output layers by sentence. Stacking with axis=0 would be by batch
         self.test_op = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
 
+    def build_generate(self):
+        pass
+
+
     def test_loss(self, data, cut_last_batch=0):
 
         batch_indices = define_minibatches(data.shape[0], False)
         batched_losses = []
         for i, batch_idx in enumerate(batch_indices):
             batch = data[batch_idx]
-            this_loss = self.model_session.run(self.total_loss, feed_dict={self.input: batch})
+            food = {
+                self.input: batch,
+                self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
+                self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
+            }
+
+            this_loss = self.model_session.run(self.total_loss, feed_dict=food)
 
             eval_size = cfg["batch_size"]
             if i == len(batch_indices) - 1:
@@ -162,7 +178,14 @@ class Model(object):
             batch_indices = define_minibatches(train_data.shape[0])
             for i, batch_idx in enumerate(batch_indices):
                 batch = train_data[batch_idx]
-                self.model_session.run(fetches=self.train_op, feed_dict={self.input: batch})
+
+                food = {
+                    self.input: batch,
+                    self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
+                    self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
+                }
+
+                self.model_session.run(fetches=self.train_op, feed_dict=food)
 
                 # Log test loss every so often
                 if cfg["out_batch"] > 0 and i > 0 and (i % (cfg["out_batch"]) == 0) :
@@ -195,7 +218,13 @@ class Model(object):
 
             # print('Starting test batch %d' % i)
 
-            estimates = self.model_session.run(fetches=self.test_op, feed_dict={self.input: batch})
+            food = {
+                self.input: batch,
+                self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
+                self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
+            }
+
+            estimates = self.model_session.run(fetches=self.test_op, feed_dict=food)
 
             eval_size = len(batch_idx)
             if i == len(batch_indices) - 1:
