@@ -23,5 +23,7 @@ cfg = {
     "use_pretrained": False,
     "extra_project": False,
 
+    "generate_length": 20,
+
     "dictionary_name": "dict.p"
 }
