@@ -11,6 +11,9 @@ class Model(object):
     def __init__(self, embeddings=None):
         self.embeddings = embeddings
         self.tfconfig = tf.ConfigProto()
+
+        self.model_session = tf.Session(config=self.tfconfig)
+
         # self.tfconfig.gpu_options.allow_growth = True
         #self.tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.95
 
@@ -95,29 +98,24 @@ class Model(object):
         y_hat = []
         loss = []
 
-        for i in range(cfg["sentence_length"] - 1):
-            # 6. Softmax output + cat cross entropy loss
+        labs = tf.slice(self.input, [0, 1], [-1, -1])
+        logs = tf.stack(self.out_layer, axis=1)
+        self.total_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                            labels=labs, logits=logs)
 
-            # we ommit the 0-th word in each sentence (namely the <bos> tag).
-            # The labels start position 1
-            y_hat.append(
-                tf.nn.sparse_softmax_cross_entropy_with_logits(
-                    labels=tf.argmax(tf.squeeze(self.input_words[i + 1]), axis=1),
-                    logits=self.out_layer[i]))
-
-            # Loss for one output position, reduced over the minibatch
-            loss.append(tf.reduce_mean(y_hat[i]))
-
-        self.total_loss = tf.reduce_mean(tf.stack(values=loss))
         optimizer = tf.train.AdamOptimizer()
 
         # Clipped gradients
-        gvs = optimizer.compute_gradients(self.total_loss)
-        grads = [x[0] for x in gvs]
-        vars = [x[1] for x in gvs]
+        #gvs = optimizer.compute_gradients(self.total_loss)
+        #grads = [x[0] for x in gvs]
+        #vars = [x[1] for x in gvs]
 
-        clipped_grads, _ = tf.clip_by_global_norm(t_list=grads, clip_norm=10)  # second output not used
-        self.train_op = optimizer.apply_gradients(list(zip(clipped_grads, vars)))
+        #self.total_loss = tf.Print(self.total_loss, grads)
+
+        #clipped_grads, _ = tf.clip_by_global_norm(t_list=grads, clip_norm=10)  # second output not used
+        #self.train_op = optimizer.apply_gradients(list(zip(clipped_grads, vars)))
+
+        self.train_op = optimizer.minimize(self.total_loss)
 
     def build_test(self):
         print('building the test operations...')
@@ -125,13 +123,13 @@ class Model(object):
         # Stack the individual output layers by sentence. Stacking with axis=0 would be by batch
         self.test_op = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
 
-    def test_loss(self, session, data):
+    def test_loss(self, data):
 
         batch_indices = define_minibatches(data.shape[0], False)
         batched_losses = []
         for i, batch_idx in enumerate(batch_indices):
             batch = data[batch_idx]
-            this_loss = session.run(self.total_loss, feed_dict={self.input: batch})
+            this_loss = self.model_session.run(self.total_loss, feed_dict={self.input: batch})
 
             # Sum over sentence positions, getting one loss per sentence
             batched_losses.append(np.sum(this_loss, axis=-1))
@@ -144,11 +142,8 @@ class Model(object):
         train_data          id_data, 2D
         test_data           id_data, 2D
         """
-        train_sess = tf.Session(config=self.tfconfig)
-        tf.global_variables_initializer().run(session=train_sess)
-        test_sess = tf.Session(config=self.tfconfig)
-        tf.global_variables_initializer().run(session=test_sess)
-        # print(tf.global_variables())
+        tf.global_variables_initializer().run(session=self.model_session)
+
 
         for e in range(cfg["max_iterations"]):
             print("Starting epoch %d..." % e)
@@ -157,12 +152,12 @@ class Model(object):
             batch_indices = define_minibatches(train_data.shape[0])
             for i, batch_idx in enumerate(batch_indices):
                 batch = train_data[batch_idx]
-                train_sess.run(fetches=self.train_op, feed_dict={self.input: batch})
+                self.model_session.run(fetches=self.train_op, feed_dict={self.input: batch})
 
                 # Log test loss every so often
                 if cfg["out_batch"] > 0 and i > 0 and (i % (cfg["out_batch"]) == 0) :
                     print("\tBatch chunk %d - %d finished in %d seconds" % (i-cfg["out_batch"], i, time.time() - start_batches))
-                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(session=test_sess, data=test_data)))
+                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data)))
                     start_batches = time.time()
 
             print("Epoch completed in %d seconds." % (time.time() - start_epoch))
@@ -171,8 +166,6 @@ class Model(object):
         """
         data            id_data, 2D
         """
-        sess = tf.InteractiveSession(config=self.tfconfig)
-        tf.global_variables_initializer().run()
 
         print('Testing...')
 
@@ -188,7 +181,7 @@ class Model(object):
 
             # print('Starting test batch %d' % i)
 
-            estimates = sess.run(fetches=self.test_op, feed_dict={self.input: batch})
+            estimates = self.model_session.run(fetches=self.test_op, feed_dict={self.input: batch})
 
             eval_size = len(batch_idx)
             if i == len(batch_indices) - 1:
