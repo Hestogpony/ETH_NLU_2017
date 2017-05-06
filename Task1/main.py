@@ -1,3 +1,6 @@
+import load_embeddings
+import model
+
 import sys
 import os
 import getopt
@@ -7,9 +10,6 @@ import numpy as np
 from collections import Counter
 import pickle
 import time
-
-import load_embeddings
-import model
 
 from config import cfg
 
@@ -179,6 +179,7 @@ def main():
 
     m.train(train_data=train_reader.id_data, test_data=eval_reader.id_data, cut_last_test_batch=eval_padding_size)
 
+    '''
     # Read test data
     test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
     test_reader.read_sentences(cfg["path"]["test"])
@@ -187,6 +188,20 @@ def main():
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
     m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=test_padding_size)
+    '''
+
+    reverted_dict = dict([(y,x) for x,y in list(train_reader.vocab_dict.items())])
+
+    # TESTING
+    d = train_reader.vocab_dict
+    sents = [
+        [d['we'], d['are']],
+        [d['well'], d['what'], d['about']],
+        [d['another'], d['thought'], d['was']],
+        [d['``']]]
+
+    m.generate(sents, reverted_dict)
+
 
 def usage_and_quit():
     print("Language model with LSTM")
@@ -245,8 +260,6 @@ if __name__ == "__main__":
             if str(a) == "small":
                 cfg["max_sentences"] = 1000
                 cfg["max_test_sentences"] = 20
-
-                cfg["max_iterations"] = 10
 
                 cfg["vocab_size"] = 200
                 cfg["batch_size"] = 10

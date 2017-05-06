@@ -77,7 +77,7 @@ class Model(object):
             # 3. Fully connected for embeddings
             # Take the ith slice of batch_size x sentence_length x vocab_size
             # along axis 1, yielding batch_size x vocab_size
-            ith_word_batch = tf.squeeze(tf.slice(one_hot, [0, i, 0], [-1, 1, -1]))
+            ith_word_batch = tf.squeeze(tf.slice(one_hot, [0, i, 0], [-1, 1, -1]), axis=[1])
             embs = tf.matmul(ith_word_batch, W_emb) + bias_emb
             fc_emb_layer.append(tf.nn.relu(embs))
 
@@ -104,6 +104,8 @@ class Model(object):
 
             # 5. Linear FC output layer
             self.out_layer.append(tf.matmul(to_project, W_out) + bias_out)
+
+        self.output_and_state = (self.out_layer[0], lstm_out[0])
 
     def build_backprop(self):
         print("building the backprop model...")
@@ -190,7 +192,7 @@ class Model(object):
             print("Epoch completed in %d seconds." % (time.time() - start_epoch))
 
         # Save the trained network to use it for Task 1.2
-        if cfg["save_model_path"]:
+        if "save_model_path" in cfg:
             save_model(session=self.model_session)
 
     def test(self, data, vocab_dict, cut_last_batch=0):
@@ -231,6 +233,55 @@ class Model(object):
                 # print(('Test batch %d completed in %d seconds' % (i, time.time() - start)))
 
         out_test.close()
+
+    def generate(self, sentences, vocab_dict):
+        # TODO should we assume that sentences have the bos tag or not?
+
+        """
+        sentences: a list of sentences. Each sentence is a list of word IDs
+        """
+
+        print('Generating...')
+
+        cur_h = np.zeros((1, cfg["lstm_size"]))
+        cur_c = np.zeros((1, cfg["lstm_size"]))
+        cur_w = None
+
+        for beginning in sentences:
+            completed_sentence = beginning
+
+            for word in beginning:
+                food = {
+                    self.input_forward: [[word]],
+                    self.initial_hidden: cur_h,
+                    self.initial_cell: cur_c
+                }
+
+                # We don't care about the output of the model for now,
+                # we just feed in stuff.
+                new_w, (cur_h, cur_c) = self.model_session.run(fetches=self.output_and_state, feed_dict=food)
+                cur_w = np.argmax(new_w, axis=-1)[0]
+
+            for i in range(cfg["generate_length"] - len(beginning)):
+                food = {
+                    self.input_forward: [[cur_w]],
+                    self.initial_hidden: cur_h,
+                    self.initial_cell: cur_c
+                }
+
+                new_w, (cur_h, cur_c) = self.model_session.run(fetches=self.output_and_state, feed_dict=food)
+                cur_w = np.argmax(new_w, axis=-1)[0]
+
+                completed_sentence.append(cur_w)
+                if vocab_dict[cur_w] == "eos":
+                    break
+
+            sentence = " ".join([vocab_dict[x] for x in completed_sentence])
+            print(sentence)
+
+
+
+
 
 def save_model(session):
     saver = tf.train.Saver()
