@@ -154,7 +154,7 @@ class Model(object):
             # Afterwards, cut out dummy values in the last batch if necessary
             batched_losses.append(np.sum(this_loss, axis=-1)[:eval_size])
 
-        return np.mean(batched_losses)
+        return np.mean(np.concatenate(batched_losses))
 
     # Test data is available for measurements
     def train(self, train_data, test_data, cut_last_test_batch=0):
@@ -236,6 +236,11 @@ def save_model(session):
     saver = tf.train.Saver()
     save_path = saver.save(session, cfg["save_model_path"])
     print("Model saved in file: %s" % save_path)
+
+def load_model(session):
+    saver = tf.train.Saver()
+    load_path = saver.restore(sess,cfg["save_model_path"])
+    print("Model from %s restored" % load_path)
 
 def define_minibatches(length, permute=True):
     if permute:
