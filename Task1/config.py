@@ -5,6 +5,7 @@ cfg = {
         "eval": "./data/sentences.eval",
         "test": "./data/sentences_test",
         "continuation": "./data/sentences.continuation",
+        "output": "./output/group02.perplexity",
     },
     "vocab_size": 20000,
     "sentence_length": 30,
