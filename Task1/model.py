@@ -144,7 +144,7 @@ class Model(object):
             # Afterwards, cut out dummy values in the last batch if necessary
             batched_losses.append(np.sum(this_loss, axis=-1)[:eval_size])
 
-        return np.mean(batched_losses)
+        return np.mean(np.concatenate(batched_losses))
 
     # Test data is available for measurements
     def train(self, train_data, test_data, cut_last_test_batch=0):
