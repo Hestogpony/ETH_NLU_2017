@@ -16,7 +16,7 @@ from config import cfg
 class Logger(object):
     def __init__(self, timestamp):
         self.terminal = sys.stdout
-        self.log = open(timestamp + ".log", "w")
+        self.log = open("log/" + timestamp + ".log", "w")
 
     def write(self, message):
         self.terminal.write(message)
