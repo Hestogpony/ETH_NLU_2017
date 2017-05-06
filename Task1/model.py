@@ -138,7 +138,7 @@ class Model(object):
         # Stack the individual output layers by sentence. Stacking with axis=0 would be by batch
         self.test_op = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
 
-    def test_loss(self, data):
+    def test_loss(self, data, cut_last_batch=0):
 
         batch_indices = define_minibatches(data.shape[0], False)
         batched_losses = []
@@ -146,13 +146,18 @@ class Model(object):
             batch = data[batch_idx]
             this_loss = self.model_session.run(self.total_loss, feed_dict={self.input: batch})
 
+            eval_size = cfg["batch_size"]
+            if i == len(batch_indices) - 1:
+                eval_size = cfg["batch_size"] - cut_last_batch
+
             # Sum over sentence positions, getting one loss per sentence
-            batched_losses.append(np.sum(this_loss, axis=-1))
+            # Afterwards, cut out dummy values in the last batch if necessary
+            batched_losses.append(np.sum(this_loss, axis=-1)[:eval_size])
 
         return np.mean(batched_losses)
 
     # Test data is available for measurements
-    def train(self, train_data, test_data):
+    def train(self, train_data, test_data, cut_last_test_batch=0):
         """
         train_data          id_data, 2D
         test_data           id_data, 2D
@@ -172,10 +177,14 @@ class Model(object):
                 # Log test loss every so often
                 if cfg["out_batch"] > 0 and i > 0 and (i % (cfg["out_batch"]) == 0) :
                     print("\tBatch chunk %d - %d finished in %d seconds" % (i-cfg["out_batch"], i, time.time() - start_batches))
-                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data)))
+                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data, cut_last_test_batch)))
                     start_batches = time.time()
 
             print("Epoch completed in %d seconds." % (time.time() - start_epoch))
+
+        # Save the trained network to use it for Task 1.2
+        if cfg["save_model_path"]:
+            save_model(session=self.model_session)
 
     def test(self, data, vocab_dict, cut_last_batch=0):
         """
@@ -210,6 +219,10 @@ class Model(object):
 
         out_test.close()
 
+def save_model(session):
+    saver = tf.train.Saver()
+    save_path = saver.save(session, cfg["save_model_path"])
+    print("Model saved in file: %s" % save_path)
 
 def define_minibatches(length, permute=True):
     if permute:

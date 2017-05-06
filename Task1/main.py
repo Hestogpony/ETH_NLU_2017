@@ -133,7 +133,7 @@ class Reader(object):
         print("padding the id data with 'pad' to make it divisible by the batch size...")
         sentences = len(self.id_data)
         if cfg["batch_size"] is 1 or sentences % cfg["batch_size"] is 0:
-            return
+            return 0
 
         padding = cfg["batch_size"] - (sentences % cfg["batch_size"])
 
@@ -169,19 +169,24 @@ def main():
     m.build_forward_prop()
     m.build_backprop()
 
-    # Read test data
-    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict =  train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
-    test_reader.read_sentences(cfg["path"]["test"])
-    padding_size = test_reader.pad_id_data_to_batch_size()
+    # Read evaluation data
+    eval_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
+    eval_reader.read_sentences(cfg["path"]["eval"])
+    eval_padding_size = eval_reader.pad_id_data_to_batch_size()
 
-    #Testing
+
     m.build_test()
+
+    m.train(train_data=train_reader.id_data, test_data=eval_reader.id_data, cut_last_test_batch=eval_padding_size)
+
+    # Read test data
+    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
+    test_reader.read_sentences(cfg["path"]["test"])
+    test_padding_size = test_reader.pad_id_data_to_batch_size()
     #Revert dictionary for perplexity
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
-
-    m.train(train_data=train_reader.id_data, test_data=test_reader.id_data)
-    m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=padding_size)
+    m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=test_padding_size)
 
 def usage_and_quit():
     print("Language model with LSTM")
@@ -206,9 +211,9 @@ def usage_and_quit():
 if __name__ == "__main__":
 
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], "fh",
+        opts, args = getopt.gnu_getopt(sys.argv[1:], "fhp",
             ["max_sentences=", "max_test_sentences=", "max_iterations=",
-            "dictionary_name=", "out_batch=", "size=","lstm=", "help", "fred", "pretrained", "extra-project"])
+            "dictionary_name=", "out_batch=", "size=","lstm=", "save_model_path=", "help", "fred", "pretrained", "extra-project"])
     except getopt.GetoptError as err:
         print(str(err))
         usage_and_quit()
@@ -226,6 +231,8 @@ if __name__ == "__main__":
             cfg["out_batch"] = int(a)
         elif o == "--lstm":
             cfg["lstm_size"] = int(a)
+        elif o == "--save_model_path":
+            cfg["save_model_path"] = str(a)
         elif o in {"--fred", "-f"}:
             cfg["use_fred"] = True
         elif o in {"--pretrained", "-p"}:

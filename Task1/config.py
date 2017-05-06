@@ -2,7 +2,8 @@ cfg = {
     "path": {
         "embeddings": "./data/wordembeddings-dim100.word2vec",
         "train": "./data/sentences.train",
-        "test": "./data/sentences.eval",
+        "eval": "./data/sentences.eval",
+        "test": "./data/sentences_test",
         "continuation": "./data/sentences.continuation",
     },
     "vocab_size": 20000,
