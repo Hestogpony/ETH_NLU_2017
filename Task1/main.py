@@ -204,8 +204,8 @@ def usage_and_quit():
     print("--lstm: the dimension of the LSTM hidden state (default 512)")
     print("Notes:")
     print("\tTo run experiment A, specify no parameters")
-    print("\tTo run experiment B, specify `main.py --pretrained`")
-    print("\tTo run experiment C, specify `main.py --pretrained --lstm=1024 --extra_project`")
+    print("\tTo run experiment B, specify `--pretrained`")
+    print("\tTo run experiment C, specify `--pretrained --lstm=1024 --extra_project`")
     sys.exit()
 
 if __name__ == "__main__":
