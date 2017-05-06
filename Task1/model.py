@@ -47,10 +47,24 @@ class Model(object):
         lstm_layer = []
         lstm_out = []
 
-        W_out = tf.get_variable(name='W_out', dtype=dtype, shape=[cfg["lstm_size"], cfg["vocab_size"]],
+        W_out = tf.get_variable(name='W_out',
+                                dtype=dtype,
+                                shape=[cfg["lstm_size"], cfg["vocab_size"]],
                                 initializer=initializer)
         bias_out = tf.get_variable(name='bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer)
         self.out_layer = []
+
+        if cfg["extra_project"]:
+            W_out_intermediate = tf.get_variable(name='W_out_intermediate',
+                                    dtype=dtype,
+                                    shape=[cfg["lstm_size"], cfg["intermediate_projection_size"]],
+                                    initializer=initializer)
+            bias_out_itermediate = tf.get_variable(name='bias_out_intermediate',
+                                    dtype=dtype,
+                                    shape=[cfg["intermediate_projection_size"]],
+                                    initializer=initializer)
+
+
 
         for i in range(cfg["sentence_length"] - 1):
             if cfg["use_fred"]:
@@ -87,10 +101,15 @@ class Model(object):
                 else:
                     lstm_out.append(lstm_layer[i](inputs=fc_emb_layer[i], state=lstm_out[i-1][1], scope=lstm_scope))
 
-            # 5. Linear FC output layer
 
-            # Output layer
-            self.out_layer.append(tf.matmul(lstm_out[i][0], W_out) + bias_out)
+            # Extra projection layer in experiment C
+            if cfg["extra_project"]:
+                to_project = tf.matmul(lstm_out[i][0], W_out_intermediate) + bias_out_itermediate
+            else:
+                to_project = lstm_out[i][0]
+
+            # 5. Linear FC output layer
+            self.out_layer.append(tf.matmul(to_project, W_out) + bias_out)
 
     def build_backprop(self):
         print("building the backprop model...")

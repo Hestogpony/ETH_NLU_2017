@@ -154,7 +154,7 @@ def main():
     train_reader.read_sentences(cfg["path"]["train"])
     # train_reader.one_hot_encode()
 
-    if cfg["experiment"] == "b" or cfg["experiment"] == "c":
+    if cfg["use_pretrained"]:
     # Read given embeddings
         sess = tf.Session()
         embeddings = tf.placeholder(dtype=tf.float32, shape=[cfg["vocab_size"], cfg["embeddings_size"]])
@@ -193,9 +193,14 @@ def usage_and_quit():
     print("--dictionary_name: define alternative dictionary name. (default: dict.p)")
     print("--out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
     print("--fred / -f : use our implementation of the LSTM cell instead of Tensorflow's")
-    print("--size: The size of the model ('small' or 'big'), for testing purposes")
-    print("--experiment: which experiment to perform('a','b' or 'c')")
-    print("")
+    print("--size: The size of the model ('small' or 'big'); use 'small' for testing purposes; 'big' corresponds to the normal model")
+    print("--pretrained / -p : used pretrained word2vec embeddings")
+    print("--extra_project: use an additional size-512 projection layer before the output")
+    print("--lstm: the dimension of the LSTM hidden state (default 512)")
+    print("Notes:")
+    print("\tTo run experiment A, specify no parameters")
+    print("\tTo run experiment B, specify `main.py --pretrained`")
+    print("\tTo run experiment C, specify `main.py --pretrained --lstm=1024 --extra_project`")
     sys.exit()
 
 if __name__ == "__main__":
@@ -203,7 +208,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "fh",
             ["max_sentences=", "max_test_sentences=", "max_iterations=",
-            "dictionary_name=", "out_batch=", "size=","experiment=", "help", "fred"])
+            "dictionary_name=", "out_batch=", "size=","lstm=", "help", "fred", "pretrained", "extra-project"])
     except getopt.GetoptError as err:
         print(str(err))
         usage_and_quit()
@@ -219,8 +224,14 @@ if __name__ == "__main__":
             cfg["dictionary_name"] = str(a)
         elif o == "--out_batch":
             cfg["out_batch"] = int(a)
+        elif o == "--lstm":
+            cfg["lstm_size"] = int(a)
         elif o in {"--fred", "-f"}:
             cfg["use_fred"] = True
+        elif o in {"--pretrained", "-p"}:
+            cfg["use_pretrained"] = True
+        elif o == "--extra_project":
+            cfg["extra_project"] = True
         elif o in {"--help", "-h"}:
             usage_and_quit()
         elif o == "--size":
@@ -232,25 +243,21 @@ if __name__ == "__main__":
 
                 cfg["vocab_size"] = 200
                 cfg["batch_size"] = 10
-                cfg["embedding_size"] = 100
-                cfg["lstm_size"] = 256
                 cfg["dictionary_name"] = "dict_small.p"
                 cfg["out_batch"] = 10
+
+                cfg["embedding_size"] = 100
+                cfg["lstm_size"] = 256
+                cfg["intermediate_projection_size"] = 128
+
             elif str(a) == "big":
+
                 cfg["vocab_size"] = 20000
                 cfg["batch_size"] = 64
                 cfg["embedding_size"] = 100
                 cfg["lstm_size"] = 512
                 cfg["dictionary_name"] = "dict_big.p"
                 cfg["out_batch"] = 1000
-        elif 0 == "--experiment=":
-            if str(a) == "a":
-                cfg["experiment"] = "a"
-            elif str(a) == "b":
-                cfg["experiment"] = "b"
-            elif str(a) == "c":
-                cfg["experiment"] = "c"
-                cfg["lstm_size"] = 1024
     #print(cfg)
 
     main()
