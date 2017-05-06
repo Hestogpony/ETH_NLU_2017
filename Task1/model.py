@@ -202,7 +202,13 @@ class Model(object):
 
         print('Testing...')
 
-        out_test = open('perplexity.txt', 'w')
+        experiment_letter = "A"
+        if cfg["use_pretrained"]:
+            experiment_letter = "B"
+        if cfg["extra_project"]:
+            experiment_letter = "C"
+
+        out_test = open(cfg["path"]["output"]+experiment_letter, 'w')
 
         # Assume that the data we got is evenly divisible by the batch size.
         # The reader has taken care of that by padding with extra dummy inputs
