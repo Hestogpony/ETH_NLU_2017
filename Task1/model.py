@@ -108,16 +108,16 @@ class Model(object):
             # Loss for one output position, reduced over the minibatch
             loss.append(tf.reduce_mean(y_hat[i]))
 
-        concatenated_losses = tf.stack(values=loss)
+        self.total_loss = tf.reduce_mean(tf.stack(values=loss))
         optimizer = tf.train.AdamOptimizer()
 
         # Clipped gradients
-        gvs = optimizer.compute_gradients(concatenated_losses)
-        list_clipped, _ = tf.clip_by_global_norm(t_list=[x[0] for x in gvs], clip_norm=10)  # second output not used
-        self.train_op = optimizer.apply_gradients(list(zip(list_clipped, [x[1] for x in gvs])))
+        gvs = optimizer.compute_gradients(self.total_loss)
+        grads = [x[0] for x in gvs]
+        vars = [x[1] for x in gvs]
 
-        # Make available for other operations.
-        self.losses = concatenated_losses
+        clipped_grads, _ = tf.clip_by_global_norm(t_list=grads, clip_norm=10)  # second output not used
+        self.train_op = optimizer.apply_gradients(list(zip(clipped_grads, vars)))
 
     def build_test(self):
         print('building the test operations...')
@@ -131,7 +131,7 @@ class Model(object):
         batched_losses = []
         for i, batch_idx in enumerate(batch_indices):
             batch = data[batch_idx]
-            this_loss = session.run(self.losses, feed_dict={self.input: batch})
+            this_loss = session.run(self.total_loss, feed_dict={self.input: batch})
 
             # Sum over sentence positions, getting one loss per sentence
             batched_losses.append(np.sum(this_loss, axis=-1))
