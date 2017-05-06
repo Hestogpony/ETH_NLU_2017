@@ -21,18 +21,14 @@ class Model(object):
         print("building the forward model...")
 
         # This is one mini-batch
-        self.input = tf.placeholder(dtype=tf.int32, shape=[None, cfg["sentence_length"]])
+        self.input_forward = tf.placeholder(dtype=tf.int32, shape=[None, None])
 
         # Initial states for the LSTM cell; we'll just pass zeros, but we use
         # a placeholder since we don't know the batch size here yet
         self.initial_hidden = tf.placeholder(dtype=tf.float32, shape=[None, cfg["lstm_size"]])
         self.initial_cell = tf.placeholder(dtype=tf.float32, shape=[None, cfg["lstm_size"]])
 
-        one_hot = tf.one_hot(indices=self.input, depth=cfg["vocab_size"], axis=-1, dtype=tf.float32)
-
-        # from 3D tensor to 2D tensor, dim batch_Size x vocab_size
-        # returns a list of 2D tensors
-        self.input_words = tf.split(value=one_hot, num_or_size_splits=cfg["sentence_length"], axis=1)
+        one_hot = tf.one_hot(indices=self.input_forward, depth=cfg["vocab_size"], axis=-1, dtype=tf.float32)
 
         initializer = tf.contrib.layers.xavier_initializer()
         dtype = tf.float32
@@ -79,8 +75,10 @@ class Model(object):
         for i in range(cfg["sentence_length"] - 1):
 
             # 3. Fully connected for embeddings
-
-            embs = tf.matmul(tf.squeeze(self.input_words[i]), W_emb) + bias_emb
+            # Take the ith slice of batch_size x sentence_length x vocab_size
+            # along axis 1, yielding batch_size x vocab_size
+            ith_word_batch = tf.squeeze(tf.slice(one_hot, [0, i, 0], [-1, 1, -1]))
+            embs = tf.matmul(ith_word_batch, W_emb) + bias_emb
             fc_emb_layer.append(tf.nn.relu(embs))
 
             # 4. LSTM
@@ -113,7 +111,7 @@ class Model(object):
         y_hat = []
         loss = []
 
-        labs = tf.slice(self.input, [0, 1], [-1, -1])
+        labs = tf.slice(self.input_forward, [0, 1], [-1, -1])
         logs = tf.stack(self.out_layer, axis=1)
         self.total_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                             labels=labs, logits=logs)
@@ -134,10 +132,6 @@ class Model(object):
         # Stack the individual output layers by sentence. Stacking with axis=0 would be by batch
         self.test_op = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
 
-    def build_generate(self):
-        pass
-
-
     def test_loss(self, data, cut_last_batch=0):
 
         batch_indices = define_minibatches(data.shape[0], False)
@@ -145,7 +139,7 @@ class Model(object):
         for i, batch_idx in enumerate(batch_indices):
             batch = data[batch_idx]
             food = {
-                self.input: batch,
+                self.input_forward: batch,
                 self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
                 self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
             }
@@ -180,7 +174,7 @@ class Model(object):
                 batch = train_data[batch_idx]
 
                 food = {
-                    self.input: batch,
+                    self.input_forward: batch,
                     self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
                     self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
                 }
@@ -219,7 +213,7 @@ class Model(object):
             # print('Starting test batch %d' % i)
 
             food = {
-                self.input: batch,
+                self.input_forward: batch,
                 self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
                 self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
             }
