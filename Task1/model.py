@@ -18,9 +18,9 @@ class Model(object):
         #self.tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.95
 
     def build_forward_prop(self, embeddings=None):
-        # TODO: change model for experiment C
 
         print("building the forward model...")
+
         # This is one mini-batch
         self.input = tf.placeholder(dtype=tf.int32, shape=[None, cfg["sentence_length"]])
         one_hot = tf.one_hot(indices=self.input, depth=cfg["vocab_size"], axis=-1, dtype=tf.float32)
@@ -31,6 +31,7 @@ class Model(object):
 
         initializer = tf.contrib.layers.xavier_initializer()
         dtype = tf.float32
+        lstm_scope = tf.VariableScope(name="lstm", reuse=None)
 
         # init with given word embeddings if provided
         if embeddings:
@@ -43,8 +44,6 @@ class Model(object):
         bias_emb = tf.get_variable(name='bias_emb', dtype=dtype, shape=[cfg["embeddings_size"]],
                                    initializer=initializer)
         fc_emb_layer = []
-
-        lstm_layer = []
         lstm_out = []
 
         W_out = tf.get_variable(name='W_out',
@@ -64,43 +63,34 @@ class Model(object):
                                     shape=[cfg["intermediate_projection_size"]],
                                     initializer=initializer)
 
-
+        if cfg["use_fred"]:
+            lstm_cell = lstm.LstmCell()
+            LSTM_INITIAL = (tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]),
+                            tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]))
+        else:
+            lstm_cell = LSTMCell(num_units=cfg["lstm_size"],
+                                forget_bias=1.0,
+                                state_is_tuple=True,
+                                activation=tf.tanh)
+            LSTM_INITIAL = lstm_cell.zero_state(cfg["batch_size"], dtype=dtype)
 
         for i in range(cfg["sentence_length"] - 1):
-            if cfg["use_fred"]:
-                scope = tf.variable_scope('lstm' + str(i))
-                lstm_layer.append(lstm.LstmCell(scope))
-            else:
-                # Use tensorflows cell
-                lstm_layer.append(LSTMCell(num_units=cfg["lstm_size"], forget_bias=1.0, state_is_tuple=True, activation=tf.tanh))
 
-        for i in range(cfg["sentence_length"] - 1):
+            # 3. Fully connected for embeddings
 
-            # 3. Fully connected of 100
+            embs = tf.matmul(tf.squeeze(self.input_words[i]), W_emb) + bias_emb
+            fc_emb_layer.append(tf.nn.relu(embs))
 
-            fc_emb_layer.append(tf.nn.relu(tf.matmul(tf.squeeze(self.input_words[i]), W_emb) + bias_emb))
+            # 4. LSTM
+            # Note: calling the cell returns a tuple with the output and the new
+            # state. Here we only care about the new state since it also contains
+            # the output.
 
-            lstm_scope = tf.VariableScope(reuse=None, name="lstm"+str(i))
-            # 4. LSTM dim 512
             if i == 0:
-                if cfg["use_fred"]:
-                    # (batch_size x lstm_size, batch_size x lstm_size)
-                    lstm_out.append(lstm_layer[i](X=fc_emb_layer[i],
-                                                  state=(tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]),
-                                                         tf.zeros(shape=[cfg["batch_size"], cfg["lstm_size"]]))
-                                                  )
-                                    )
-                else:
-                    zero_state = lstm_layer[i].zero_state(cfg["batch_size"], dtype=dtype)
-                    lstm_out.append(lstm_layer[i](inputs=fc_emb_layer[i],
-                        state=zero_state,
-                        scope=lstm_scope))
+                lstm_out.append(lstm_cell(fc_emb_layer[i], LSTM_INITIAL, lstm_scope)[1])
+                lstm_scope.reuse_variables()
             else:
-                if cfg["use_fred"]:
-                    lstm_out.append(lstm_layer[i](X=fc_emb_layer[i], state=lstm_out[i - 1]))
-                else:
-                    lstm_out.append(lstm_layer[i](inputs=fc_emb_layer[i], state=lstm_out[i-1][1], scope=lstm_scope))
-
+                lstm_out.append(lstm_cell(fc_emb_layer[i], lstm_out[i - 1], lstm_scope)[1])
 
             # Extra projection layer in experiment C
             if cfg["extra_project"]:
