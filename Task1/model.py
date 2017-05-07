@@ -111,7 +111,11 @@ class Model(object):
             # 5. Linear FC output layer
             self.out_layer.append(tf.matmul(to_project, W_out) + bias_out)
 
-        self.output_and_state = (self.out_layer[0], lstm_out[0])
+        # Made available for the test operation
+        self.softmax_out = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
+
+        # Made available for the generate operation
+        self.output_and_state = (tf.nn.softmax(self.out_layer[0]), lstm_out[0])
 
     def build_backprop(self):
         print("building the backprop model...")
@@ -133,12 +137,6 @@ class Model(object):
 
         clipped_grads, _ = tf.clip_by_global_norm(t_list=grads, clip_norm=10)  # second output not used
         self.train_op = optimizer.apply_gradients(list(zip(clipped_grads, vars)))
-
-    def build_test(self):
-        print('building the test operations...')
-
-        # Stack the individual output layers by sentence. Stacking with axis=0 would be by batch
-        self.test_op = tf.nn.softmax(tf.stack(self.out_layer, axis=1))
 
     def test_loss(self, data, cut_last_batch=0):
 
@@ -235,7 +233,7 @@ class Model(object):
                 self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
             }
 
-            estimates = self.model_session.run(fetches=self.test_op, feed_dict=food)
+            estimates = self.model_session.run(fetches=self.softmax_out, feed_dict=food)
 
             eval_size = len(batch_idx)
             if i == len(batch_indices) - 1:
