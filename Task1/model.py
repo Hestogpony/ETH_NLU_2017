@@ -182,8 +182,8 @@ class Model(object):
 
                 food = {
                     self.input_forward: batch,
-                    self.initial_hidden: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"])),
-                    self.initial_cell: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"]))
+                    self.initial_hidden: np.zeros((len(batch_idx), self.cfg["lstm_size"])),
+                    self.initial_cell: np.zeros((len(batch_idx), self.cfg["lstm_size"]))
                 }
 
                 self.model_session.run(fetches=self.train_op, feed_dict=food)
@@ -198,7 +198,7 @@ class Model(object):
 
         # Save the trained network to use it for Task 1.2
         if "save_model_path" in self.cfg:
-            self.save_model(session=self.model_session, path=self.cfg["save_model_path"])
+            self.save_model(path=self.cfg["save_model_path"])
 
     def test(self, data, vocab_dict):
         """
@@ -225,13 +225,13 @@ class Model(object):
 
             food = {
                 self.input_forward: batch,
-                self.initial_hidden: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"])),
-                self.initial_cell: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"]))
+                self.initial_hidden: np.zeros((len(batch_idx), self.cfg["lstm_size"])),
+                self.initial_cell: np.zeros((len(batch_idx), self.cfg["lstm_size"]))
             }
 
             estimates = self.model_session.run(fetches=self.softmax_out, feed_dict=food)
 
-            for j in range(batch_idx):
+            for j in range(len(batch_idx)):
                 perp = perplexity(estimates[j], batch[j], vocab_dict)
                 out_test.write(str(perp) + '\n')
 
@@ -311,7 +311,11 @@ class Model(object):
         if rest is not 0:
             indices_even = indices[:-rest]
             indices_rest = indices[len(indices_even):]
+            batches = np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"])
+            batches.append(np.array(indices_rest))
+        else:
+            batches = np.split(indices, indices_or_sections=len(indices) / self.cfg["batch_size"])
 
-        batches = np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"])
-        batches.append(np.array(indices_rest))
+
+
         return batches
