@@ -217,6 +217,8 @@ def usage_and_quit():
     print("--pretrained / -p : used pretrained word2vec embeddings")
     print("--extra_project: use an additional size-512 projection layer before the output")
     print("--lstm: the dimension of the LSTM hidden state (default 512)")
+    print("--save_model_path: Path name where the trained model should be stored. Careful, the model is saved as multiple files")
+    print("--load_model_path: Path name from where to load a pretrained model")
     print("Notes:")
     print("\tTo run experiment A, specify no parameters")
     print("\tTo run experiment B, specify `--pretrained`")
@@ -228,7 +230,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "fhp",
             ["max_sentences=", "max_test_sentences=", "max_iterations=",
-            "dictionary_name=", "out_batch=", "size=","lstm=", "save_model_path=", "help", "fred", "pretrained", "extra_project"])
+            "dictionary_name=", "out_batch=", "size=","lstm=", "save_model_path=", "load_model_path=", "help", "fred", "pretrained", "extra_project"])
     except getopt.GetoptError as err:
         print(str(err))
         usage_and_quit()
@@ -248,6 +250,8 @@ if __name__ == "__main__":
             cfg["lstm_size"] = int(a)
         elif o == "--save_model_path":
             cfg["save_model_path"] = str(a)
+        elif o == "--load_model_path":
+            cfg["load_model_path"] = str(a)
         elif o in {"--fred", "-f"}:
             cfg["use_fred"] = True
         elif o in {"--pretrained", "-p"}:

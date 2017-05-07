@@ -4,5 +4,4 @@
 train experiment C
 execute Task 1.2
 
-Calculate average perplexities
 	

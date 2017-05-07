@@ -168,7 +168,10 @@ class Model(object):
         train_data          id_data, 2D
         test_data           id_data, 2D
         """
-        tf.global_variables_initializer().run(session=self.model_session)
+        if cfg["load_model_path"]:
+            load_model(self.model_session)
+        else:
+            tf.global_variables_initializer().run(session=self.model_session)
 
 
         for e in range(cfg["max_iterations"]):
@@ -300,8 +303,8 @@ def save_model(session):
 
 def load_model(session):
     saver = tf.train.Saver()
-    load_path = saver.restore(sess,cfg["save_model_path"])
-    print("Model from %s restored" % load_path)
+    saver.restore(session, cfg["load_model_path"])
+    print("Model from %s restored" % cfg["load_model_path"])
 
 def define_minibatches(length, permute=True):
     if permute:
