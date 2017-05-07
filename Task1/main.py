@@ -7,7 +7,6 @@ import getopt
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
 import numpy as np
-from collections import Counter
 import pickle
 import time
 
@@ -38,7 +37,7 @@ def main():
     # Read train data
     train_reader = Reader(vocab_size=cfg["vocab_size"], sentence_length =cfg["sentence_length"],
                     max_sentences=cfg["max_sentences"])
-    train_reader.build_dict(cfg["path"]["train"])
+    train_reader.build_dict(cfg["dictionary_name"], cfg["path"]["train"])
     train_reader.read_sentences(cfg["path"]["train"])
 
     if cfg["use_pretrained"]:
@@ -67,7 +66,7 @@ def main():
     # Read test data
     test_reader = Reader(vocab_size=cfg["vocab_size"], sentence_length =cfg["sentence_length"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
     test_reader.read_sentences(cfg["path"]["test"])
-    
+
     #Revert dictionary for perplexity
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 

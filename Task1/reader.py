@@ -2,6 +2,8 @@ import numpy as np
 import pickle
 import os
 
+from collections import Counter
+
 class Reader(object):
 
     def __init__(self, vocab_size, sentence_length, max_sentences=-1, vocab_dict={}):
@@ -10,17 +12,17 @@ class Reader(object):
         self.max_sentences = max_sentences
         self.vocab_dict = vocab_dict
 
-    def build_dict(self, path):
+    def build_dict(self, wanted_dict_path, data_path):
         """ Ordered by word count, only the 20k most frequent words are being used """
         print("building dictionary...")
 
         # load the dictionary if it's there
-        if os.path.isfile(path):
-            self.vocab_dict = pickle.load(open(path, "rb"))
+        if os.path.isfile(wanted_dict_path):
+            self.vocab_dict = pickle.load(open(wanted_dict_path, "rb"))
             return
 
         cnt = Counter()
-        with open(path, 'r') as f:
+        with open(data_path, 'r') as f:
             for line in f:
                 for word in line.split():
                     if word not in {"bos","eos","unk","pad"}:
@@ -38,7 +40,7 @@ class Reader(object):
             self.vocab_dict["unk"] = self.vocab_size - 2
             self.vocab_dict["pad"] = self.vocab_size - 1
 
-            pickle.dump(self.vocab_dict, open(path, "wb"))
+            pickle.dump(self.vocab_dict, open(wanted_dict_path, "wb"))
 
     def read_sentences(self, path):
         # Read sentences, pad them, convert to IDs according to the dict
@@ -54,8 +56,7 @@ class Reader(object):
                         sentence_list.append(sentence)
             else:
                 for i in range(self.max_sentences):
-                    # last token is the newline character
-                    tokens = f.readline().split()[:-1]
+                    tokens = f.readline().split()
                     if(len(tokens) <= self.sentence_length - 2):
                         tokens = self.add_tags(tokens)
                         sentence = self.convert_sentence(tokens)
@@ -103,8 +104,7 @@ class PartialsReader(Reader):
                     sentence_list.append(sentence)
             else:
                 for i in range(self.max_sentences):
-                    # last token is the newline character
-                    tokens = f.readline().split()[:-1]
+                    tokens = f.readline().split()
                     tokens.insert(0, "bos")
                     sentence = self.convert_sentence(tokens)
                     sentence_list.append(sentence)
