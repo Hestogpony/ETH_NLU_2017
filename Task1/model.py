@@ -148,8 +148,8 @@ class Model(object):
             batch = data[batch_idx]
             food = {
                 self.input_forward: batch,
-                self.initial_hidden: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"])),
-                self.initial_cell: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"]))
+                self.initial_hidden: np.zeros((len(batch_idx), self.cfg["lstm_size"])),
+                self.initial_cell: np.zeros((len(batch_idx), self.cfg["lstm_size"]))
             }
 
             this_loss = self.model_session.run(self.total_loss, feed_dict=food)
