@@ -213,7 +213,7 @@ def usage_and_quit():
     print("--dictionary_name: define alternative dictionary name. (default: dict.p)")
     print("--out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
     print("--fred / -f : use our implementation of the LSTM cell instead of Tensorflow's")
-    print("--size: The size of the model ('small' or 'big'); use 'small' for testing purposes; 'big' corresponds to the normal model")
+    print("--size: The size of the model ('small', 'medium' or 'big'); use 'small' and 'medium' for testing purposes; 'big' corresponds to the normal model")
     print("--pretrained / -p : used pretrained word2vec embeddings")
     print("--extra_project: use an additional size-512 projection layer before the output")
     print("--lstm: the dimension of the LSTM hidden state (default 512)")
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "fhp",
             ["max_sentences=", "max_test_sentences=", "max_iterations=",
-            "dictionary_name=", "out_batch=", "size=","lstm=", "save_model_path=", "help", "fred", "pretrained", "extra-project"])
+            "dictionary_name=", "out_batch=", "size=","lstm=", "save_model_path=", "help", "fred", "pretrained", "extra_project"])
     except getopt.GetoptError as err:
         print(str(err))
         usage_and_quit()
@@ -270,6 +270,19 @@ if __name__ == "__main__":
                 cfg["lstm_size"] = 256
                 cfg["intermediate_projection_size"] = 128
 
+            elif str(a) == "medium": # Similar to small, but we can use the pretrained embeddings
+                cfg["max_sentences"] = 1000
+                cfg["max_test_sentences"] = 20
+
+                cfg["vocab_size"] = 20000
+                cfg["batch_size"] = 10
+                cfg["dictionary_name"] = "dict_medium.p"
+                cfg["out_batch"] = 10
+
+                cfg["embedding_size"] = 100
+                cfg["lstm_size"] = 256
+                cfg["intermediate_projection_size"] = 128
+
             elif str(a) == "big":
 
                 cfg["vocab_size"] = 20000
@@ -278,6 +291,7 @@ if __name__ == "__main__":
                 cfg["lstm_size"] = 512
                 cfg["dictionary_name"] = "dict_big.p"
                 cfg["out_batch"] = 1000
+
     #print(cfg)
 
     main()

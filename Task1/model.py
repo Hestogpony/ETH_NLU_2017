@@ -47,22 +47,26 @@ class Model(object):
         fc_emb_layer = []
         lstm_out = []
 
-        W_out = tf.get_variable(name='W_out',
-                                dtype=dtype,
-                                shape=[cfg["lstm_size"], cfg["vocab_size"]],
-                                initializer=initializer)
-        bias_out = tf.get_variable(name='bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer)
-        self.out_layer = []
-
         if cfg["extra_project"]:
             W_out_intermediate = tf.get_variable(name='W_out_intermediate',
                                     dtype=dtype,
                                     shape=[cfg["lstm_size"], cfg["intermediate_projection_size"]],
                                     initializer=initializer)
-            bias_out_itermediate = tf.get_variable(name='bias_out_intermediate',
+            bias_out_intermediate = tf.get_variable(name='bias_out_intermediate',
                                     dtype=dtype,
                                     shape=[cfg["intermediate_projection_size"]],
                                     initializer=initializer)
+            w_out_input_size = cfg["intermediate_projection_size"]
+        else:
+            w_out_input_size = cfg["lstm_size"]
+
+
+        W_out = tf.get_variable(name='W_out',
+                                dtype=dtype,
+                                shape=[w_out_input_size, cfg["vocab_size"]],
+                                initializer=initializer)
+        bias_out = tf.get_variable(name='bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer)
+        self.out_layer = []
 
         if cfg["use_fred"]:
             lstm_cell = lstm.LstmCell()
@@ -98,7 +102,7 @@ class Model(object):
 
             # Extra projection layer in experiment C
             if cfg["extra_project"]:
-                to_project = tf.matmul(lstm_out[i][0], W_out_intermediate) + bias_out_itermediate
+                to_project = tf.matmul(lstm_out[i][0], W_out_intermediate) + bias_out_intermediate
             else:
                 to_project = lstm_out[i][0]
 
