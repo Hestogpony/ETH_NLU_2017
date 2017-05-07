@@ -1,3 +1,5 @@
+import pickle
+
 cfg = {
     "path": {
         "embeddings": "./data/wordembeddings-dim100.word2vec",
@@ -28,3 +30,11 @@ cfg = {
 
     "dictionary_name": "dict.p"
 }
+
+def save_cfg(model_name):
+    pickle.dump(cfg, open(model_name + ".config", "wb"))
+    print("Configs saved in file: %s" % (model_name + ".config"))
+
+def load_cfg(model_name):
+    cfg = pickle.load(open(model_name, "rb"))
+    print("Configs loaded from %s" % (model_name + ".config"))

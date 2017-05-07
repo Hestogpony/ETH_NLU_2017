@@ -2,8 +2,10 @@ import tensorflow as tf
 from tensorflow.contrib.rnn import LSTMCell
 import numpy as np
 import time
+import pickle
 
 import lstm
+import config
 from config import cfg
 from perplexity import perplexity
 
@@ -168,8 +170,8 @@ class Model(object):
         train_data          id_data, 2D
         test_data           id_data, 2D
         """
-        if cfg["load_model_path"]:
-            load_model(self.model_session)
+        if "load_model_path" in cfg:
+            load_model(self.model_session, cfg["load_model_path"])
         else:
             tf.global_variables_initializer().run(session=self.model_session)
 
@@ -200,7 +202,7 @@ class Model(object):
 
         # Save the trained network to use it for Task 1.2
         if "save_model_path" in cfg:
-            save_model(session=self.model_session)
+            save_model(session=self.model_session, path=cfg["save_model_path"])
 
     def test(self, data, vocab_dict, cut_last_batch=0):
         """
@@ -296,15 +298,17 @@ class Model(object):
 
 
 
-def save_model(session):
+def save_model(session, path):
     saver = tf.train.Saver()
-    save_path = saver.save(session, cfg["save_model_path"])
+    save_path = saver.save(session, path)
     print("Model saved in file: %s" % save_path)
+    config.save_cfg(path)
 
-def load_model(session):
+
+def load_model(session, path):
     saver = tf.train.Saver()
-    saver.restore(session, cfg["load_model_path"])
-    print("Model from %s restored" % cfg["load_model_path"])
+    saver.restore(session, path)
+    print("Model from %s restored" % path)
 
 def define_minibatches(length, permute=True):
     if permute:
