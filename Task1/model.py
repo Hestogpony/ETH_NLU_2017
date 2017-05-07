@@ -256,6 +256,11 @@ class Model(object):
         f = open('continued', 'w')
 
         for beginning in sentences:
+
+            cur_h = np.zeros((1, self.cfg["lstm_size"]))
+            cur_c = np.zeros((1, self.cfg["lstm_size"]))
+            cur_w = None
+            
             completed_sentence = list(beginning)[1:]
 
             for j, word in enumerate(beginning):
