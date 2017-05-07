@@ -1,17 +1,8 @@
-- Figure out this whole tensorboard and summary business
-- Set up experiment C
-- Do task 1.2
-- Print both train and test lost
-- Create figures of the losses
+(- Figure out this whole tensorboard and summary business)
+(- Create figures of the losses)
 
+train experiment C
+execute Task 1.2
 
-This should be solved now!
-Possible reasons for memory error:
-- loading the test data in between fucks up some allocated memory
-	test data size = 4 * 30 * 10000 = 1.2 MB with indicator
-- we hold on to unused objects (most likely data) and fill up the gpu until it's assigned space (approx 7850 MB) is full
-- some old parameters are saved to the nirvana. But this shouldn't happen with the tensorflow LSTM. Maybe still, our unrolling architecture has a memory leak.
-- how big is the entire data:
-	2000000 / 64 = 31.250 batches
-	2000000 * 30 * 4 = 240 MB shouldn't lead to a problem
+Calculate average perplexities
 	
