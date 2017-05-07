@@ -1,0 +1,39 @@
+building dictionary...
+reading sentences from ./data/sentences.train...
+Loading external embeddings from ./data/wordembeddings-dim100.word2vec
+20000 words out of 20000 could be loaded
+building the forward model...
+building the backprop model...
+reading sentences from ./data/sentences.eval...
+Starting epoch 0...
+	Batch chunk 0 - 5000 finished in 931 seconds
+	Test loss (mean per sentence) at batch 5000: 54.588070
+	Batch chunk 5000 - 10000 finished in 935 seconds
+	Test loss (mean per sentence) at batch 10000: 52.194584
+	Batch chunk 10000 - 15000 finished in 935 seconds
+	Test loss (mean per sentence) at batch 15000: 50.866287
+	Batch chunk 15000 - 20000 finished in 937 seconds
+	Test loss (mean per sentence) at batch 20000: 50.016338
+	Batch chunk 20000 - 25000 finished in 936 seconds
+	Test loss (mean per sentence) at batch 25000: 49.469742
+	Batch chunk 25000 - 30000 finished in 938 seconds
+	Test loss (mean per sentence) at batch 30000: 48.995350
+Epoch completed in 5823 seconds.
+Starting epoch 1...
+	Batch chunk 0 - 5000 finished in 938 seconds
+	Test loss (mean per sentence) at batch 5000: 48.680546
+	Batch chunk 5000 - 10000 finished in 938 seconds
+	Test loss (mean per sentence) at batch 10000: 48.419155
+	Batch chunk 10000 - 15000 finished in 938 seconds
+	Test loss (mean per sentence) at batch 15000: 48.238125
+	Batch chunk 15000 - 20000 finished in 938 seconds
+	Test loss (mean per sentence) at batch 20000: 48.051064
+	Batch chunk 20000 - 25000 finished in 938 seconds
+	Test loss (mean per sentence) at batch 25000: 47.912621
+	Batch chunk 25000 - 30000 finished in 937 seconds
+	Test loss (mean per sentence) at batch 30000: 47.766808
+Epoch completed in 5838 seconds.
+Model saved in file: final_model_C
+Configs saved in file: final_model_C.config
+reading sentences from ./data/sentences_test...
+Testing...
