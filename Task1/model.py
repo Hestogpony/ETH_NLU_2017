@@ -268,7 +268,14 @@ class Model(object):
                 # We don't care about the output of the model for now,
                 # we just feed in stuff.
                 new_w, (cur_h, cur_c) = self.model_session.run(fetches=self.output_and_state, feed_dict=food)
-                cur_w = np.argmax(new_w, axis=-1)[0]
+                print(new_w)
+                print(cur_h)
+                print(cur_c)
+                new_w = np.squeeze(new_w)
+                # Exclude unk and pad
+                new_w[-1] = -1
+                new_w[-2] = -1
+                cur_w = np.argmax(new_w)
 
             for i in range(self.cfg["generate_length"] - len(beginning)):
                 food = {
@@ -278,7 +285,11 @@ class Model(object):
                 }
 
                 new_w, (cur_h, cur_c) = self.model_session.run(fetches=self.output_and_state, feed_dict=food)
+                print(new_w)
+                print(cur_h)
+                print(cur_c)
                 new_w = np.squeeze(new_w)
+                # Exclude unk and pad
                 new_w[-1] = -1
                 new_w[-2] = -1
                 cur_w = np.argmax(new_w)
