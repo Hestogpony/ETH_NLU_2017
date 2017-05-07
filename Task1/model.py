@@ -47,22 +47,26 @@ class Model(object):
         fc_emb_layer = []
         lstm_out = []
 
-        W_out = tf.get_variable(name='W_out',
-                                dtype=dtype,
-                                shape=[cfg["lstm_size"], cfg["vocab_size"]],
-                                initializer=initializer)
-        bias_out = tf.get_variable(name='bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer)
-        self.out_layer = []
-
         if cfg["extra_project"]:
             W_out_intermediate = tf.get_variable(name='W_out_intermediate',
                                     dtype=dtype,
                                     shape=[cfg["lstm_size"], cfg["intermediate_projection_size"]],
                                     initializer=initializer)
-            bias_out_itermediate = tf.get_variable(name='bias_out_intermediate',
+            bias_out_intermediate = tf.get_variable(name='bias_out_intermediate',
                                     dtype=dtype,
                                     shape=[cfg["intermediate_projection_size"]],
                                     initializer=initializer)
+            w_out_input_size = cfg["intermediate_projection_size"]
+        else:
+            w_out_input_size = cfg["lstm_size"]
+
+
+        W_out = tf.get_variable(name='W_out',
+                                dtype=dtype,
+                                shape=[w_out_input_size, cfg["vocab_size"]],
+                                initializer=initializer)
+        bias_out = tf.get_variable(name='bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer)
+        self.out_layer = []
 
         if cfg["use_fred"]:
             lstm_cell = lstm.LstmCell()
@@ -98,7 +102,7 @@ class Model(object):
 
             # Extra projection layer in experiment C
             if cfg["extra_project"]:
-                to_project = tf.matmul(lstm_out[i][0], W_out_intermediate) + bias_out_itermediate
+                to_project = tf.matmul(lstm_out[i][0], W_out_intermediate) + bias_out_intermediate
             else:
                 to_project = lstm_out[i][0]
 
@@ -162,7 +166,10 @@ class Model(object):
         train_data          id_data, 2D
         test_data           id_data, 2D
         """
-        tf.global_variables_initializer().run(session=self.model_session)
+        if cfg["load_model_path"]:
+            load_model(self.model_session)
+        else:
+            tf.global_variables_initializer().run(session=self.model_session)
 
 
         for e in range(cfg["max_iterations"]):
@@ -200,7 +207,13 @@ class Model(object):
 
         print('Testing...')
 
-        out_test = open('perplexity.txt', 'w')
+        experiment_letter = "A"
+        if cfg["use_pretrained"]:
+            experiment_letter = "B"
+        if cfg["extra_project"]:
+            experiment_letter = "C"
+
+        out_test = open(cfg["path"]["output"]+experiment_letter, 'w')
 
         # Assume that the data we got is evenly divisible by the batch size.
         # The reader has taken care of that by padding with extra dummy inputs
@@ -288,8 +301,8 @@ def save_model(session):
 
 def load_model(session):
     saver = tf.train.Saver()
-    load_path = saver.restore(sess,cfg["save_model_path"])
-    print("Model from %s restored" % load_path)
+    saver.restore(session, cfg["load_model_path"])
+    print("Model from %s restored" % cfg["load_model_path"])
 
 def define_minibatches(length, permute=True):
     if permute:

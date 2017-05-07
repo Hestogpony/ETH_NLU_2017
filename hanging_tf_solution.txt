@@ -1,0 +1,31 @@
+1) Run the command: grep menu /boot/grub/grub.cfg
+It lists existing kernels. You should find index of
+	 "menuentry 'Ubuntu, with Linux 4.4.0-66-generic' --class ubuntu --class
+..." or
+	 "menuentry 'Ubuntu, with Linux 4.4.0-71-generic' --class ubuntu --class
+..." if you have.
+The first entry is "menuentry 'Ubuntu, with Linux 4.4.0-75-generic' --class
+ubuntu --class..." and has index of 0 (zero-based indexing).
+
+For example, this is output of my VM:
+	 menuentry 'Ubuntu, with Linux 4.4.0-75-generic' --class ubuntu --class
+gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-4.4.0-75-...
+	 menuentry 'Ubuntu, with Linux 4.4.0-75-generic (upstart)' --class
+ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option
+'gnulinux-...
+	 menuentry 'Ubuntu, with Linux 4.4.0-75-generic (recovery mode)' --class
+ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option ...
+	 menuentry 'Ubuntu, with Linux 4.4.0-66-generic' --class ubuntu --class
+gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-4.4.0-66-...
+	 menuentry 'Ubuntu, with Linux 4.4.0-66-generic (upstart)' --class
+ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option
+'gnulinux-...
+	 menuentry 'Ubuntu, with Linux 4.4.0-66-generic (recovery mode)' --class
+ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option ...
+In my case, index of the previous kernel is 3.
+
+2) Run sudo grub-reboot '1>3'
+Note that 3 must be replaced with your index.
+
+3) Go to portal. Stop and start your VM.
+4) You can verify the solution by running "nvidia-smi".
