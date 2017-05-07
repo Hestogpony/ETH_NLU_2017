@@ -253,8 +253,10 @@ class Model(object):
         cur_c = np.zeros((1, self.cfg["lstm_size"]))
         cur_w = None
 
+        f = open('continued', 'w')
+
         for beginning in sentences:
-            completed_sentence = list(beginning)
+            completed_sentence = list(beginning)[1:]
 
             for word in beginning:
                 food = {
@@ -286,7 +288,9 @@ class Model(object):
                     break
 
             sentence = " ".join([vocab_dict[x] for x in completed_sentence])
-            print(sentence)
+            f.write(sentence + '\n')
+
+        f.close()
 
 
     def save_model(self, path):
