@@ -276,7 +276,10 @@ class Model(object):
                 }
 
                 new_w, (cur_h, cur_c) = self.model_session.run(fetches=self.output_and_state, feed_dict=food)
-                cur_w = np.argmax(new_w, axis=-1)[0]
+                new_w = np.squeeze(new_w)
+                new_w[-1] = -1
+                new_w[-2] = -1
+                cur_w = np.argmax(new_w)
 
                 completed_sentence.append(cur_w)
                 if vocab_dict[cur_w] == "eos":
