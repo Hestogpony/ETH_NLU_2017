@@ -258,7 +258,7 @@ class Model(object):
         for beginning in sentences:
             completed_sentence = list(beginning)[1:]
 
-            for word in beginning:
+            for j, word in enumerate(beginning):
                 food = {
                     self.input_forward: [[word]],
                     self.initial_hidden: cur_h,
@@ -268,8 +268,12 @@ class Model(object):
                 # We don't care about the output of the model for now,
                 # we just feed in stuff.
                 new_w, (cur_h, cur_c) = self.model_session.run(fetches=self.output_and_state, feed_dict=food)
+                print("\nword %d" % j)
+                print("new_w\n")
                 print(new_w)
+                print("cur_h\n")
                 print(cur_h)
+                print("cur_c\n")
                 print(cur_c)
                 new_w = np.squeeze(new_w)
                 # Exclude unk and pad
@@ -285,8 +289,12 @@ class Model(object):
                 }
 
                 new_w, (cur_h, cur_c) = self.model_session.run(fetches=self.output_and_state, feed_dict=food)
+                print("\nnew word %d" % i)
+                print("new_w\n")
                 print(new_w)
+                print("cur_h\n")
                 print(cur_h)
+                print("cur_c\n")
                 print(cur_c)
                 new_w = np.squeeze(new_w)
                 # Exclude unk and pad
