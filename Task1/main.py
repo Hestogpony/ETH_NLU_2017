@@ -36,7 +36,7 @@ def main():
     sys.stdout = Logger(timestamp)
 
     # Read train data
-    train_reader = Reader(vocab_size=cfg["vocab_size"],
+    train_reader = Reader(vocab_size=cfg["vocab_size"], sentence_length =cfg["sentence_length"],
                     max_sentences=cfg["max_sentences"])
     train_reader.build_dict(cfg["path"]["train"])
     train_reader.read_sentences(cfg["path"]["train"])
@@ -48,47 +48,31 @@ def main():
         embeddings_blank = tf.Variable(dtype=tf.float32, initial_value=np.zeros(shape=(cfg["vocab_size"], cfg["embeddings_size"])))
         embeddings = load_embeddings.load_embedding(session=sess, vocab=train_reader.vocab_dict, emb=embeddings_blank, path=cfg[
                        "path"]["embeddings"], dim_embedding=cfg["embeddings_size"])
-        m = model.Model(embeddings=embeddings)
+        m = model.Model(cfg=cfg, embeddings=embeddings)
     else:
-        m = model.Model()
+        m = model.Model(cfg=cfg)
 
     # Training
     m.build_forward_prop()
     m.build_backprop()
 
     # Read evaluation data
-    eval_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
+    eval_reader = Reader(vocab_size=cfg["vocab_size"], sentence_length =cfg["sentence_length"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
     eval_reader.read_sentences(cfg["path"]["eval"])
-    eval_padding_size = eval_reader.pad_id_data_to_batch_size()
 
 
-    m.build_test()
-
-    m.train(train_data=train_reader.id_data, test_data=eval_reader.id_data, cut_last_test_batch=eval_padding_size)
+    m.train(train_data=train_reader.id_data, test_data=eval_reader.id_data)
 
 
     # Read test data
-    test_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
+    test_reader = Reader(vocab_size=cfg["vocab_size"], sentence_length =cfg["sentence_length"], vocab_dict=train_reader.vocab_dict, max_sentences=cfg["max_test_sentences"])
     test_reader.read_sentences(cfg["path"]["test"])
-    test_padding_size = test_reader.pad_id_data_to_batch_size()
+    
     #Revert dictionary for perplexity
     reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
 
-    m.test(data=test_reader.id_data, vocab_dict=reverted_dict, cut_last_batch=test_padding_size)
+    m.test(data=test_reader.id_data, vocab_dict=reverted_dict)
 
-    '''
-    reverted_dict = dict([(y,x) for x,y in list(train_reader.vocab_dict.items())])
-
-    # TESTING
-    d = train_reader.vocab_dict
-    sents = [
-        [d['we'], d['are']],
-        [d['well'], d['what'], d['about']],
-        [d['another'], d['thought'], d['was']],
-        [d['``']]]
-
-    m.generate(sents, reverted_dict)
-    '''
 
 def usage_and_quit():
     print("Language model with LSTM")

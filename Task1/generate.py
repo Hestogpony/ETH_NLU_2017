@@ -3,23 +3,24 @@ import getopt
 import sys
 
 import config
-from config import cfg
 from reader import PartialsReader
 import model
 
 def generate(load_model_path, max_sentences):
-    config.load_cfg(load_model_path)
-    cfg["load_model_path"] = load_model_path
+    config.cfg = config.load_cfg(load_model_path)
+    config.cfg["load_model_path"] = load_model_path
 
-    p_reader = PartialsReader(max_sentences=cfg["max_sentences"])
-    p_reader.load_dict(cfg["dictionary_name"])
-    p_reader.read_sentences(cfg["path"]["continuation"])
+    p_reader = PartialsReader(max_sentences=max_sentences)
+    p_reader.load_dict(config.cfg["dictionary_name"])
+    p_reader.read_sentences(config.cfg["path"]["continuation"])
 
-    m = model.Model()
+    import model
+    m = model.Model(cfg=config.cfg)
     m.build_forward_prop()
+    m.load_model(config.cfg["load_model_path"])
 
     #Revert dictionary for generation
-    reverted_dict = dict([(y,x) for x,y in list(test_reader.vocab_dict.items())])
+    reverted_dict = dict([(y,x) for x,y in list(p_reader.vocab_dict.items())])
 
     m.generate(p_reader.id_sequences, reverted_dict)
 
@@ -38,7 +39,7 @@ def usage_and_quit():
 if __name__ == "__main__":
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], "h",
-            ["load_model_path=", "max_sentences:", "help"])
+            ["load_model_path=", "max_sentences=", "help"])
     except getopt.GetoptError as err:
         print(str(err))
         usage_and_quit()

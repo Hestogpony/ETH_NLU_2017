@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
 from tensorflow.contrib.rnn import LSTMCell
 import numpy as np
@@ -6,11 +8,11 @@ import pickle
 
 import lstm
 import config
-from config import cfg
 from perplexity import perplexity
 
 class Model(object):
-    def __init__(self, embeddings=None):
+    def __init__(self, cfg, embeddings=None):
+        self.cfg = cfg
         self.embeddings = embeddings
         self.tfconfig = tf.ConfigProto()
 
@@ -27,10 +29,10 @@ class Model(object):
 
         # Initial states for the LSTM cell; we'll just pass zeros, but we use
         # a placeholder since we don't know the batch size here yet
-        self.initial_hidden = tf.placeholder(dtype=tf.float32, shape=[None, cfg["lstm_size"]])
-        self.initial_cell = tf.placeholder(dtype=tf.float32, shape=[None, cfg["lstm_size"]])
+        self.initial_hidden = tf.placeholder(dtype=tf.float32, shape=[None, self.cfg["lstm_size"]])
+        self.initial_cell = tf.placeholder(dtype=tf.float32, shape=[None, self.cfg["lstm_size"]])
 
-        one_hot = tf.one_hot(indices=self.input_forward, depth=cfg["vocab_size"], axis=-1, dtype=tf.float32)
+        one_hot = tf.one_hot(indices=self.input_forward, depth=self.cfg["vocab_size"], axis=-1, dtype=tf.float32)
 
         initializer = tf.contrib.layers.xavier_initializer()
         dtype = tf.float32
@@ -39,46 +41,46 @@ class Model(object):
         # init with given word embeddings if provided
         if embeddings:
             W_emb.append = tf.Variable(name='W_emb', dtype=dtype, initial_value=embeddings,
-                                       expected_shape=[cfg["vocab_size"], cfg["embeddings_size"]])
+                                       expected_shape=[self.cfg["vocab_size"], self.cfg["embeddings_size"]])
         else:
-            W_emb = tf.get_variable(name='W_emb', dtype=dtype, shape=[cfg["vocab_size"], cfg["embeddings_size"]],
+            W_emb = tf.get_variable(name='W_emb', dtype=dtype, shape=[self.cfg["vocab_size"], self.cfg["embeddings_size"]],
                                     initializer=initializer)
 
-        bias_emb = tf.get_variable(name='bias_emb', dtype=dtype, shape=[cfg["embeddings_size"]],
+        bias_emb = tf.get_variable(name='bias_emb', dtype=dtype, shape=[self.cfg["embeddings_size"]],
                                    initializer=initializer)
         fc_emb_layer = []
         lstm_out = []
 
-        if cfg["extra_project"]:
+        if self.cfg["extra_project"]:
             W_out_intermediate = tf.get_variable(name='W_out_intermediate',
                                     dtype=dtype,
-                                    shape=[cfg["lstm_size"], cfg["intermediate_projection_size"]],
+                                    shape=[self.cfg["lstm_size"], self.cfg["intermediate_projection_size"]],
                                     initializer=initializer)
             bias_out_intermediate = tf.get_variable(name='bias_out_intermediate',
                                     dtype=dtype,
-                                    shape=[cfg["intermediate_projection_size"]],
+                                    shape=[self.cfg["intermediate_projection_size"]],
                                     initializer=initializer)
-            w_out_input_size = cfg["intermediate_projection_size"]
+            w_out_input_size = self.cfg["intermediate_projection_size"]
         else:
-            w_out_input_size = cfg["lstm_size"]
+            w_out_input_size = self.cfg["lstm_size"]
 
 
         W_out = tf.get_variable(name='W_out',
                                 dtype=dtype,
-                                shape=[w_out_input_size, cfg["vocab_size"]],
+                                shape=[w_out_input_size, self.cfg["vocab_size"]],
                                 initializer=initializer)
-        bias_out = tf.get_variable(name='bias_out', dtype=dtype, shape=[cfg["vocab_size"]], initializer=initializer)
+        bias_out = tf.get_variable(name='bias_out', dtype=dtype, shape=[self.cfg["vocab_size"]], initializer=initializer)
         self.out_layer = []
 
-        if cfg["use_fred"]:
+        if self.cfg["use_fred"]:
             lstm_cell = lstm.LstmCell()
         else:
-            lstm_cell = LSTMCell(num_units=cfg["lstm_size"],
+            lstm_cell = LSTMCell(num_units=self.cfg["lstm_size"],
                                 forget_bias=1.0,
                                 state_is_tuple=True,
                                 activation=tf.tanh)
 
-        for i in range(cfg["sentence_length"] - 1):
+        for i in range(self.cfg["sentence_length"] - 1):
 
             # 3. Fully connected for embeddings
             # Take the ith slice of batch_size x sentence_length x vocab_size
@@ -103,7 +105,7 @@ class Model(object):
                 lstm_out.append(lstm_cell(fc_emb_layer[i], lstm_out[i - 1], lstm_scope)[1])
 
             # Extra projection layer in experiment C
-            if cfg["extra_project"]:
+            if self.cfg["extra_project"]:
                 to_project = tf.matmul(lstm_out[i][0], W_out_intermediate) + bias_out_intermediate
             else:
                 to_project = lstm_out[i][0]
@@ -138,71 +140,67 @@ class Model(object):
         clipped_grads, _ = tf.clip_by_global_norm(t_list=grads, clip_norm=10)  # second output not used
         self.train_op = optimizer.apply_gradients(list(zip(clipped_grads, vars)))
 
-    def test_loss(self, data, cut_last_batch=0):
+    def test_loss(self, data):
 
-        batch_indices = define_minibatches(data.shape[0], False)
+        batch_indices = self.define_minibatches(data.shape[0], False)
         batched_losses = []
         for i, batch_idx in enumerate(batch_indices):
             batch = data[batch_idx]
             food = {
                 self.input_forward: batch,
-                self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
-                self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
+                self.initial_hidden: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"])),
+                self.initial_cell: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"]))
             }
 
             this_loss = self.model_session.run(self.total_loss, feed_dict=food)
 
-            eval_size = cfg["batch_size"]
-            if i == len(batch_indices) - 1:
-                eval_size = cfg["batch_size"] - cut_last_batch
 
             # Sum over sentence positions, getting one loss per sentence
-            # Afterwards, cut out dummy values in the last batch if necessary
-            batched_losses.append(np.sum(this_loss, axis=-1)[:eval_size])
+            batched_losses.append(np.sum(this_loss, axis=-1))
 
         return np.mean(np.concatenate(batched_losses))
 
     # Test data is available for measurements
-    def train(self, train_data, test_data, cut_last_test_batch=0):
+    def train(self, train_data, test_data):
         """
         train_data          id_data, 2D
         test_data           id_data, 2D
         """
-        if "load_model_path" in cfg:
-            load_model(self.model_session, cfg["load_model_path"])
+        if "load_model_path" in self.cfg:
+            self.load_model(self.model_session, self.cfg["load_model_path"])
         else:
             tf.global_variables_initializer().run(session=self.model_session)
 
 
-        for e in range(cfg["max_iterations"]):
+        for e in range(self.cfg["max_iterations"]):
             print("Starting epoch %d..." % e)
             start_epoch = start_batches = time.time()
 
-            batch_indices = define_minibatches(train_data.shape[0])
+            batch_indices = self.define_minibatches(train_data.shape[0])
             for i, batch_idx in enumerate(batch_indices):
                 batch = train_data[batch_idx]
 
                 food = {
                     self.input_forward: batch,
-                    self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
-                    self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
+                    self.initial_hidden: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"])),
+                    self.initial_cell: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"]))
                 }
 
                 self.model_session.run(fetches=self.train_op, feed_dict=food)
 
                 # Log test loss every so often
-                if cfg["out_batch"] > 0 and i > 0 and (i % (cfg["out_batch"]) == 0) :
-                    print("\tBatch chunk %d - %d finished in %d seconds" % (i-cfg["out_batch"], i, time.time() - start_batches))
-                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data, cut_last_test_batch)))
+                if self.cfg["out_batch"] > 0 and i > 0 and (i % (self.cfg["out_batch"]) == 0) :
+                    print("\tBatch chunk %d - %d finished in %d seconds" % (i-self.cfg["out_batch"], i, time.time() - start_batches))
+                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, self.test_loss(test_data)))
                     start_batches = time.time()
 
             print("Epoch completed in %d seconds." % (time.time() - start_epoch))
 
         # Save the trained network to use it for Task 1.2
-        if "save_model_path" in cfg:
-            save_model(session=self.model_session, path=cfg["save_model_path"])
+        if "save_model_path" in self.cfg:
+            self.save_model(session=self.model_session, path=self.cfg["save_model_path"])
 
-    def test(self, data, vocab_dict, cut_last_batch=0):
+    def test(self, data, vocab_dict):
         """
         data            id_data, 2D
         """
@@ -210,17 +208,15 @@ class Model(object):
         print('Testing...')
 
         experiment_letter = "A"
-        if cfg["use_pretrained"]:
+        if self.cfg["use_pretrained"]:
             experiment_letter = "B"
-        if cfg["extra_project"]:
+        if self.cfg["extra_project"]:
             experiment_letter = "C"
 
-        out_test = open(cfg["path"]["output"]+experiment_letter, 'w')
+        out_test = open(self.cfg["path"]["output"]+experiment_letter, 'w')
 
-        # Assume that the data we got is evenly divisible by the batch size.
-        # The reader has taken care of that by padding with extra dummy inputs
-        # that we can ignore. Additionally, do not randomly permute the data.
-        batch_indices = define_minibatches(data.shape[0], False)
+        # do not randomly permute the data.
+        batch_indices = self.define_minibatches(data.shape[0], False)
         for i, batch_idx in enumerate(batch_indices):
             start = time.time()
             batch = data[batch_idx]
@@ -229,17 +225,13 @@ class Model(object):
 
             food = {
                 self.input_forward: batch,
-                self.initial_hidden: np.zeros((cfg["batch_size"], cfg["lstm_size"])),
-                self.initial_cell: np.zeros((cfg["batch_size"], cfg["lstm_size"]))
+                self.initial_hidden: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"])),
+                self.initial_cell: np.zeros((self.cfg["batch_size"], self.cfg["lstm_size"]))
             }
 
             estimates = self.model_session.run(fetches=self.softmax_out, feed_dict=food)
 
-            eval_size = len(batch_idx)
-            if i == len(batch_indices) - 1:
-                eval_size = cfg["batch_size"] - cut_last_batch
-
-            for j in range(eval_size):
+            for j in range(batch_idx):
                 perp = perplexity(estimates[j], batch[j], vocab_dict)
                 out_test.write(str(perp) + '\n')
 
@@ -252,16 +244,17 @@ class Model(object):
 
         """
         sentences: a list of sentences. Each sentence is a list of word IDs
+        vocab dict: id -> word
         """
 
         print('Generating...')
 
-        cur_h = np.zeros((1, cfg["lstm_size"]))
-        cur_c = np.zeros((1, cfg["lstm_size"]))
+        cur_h = np.zeros((1, self.cfg["lstm_size"]))
+        cur_c = np.zeros((1, self.cfg["lstm_size"]))
         cur_w = None
 
         for beginning in sentences:
-            completed_sentence = beginning
+            completed_sentence = list(beginning)
 
             for word in beginning:
                 food = {
@@ -275,7 +268,7 @@ class Model(object):
                 new_w, (cur_h, cur_c) = self.model_session.run(fetches=self.output_and_state, feed_dict=food)
                 cur_w = np.argmax(new_w, axis=-1)[0]
 
-            for i in range(cfg["generate_length"] - len(beginning)):
+            for i in range(self.cfg["generate_length"] - len(beginning)):
                 food = {
                     self.input_forward: [[cur_w]],
                     self.initial_hidden: cur_h,
@@ -293,33 +286,32 @@ class Model(object):
             print(sentence)
 
 
+    def save_model(self, path):
+        saver = tf.train.Saver()
+        save_path = saver.save(self.model_session, path)
+        print("Model saved in file: %s" % save_path)
+        config.save_cfg(path)
 
 
+    def load_model(self, path):
+        saver = tf.train.Saver()
+        saver.restore(self.model_session, path)
+        print("Model from %s restored" % path)
 
-def save_model(session, path):
-    saver = tf.train.Saver()
-    save_path = saver.save(session, path)
-    print("Model saved in file: %s" % save_path)
-    config.save_cfg(path)
+    def define_minibatches(self, length, permute=True):
+        if permute:
+            # create a random permutation (for training over multiple epochs)
+            indices = np.random.permutation(length)
+        else:
+            # use the indices in a sequential manner (for testing)
+            indices = np.arange(length)
 
+        # Hold out the last sentences in case data set is not divisible by the batch size
+        rest = length % self.cfg["batch_size"]
+        if rest is not 0:
+            indices_even = indices[:-rest]
+            indices_rest = indices[len(indices_even):]
 
-def load_model(session, path):
-    saver = tf.train.Saver()
-    saver.restore(session, path)
-    print("Model from %s restored" % path)
-
-def define_minibatches(length, permute=True):
-    if permute:
-        # create a random permutation (for training over multiple epochs)
-        indices = np.random.permutation(length)
-    else:
-        # use the indices in a sequential manner (for testing)
-        indices = np.arange(length)
-
-    # Cut out the last sentences in case data set is not divisible by the batch size
-    rest = length % cfg["batch_size"]
-    if rest is not 0:
-        indices = indices[:-rest]
-
-    batches = np.split(indices, indices_or_sections=len(indices) / cfg["batch_size"])
-    return batches
+        batches = np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"])
+        batches.append(np.array(indices_rest))
+        return batches

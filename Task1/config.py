@@ -36,5 +36,6 @@ def save_cfg(model_name):
     print("Configs saved in file: %s" % (model_name + ".config"))
 
 def load_cfg(model_name):
-    cfg = pickle.load(open(model_name, "rb"))
+    loaded_cfg = pickle.load(open(model_name + ".config", "rb"))
     print("Configs loaded from %s" % (model_name + ".config"))
+    return loaded_cfg
