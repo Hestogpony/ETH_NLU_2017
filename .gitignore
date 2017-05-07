@@ -17,4 +17,5 @@
 **/perplexity.txt
 
 # logfiles
-*.log
+**/Task1/*.log
+**/Task1/log/*.log
