@@ -1,0 +1,18 @@
+About the additonal Cornell data:
+
+I preprocess the cornell movie corpus into two formats:
+
+1. pairs (In case we want to use it on standard seq2seq model)
+
+2. Conversation (In case we wanna further exploit its nature, mutiple lines)
+
+You can download the link from polybox:
+
+
+
+
+
+
+
+
+https://polybox.ethz.ch/index.php/s/zioMOU2A5ZxfMIc
