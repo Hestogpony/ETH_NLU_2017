@@ -19,3 +19,6 @@
 # logfiles
 **/Task1/*.log
 **/Task1/log/*.log
+
+# models
+**/Task1/final_results/final_model_C/*
