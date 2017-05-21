@@ -1,0 +1,5 @@
+- resolve all TODOs in the training pipeline
+- set up the testing pipeline
+
+- decide on and implement another metric apart from perplexity
+- write a report skeleton in LATEX
