@@ -36,14 +36,14 @@ def main():
     train_reader.read_data(cfg["path"]["train"])
 
     # Training
-    m.build_forward_prop()
-    m.build_backprop()
+    # m.build_forward_prop()
+    # m.build_backprop()
 
-    # Read evaluation data
-    eval_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_turns=cfg["max_test_turns"])
-    eval_reader.read_sentences(cfg["path"]["validation"])
+    # # Read evaluation data
+    # eval_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_turns=cfg["max_test_turns"])
+    # eval_reader.read_sentences(cfg["path"]["validation"])
 
-    m.train(train_data=train_reader.id_data, test_data=eval_reader.id_data)
+    # m.train(train_data=train_reader.id_data, train_buckets_with_ids = train_reader.buckets_with_ids, test_data=eval_reader.id_data)
 
 def usage_and_quit():
     print("Chat bot based on seq2seq model")

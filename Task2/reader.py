@@ -91,6 +91,8 @@ class Reader:
         second_sentences = []
         third_sentences = []
 
+        self.dataset = []
+
         for data_line in input_data_lines:
             input_sentences = data_line.split('\t')
             assert (len(input_sentences) == 3)
@@ -100,17 +102,20 @@ class Reader:
             third_sentence_as_ids = self.ids_from_toks(input_sentences[2].split())
 
             if self.use_triples:
+                #TODO
                 first_sentences.append(first_sentence_as_ids + [self.EOS_i])
                 second_sentences.append(second_sentence_as_ids + [self.EOS_i])
                 third_sentences.append([self.BOS_i] + third_sentence_as_ids + [self.EOS_i])
             else:
-                first_sentences.append(first_sentence_as_ids + [self.EOS_i])
-                first_sentences.append([self.BOS_i] + second_sentence_as_ids + [self.EOS_i])
+                self.dataset.append((first_sentence_as_ids + [self.EOS_i], [self.BOS_i] + second_sentence_as_ids + [self.EOS_i]))
+                self.dataset.append((second_sentence_as_ids + [self.EOS_i],[self.BOS_i] + third_sentence_as_ids + [self.EOS_i]))
 
-                second_sentences.append(second_sentence_as_ids + [self.EOS_i])
-                second_sentences.append([self.BOS_i] + third_sentence_as_ids + [self.EOS_i])
+
+
+        self.buckets_with_ids = [[] for x in cfg["buckets"]]
 
         if self.use_triples:
+            #TODO
             for i in range(0, len(first_sentences)):
                 if len(first_sentences[i]) > 100 or len(second_sentences[i]) > 100 or len(third_sentences[i]) > 100:
                     continue
@@ -124,20 +129,21 @@ class Reader:
                             dataset[bucket_index].append((first_sentences[i], second_sentences[i], third_sentences[i]))
                             break
         else:
-            for i in range(0, len(first_sentences)):
-                if len(first_sentences[i]) > MAX_SENTENCE_LEN or len(second_sentences[i]) > MAX_SENTENCE_LEN:
+            for i in range(0, len(self.dataset)):
+                if len(self.dataset[i][0]) > MAX_SENTENCE_LEN or len(self.dataset[i][1]) > MAX_SENTENCE_LEN:
                     continue
                 else:
+
+
                     for bucket_index, bucket_size in enumerate(self.buckets):
-                        if len(first_sentences[i]) < bucket_size and len(second_sentences[i]) < bucket_size:
-                            first_sentences[i].extend((bucket_size - len(first_sentences[i])) * [self.PAD_i])
+                        if len(self.dataset[i][0]) < bucket_size and len(self.dataset[i][0]) < bucket_size:
+                            self.dataset[i][0].extend((bucket_size - len(self.dataset[i][0])) * [self.PAD_i])
                             # print(str(ta[index]))
-                            second_sentences[i].extend((bucket_size - len(second_sentences[i])) * [self.PAD_i])
+                            self.dataset[i][1].extend((bucket_size - len(self.dataset[i][1])) * [self.PAD_i])
                             # print(str(tc[index]))
-                            dataset[bucket_index].append((first_sentences[i], second_sentences[i]))
+                            self.buckets_with_ids[bucket_index].append(i)
                             break
 
-        return dataset
 
         """
         if self.use_triples:

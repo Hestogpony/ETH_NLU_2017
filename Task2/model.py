@@ -2,6 +2,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
 import numpy as np
+import sys
 
 class Model(object):
     def __init__(self, cfg):
@@ -65,7 +66,7 @@ class Model(object):
     def validation_loss(self, data):
         return ""
 
-    def train(self, train_data, test_data):
+    def train(self, train_data, train_buckets_with_ids, test_data):
         # Initialize variables
         if "load_model_path" in self.cfg:
             self.load_model(self.model_session, self.cfg["load_model_path"])
@@ -76,8 +77,8 @@ class Model(object):
             print("Starting epoch %d..." % e)
             start_epoch = start_batches = time.time()
 
-            batch_indices = self.define_minibatches(train_data.shape[0])
-
+            batch_indices = self.define_minibatches(train_buckets_with_ids)
+            sys.exit()
             #TODO adapt this
             for i, batch_idx in enumerate(batch_indices):
                 batch = train_data[batch_idx]
@@ -117,30 +118,30 @@ class Model(object):
         print("Model from %s restored" % path)
 
 
-    def define_minibatches(self, bucket_lengths, permute=True):
+    def define_minibatches(self, buckets_with_ids, permute=True):
         """
-        bucket_lengths:     list of #samples in each bucket
+        buckets_with_ids     list of #samples in each bucket
         return:             list of lists of ndarrays
         """
-        batches = [[] for x in len(bucket_lengths)]
-        for i, l in enumerate(bucket_lengths):            
+        batches = []
+        for i, b in enumerate(buckets_with_ids):            
             if permute:
                 # create a random permutation (for training over multiple epochs)
-                indices = np.random.permutation(length)
+                indices = np.random.permutation(buckets_with_ids[i])
             else:
                 # use the indices in a sequential manner (for testing)
-                indices = np.arange(length)
+                indices = buckets_with_ids[i]
 
             # Hold out the last sentences in case data set is not divisible by the batch size
-            rest = l % self.cfg["batch_size"]
+            rest = len(b) % self.cfg["batch_size"]
             if rest is not 0:
                 indices_even = indices[:-rest]
                 indices_rest = indices[len(indices_even):]
-                batches[i] = np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"])
-                batches[i].append(np.array(indices_rest))
+                batches.append(np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"]))
+                batches.append(np.array(indices_rest))
             else:
-                batches[i] = np.split(indices, indices_or_sections=len(indices) / self.cfg["batch_size"])
+                batches.append(np.split(indices, indices_or_sections=len(indices) / self.cfg["batch_size"]))
 
 
-
+        print(batches.shape)
         return batches
