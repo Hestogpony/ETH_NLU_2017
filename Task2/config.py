@@ -8,6 +8,7 @@ cfg = {
         # "validation_labels": "./data/Validation_Shuffled_Dataset_Labels.txt",
         # "output": "./output/group02.perplexity",
     },
+    "buckets": [10, 20, 30, 40, 50],
     "vocab_size": 20000,
     "embeddings_size": 100,
 
