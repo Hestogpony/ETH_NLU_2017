@@ -116,25 +116,30 @@ class Model(object):
         saver.restore(self.model_session, path)
         print("Model from %s restored" % path)
 
-    
-    # TODO adapt this to task 2 and buckets
-    def define_minibatches(self, length, permute=True):
-        if permute:
-            # create a random permutation (for training over multiple epochs)
-            indices = np.random.permutation(length)
-        else:
-            # use the indices in a sequential manner (for testing)
-            indices = np.arange(length)
 
-        # Hold out the last sentences in case data set is not divisible by the batch size
-        rest = length % self.cfg["batch_size"]
-        if rest is not 0:
-            indices_even = indices[:-rest]
-            indices_rest = indices[len(indices_even):]
-            batches = np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"])
-            batches.append(np.array(indices_rest))
-        else:
-            batches = np.split(indices, indices_or_sections=len(indices) / self.cfg["batch_size"])
+    def define_minibatches(self, bucket_lengths, permute=True):
+        """
+        bucket_lengths:     list of #samples in each bucket
+        return:             list of lists of ndarrays
+        """
+        batches = [[] for x in len(bucket_lengths)]
+        for i, l in enumerate(bucket_lengths):            
+            if permute:
+                # create a random permutation (for training over multiple epochs)
+                indices = np.random.permutation(length)
+            else:
+                # use the indices in a sequential manner (for testing)
+                indices = np.arange(length)
+
+            # Hold out the last sentences in case data set is not divisible by the batch size
+            rest = l % self.cfg["batch_size"]
+            if rest is not 0:
+                indices_even = indices[:-rest]
+                indices_rest = indices[len(indices_even):]
+                batches[i] = np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"])
+                batches[i].append(np.array(indices_rest))
+            else:
+                batches[i] = np.split(indices, indices_or_sections=len(indices) / self.cfg["batch_size"])
 
 
 
