@@ -36,10 +36,29 @@ def main():
     train_reader.build_dict(cfg["dictionary_name"], cfg["path"]["train"])
     train_reader.read_data(cfg["path"]["train"])
 
+    # Training
+    m.build_forward_prop()
+    m.build_backprop()
+
+    # Read evaluation data
+    eval_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_turns=cfg["max_test_turns"])
+    eval_reader.read_sentences(cfg["path"]["validation"])
+
+    m.train(train_data=train_reader.id_data, test_data=eval_reader.id_data)
+
 def usage_and_quit():
     print("Chat bot based on seq2seq model")
     print("Options:")
     print("")
+    print("--max_turns: maximum number of triples to read (default: -1, reads all available triples)")
+    print("--max_test_turns: maximum number of triples to read (default: 10000, reads all available triples)")
+    print("--max_iterations: maximum number of training iterations (default: 100)")
+    print("--dictionary_name: define alternative dictionary name. (default: dict.p)")
+    print("--out_batch: every x batches, report the test loss (default: 100, if < 1, never report)")
+    print("--size: The size of the model ('small', 'medium' or 'big'); use 'small' and 'medium' for testing purposes; 'big' corresponds to the normal model")
+    print("--lstm: the dimension of the LSTM hidden state (default 512)")
+    print("--save_model_path: Path name where the trained model should be stored. Careful, the model is saved as multiple files")
+    print("--load_model_path: Path name from where to load a pretrained model")
     sys.exit()
 
 if __name__ == "__main__":
