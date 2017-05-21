@@ -4,6 +4,20 @@ import tensorflow as tf
 import numpy as np
 import sys
 
+def seq2seq_f(encoder_inputs, decoder_inputs):
+    return tf.contrib.legacy_seq2seq.embedding_rnn_seq2seq(
+        encoder_inputs = encoder_inputs,
+        decoder_inputs = decoder_inputs,
+        cell = tf.contrib.rnn.BasicLSTMCell(self.config["lstm_size"]),
+        num_encoder_symbols = self.cfg["vocab_size"],
+        num_decoder_symbols = self.cfg["vocab_size"],
+        embedding_size = self.cfg["embeddings_size"],
+        output_projection=None,
+        feed_previous=False,
+        dtype=tf.float32,
+        scope=None
+    )
+
 class Model(object):
     def __init__(self, cfg):
         self.cfg = cfg
@@ -21,7 +35,20 @@ class Model(object):
 
         # We suppose that all samples in one batch fall into the same bucket, i.e. have the same length with padding
         self.input_forward = tf.placeholder(dtype=self.model_dtype, shape=[None, None])
-        decoder_inputs = tf.placeholder(dtype=self.model_dtype, shape=[None, None])
+        self.decoder_inputs = tf.placeholder(dtype=self.model_dtype, shape=[None, None])
+        targets = tf.slice(self.decoder_inputs, [0,1], [-1,-1])
+
+        # Weights to avoid including the loss of pad labels when training
+        self.target_weights = tf.placeholder(dtype=self.model_dtype, shape=[None, None])
+        target_weights_sliced = tf.slice(self.target_weights, [0,1], [-1,-1])
+
+        # Transpose everything, as model with buckets requires the batch size to be the last dimension
+        input_forward_t = tf.unstack(tf.transpose(self.input_forward), )
+        decoder_inputs_t = tf.unstack(tf.transpose(self.decoder_inputs))
+        target_weights_t = tf.unstack(tf.transpose(target_weights_sliced))
+        targets_t = tf.unstack(tf.transpose(targets))
+
+
         # TODO: Maybe apply splitting word-wise
 
         # W_embeddings = tf.get_variable(name='W_emb', dtype=self.model_dtype, shape=[self.cfg["vocab_size"], self.cfg["embeddings_size"]],
@@ -29,30 +56,19 @@ class Model(object):
         # embeddings = tf.nn.embedding_lookup(params=W_embeddings, ids=self.input_forward)
 
         # state not used now
-        self.outputs, state = tf.contrib.legacy_seq2seq.embedding_rnn_seq2seq(
-            encoder_inputs = self.input_forward,
-            decoder_inputs = decoder_inputs,
-            cell = tf.contrib.rnn.BasicLSTMCell(self.config["lstm_size"]),
-            num_encoder_symbols = self.cfg["vocab_size"],
-            num_decoder_symbols = self.cfg["vocab_size"],
-            embedding_size = self.cfg["embeddings_size"],
-            # output_projection=None,
-            feed_previous=False,
-            dtype=self.model_dtype
-            # scope=None
+        self.outputs, self.total_loss = tf.contrib.legacy_seq2seq.model_with_buckets(
+            encoder_inputs = input_forward_t,
+            decoder_inputs = decoder_inputs_t,
+            targets = targets_t,
+            weights = target_weights_t,
+            buckets = self.cfg["buckets"],
+            seq2seq = seq2seq_f,
+            softmax_loss_function = tf.nn.sparse_softmax_cross_entropy_with_logits
         )
 
     def build_backprop(self):
         print("building the backprop model...")
 
-        # TODO: Exclude first token of each sentence (<bos> tag)
-        labs = tf.slice(self.input_forward, [0, 1], [-1, -1])
-
-        # TODO: how is unrolling done here?
-        logs = self.outputs
-
-        self.total_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                            labels=labs, logits=logs)
         optimizer = tf.train.AdamOptimizer()
 
         # Clipped gradients
@@ -66,7 +82,7 @@ class Model(object):
     def validation_loss(self, data):
         return ""
 
-    def train(self, train_data, train_buckets_with_ids, test_data):
+    def train(self, train_data, train_buckets_with_ids, train_target_weights, test_data):
         # Initialize variables
         if "load_model_path" in self.cfg:
             self.load_model(self.model_session, self.cfg["load_model_path"])
@@ -78,24 +94,23 @@ class Model(object):
             start_epoch = start_batches = time.time()
 
             batch_indices = self.define_minibatches(train_buckets_with_ids)
-            sys.exit()
-            #TODO adapt this
             for i, batch_idx in enumerate(batch_indices):
-                batch = train_data[batch_idx]
+                enc_batch = train_data[0][batch_idx]
+                dec_batch = train_data[1][batch_idx]
 
                 food = {
-                    self.input_forward: batch,
-                    # self.initial_hidden: np.zeros((len(batch_idx), self.cfg["lstm_size"])),
-                    # self.initial_cell: np.zeros((len(batch_idx), self.cfg["lstm_size"]))
+                    self.input_forward: enc_batch,
+                    self.decoder_inputs: dec_batch,
+                    self.target_weights: train_target_weights
                 }
 
                 self.model_session.run(fetches=self.train_op, feed_dict=food)
 
                 # Log test loss every so often
-                if self.cfg["out_batch"] > 0 and i > 0 and (i % (self.cfg["out_batch"]) == 0) :
-                    print("\tBatch chunk %d - %d finished in %d seconds" % (i-self.cfg["out_batch"], i, time.time() - start_batches))
-                    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, float(self.validation_loss(test_data))))
-                    start_batches = time.time()
+                #if self.cfg["out_batch"] > 0 and i > 0 and (i % (self.cfg["out_batch"]) == 0) :
+                #    print("\tBatch chunk %d - %d finished in %d seconds" % (i-self.cfg["out_batch"], i, time.time() - start_batches))
+                #    print("\tTest loss (mean per sentence) at batch %d: %f" % (i, float(self.validation_loss(test_data))))
+                #    start_batches = time.time()
 
             print("Epoch completed in %d seconds." % (time.time() - start_epoch))
 
@@ -127,6 +142,7 @@ class Model(object):
         for i, b in enumerate(buckets_with_ids):            
             if permute:
                 # create a random permutation (for training over multiple epochs)
+                # this np command creates a copy
                 indices = np.random.permutation(buckets_with_ids[i])
             else:
                 # use the indices in a sequential manner (for testing)
@@ -142,6 +158,7 @@ class Model(object):
             else:
                 batches.append(np.split(indices, indices_or_sections=len(indices) / self.cfg["batch_size"]))
 
-
+        if permute:
+            batches = np.random.permutation(batches)
         print(batches.shape)
         return batches

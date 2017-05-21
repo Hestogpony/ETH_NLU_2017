@@ -8,6 +8,7 @@ import time
 
 from config import cfg
 from reader import Reader
+from model import Model
 
 class Logger(object):
     def __init__(self, timestamp):
@@ -35,9 +36,13 @@ def main():
     train_reader.build_dict(cfg["dictionary_name"], cfg["path"]["train"])
     train_reader.read_data(cfg["path"]["train"])
 
+    m = Model(cfg)
+
     # Training
-    # m.build_forward_prop()
-    # m.build_backprop()
+    m.build_forward_prop()
+    m.build_backprop()
+
+    m.train((train_reader.dataset_enc, train_reader.dataset_dec), train_reader.buckets_with_ids, None)
 
     # # Read evaluation data
     # eval_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_turns=cfg["max_test_turns"])

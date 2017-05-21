@@ -25,6 +25,7 @@ class Reader:
         self.UNK_i = self.vocab_size - 2
         self.PAD_i = self.vocab_size - 1
 
+
     def build_dict(self, wanted_dict_path, data_path):
         """ Ordered by word count, only the 20k most frequent words are being used """
         print("building dictionary...")
@@ -91,7 +92,9 @@ class Reader:
         second_sentences = []
         third_sentences = []
 
-        self.dataset = []
+        self.dataset_enc = []
+        self.dataset_dec = []
+        self.dec_weights = []
 
         for data_line in input_data_lines:
             input_sentences = data_line.split('\t')
@@ -101,15 +104,28 @@ class Reader:
             second_sentence_as_ids = self.ids_from_toks(input_sentences[1].split())
             third_sentence_as_ids = self.ids_from_toks(input_sentences[2].split())
 
+
+
             if self.use_triples:
                 #TODO
                 first_sentences.append(first_sentence_as_ids + [self.EOS_i])
                 second_sentences.append(second_sentence_as_ids + [self.EOS_i])
                 third_sentences.append([self.BOS_i] + third_sentence_as_ids + [self.EOS_i])
             else:
-                self.dataset.append((first_sentence_as_ids + [self.EOS_i], [self.BOS_i] + second_sentence_as_ids + [self.EOS_i]))
-                self.dataset.append((second_sentence_as_ids + [self.EOS_i],[self.BOS_i] + third_sentence_as_ids + [self.EOS_i]))
+                a = first_sentence_as_ids + [self.EOS_i]
+                b = [self.BOS_i] + second_sentence_as_ids + [self.EOS_i]
+                b2 = second_sentence_as_ids + [self.EOS_i]
+                c = [self.BOS_i] + third_sentence_as_ids + [self.EOS_i]
 
+                if len(a) <= MAX_SENTENCE_LEN and len(b) <= MAX_SENTENCE_LEN:
+                    self.dataset_enc.append(a)
+                    self.dataset_dec.append(b)
+                    self.dec_weights.append(np.ones(shape=len(b), dtype=np.float32))
+
+                if len(b2) <= MAX_SENTENCE_LEN and len(c) <= MAX_SENTENCE_LEN:
+                    self.dataset_enc.append(b2)
+                    self.dataset_dec.append(c)
+                    self.dec_weights.append(np.ones(shape=len(c), dtype=np.float32))
 
 
         self.buckets_with_ids = [[] for x in cfg["buckets"]]
@@ -129,20 +145,15 @@ class Reader:
                             dataset[bucket_index].append((first_sentences[i], second_sentences[i], third_sentences[i]))
                             break
         else:
-            for i in range(0, len(self.dataset)):
-                if len(self.dataset[i][0]) > MAX_SENTENCE_LEN or len(self.dataset[i][1]) > MAX_SENTENCE_LEN:
-                    continue
-                else:
-
-
-                    for bucket_index, bucket_size in enumerate(self.buckets):
-                        if len(self.dataset[i][0]) < bucket_size and len(self.dataset[i][0]) < bucket_size:
-                            self.dataset[i][0].extend((bucket_size - len(self.dataset[i][0])) * [self.PAD_i])
-                            # print(str(ta[index]))
-                            self.dataset[i][1].extend((bucket_size - len(self.dataset[i][1])) * [self.PAD_i])
-                            # print(str(tc[index]))
-                            self.buckets_with_ids[bucket_index].append(i)
-                            break
+            for i in range(0, len(self.dataset_enc)):
+                for bucket_index, bucket_size in enumerate(self.buckets):
+                    if len(self.dataset_enc[i]) < bucket_size and len(self.dataset_dec[i]) < bucket_size:
+                        self.dataset_enc[i].extend((bucket_size - len(self.dataset_enc[i])) * [self.PAD_i])
+                        # print(str(ta[index]))
+                        self.dataset_dec[i].extend((bucket_size - len(self.dataset_dec[i])) * [self.PAD_i])
+                        # print(str(tc[index]))
+                        self.buckets_with_ids[bucket_index].append(i)
+                        break
 
 
         """

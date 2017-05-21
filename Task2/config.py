@@ -9,6 +9,7 @@ cfg = {
         # "output": "./output/group02.perplexity",
     },
     "buckets": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    "PAD_i": 20000 - 1,
     "vocab_size": 20000,
     "embeddings_size": 100,
 
