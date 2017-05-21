@@ -1,7 +1,9 @@
+#!/usr/bin/env bash
 
-input_file = $1
+input_file=$1
+filelines=`cat $input_file`
 
-for line in (input_file)
+for line in $filelines;
 do
-    echo "${line}"
+    echo $line
 done

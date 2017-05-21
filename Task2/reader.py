@@ -9,6 +9,7 @@ BOS = "<bos>"
 EOS = "<eos>"
 UNK = "<unk>"
 PAD = "<pad>"
+MAX_SENTENCE_LEN = 100
 
 
 class Reader:
@@ -77,71 +78,66 @@ class Reader:
         with open(path, 'r') as f:
 
             if self.max_turns < 0:
-                turns = f.readlines()
+                input_data_lines = f.readlines()
             else:
-                turns = []
+                input_data_lines = []
                 for i in range(self.max_turns):
-                    turns.append(f.readline())
+                    input_data_lines.append(f.readline())
 
         dataset = [[] for _ in self.buckets]
         dataset_triple = [[] for _ in self.buckets]
 
+        first_sentences = []
+        second_sentences = []
+        third_sentences = []
 
-        ta = []
-        tb = []
-        tc = []
+        for data_line in input_data_lines:
+            input_sentences = data_line.split('\t')
+            assert (len(input_sentences) == 3)
 
-        for turn in turns:
-            parts = turn.split('\t')
-            assert(len(parts) == 3)
-
-            a = self.ids_from_toks(parts[0].split())
-            b = self.ids_from_toks(parts[1].split())
-            c = self.ids_from_toks(parts[2].split())
+            first_sentence_as_ids = self.ids_from_toks(input_sentences[0].split())
+            second_sentence_as_ids = self.ids_from_toks(input_sentences[1].split())
+            third_sentence_as_ids = self.ids_from_toks(input_sentences[2].split())
 
             if self.use_triples:
-                ta.append(a + [self.EOS_i])
-                tb.append(b + [self.EOS_i])
-                tc.append([self.BOS_i] + c + [self.EOS_i])
+                first_sentences.append(first_sentence_as_ids + [self.EOS_i])
+                second_sentences.append(second_sentence_as_ids + [self.EOS_i])
+                third_sentences.append([self.BOS_i] + third_sentence_as_ids + [self.EOS_i])
             else:
-                ta.append(a + [self.EOS_i])
-                ta.append([self.BOS_i] + b + [self.EOS_i])
+                first_sentences.append(first_sentence_as_ids + [self.EOS_i])
+                first_sentences.append([self.BOS_i] + second_sentence_as_ids + [self.EOS_i])
 
-                tc.append(b + [self.EOS_i])
-                tc.append([self.BOS_i] + c + [self.EOS_i])
+                second_sentences.append(second_sentence_as_ids + [self.EOS_i])
+                second_sentences.append([self.BOS_i] + third_sentence_as_ids + [self.EOS_i])
 
         if self.use_triples:
-            for index in range(0, len(ta)):
-                if len(ta[index]) > 100 or len(tb[index]) > 100 or len(tc[index]) > 100 :
+            for i in range(0, len(first_sentences)):
+                if len(first_sentences[i]) > 100 or len(second_sentences[i]) > 100 or len(third_sentences[i]) > 100:
                     continue
-                else :
-                    for b_ind, bucket in enumerate(self.buckets):
-                        if len(ta[index]) < bucket and len(tc[index]) < bucket and len(tb[index]) < bucket:
-                            ta[index].extend((bucket - len(ta[index])) * [self.PAD_i]) 
-                            tb[index].extend((bucket - len(tb[index])) * [self.PAD_i]) 
-                            tc[index].extend((bucket - len(tc[index])) * [self.PAD_i])
-                            dataset[b_ind].append((ta[index] , tb[index], tc[index]))
+                else:
+                    for bucket_index, bucket_size in enumerate(self.buckets):
+                        if len(first_sentences[i]) < bucket_size and len(third_sentences[i]) < bucket_size and len(
+                                second_sentences[i]) < bucket_size:
+                            first_sentences[i].extend((bucket_size - len(first_sentences[i])) * [self.PAD_i])
+                            second_sentences[i].extend((bucket_size - len(second_sentences[i])) * [self.PAD_i])
+                            third_sentences[i].extend((bucket_size - len(third_sentences[i])) * [self.PAD_i])
+                            dataset[bucket_index].append((first_sentences[i], second_sentences[i], third_sentences[i]))
                             break
         else:
-            for index in range(0,len(ta)):
-                if len(ta[index]) > 100 or len(tc[index]) > 100:
+            for i in range(0, len(first_sentences)):
+                if len(first_sentences[i]) > MAX_SENTENCE_LEN or len(second_sentences[i]) > MAX_SENTENCE_LEN:
                     continue
-                else :
-                    for b_ind, bucket in enumerate(self.buckets):
-                        if len(ta[index]) < bucket and len(tc[index]) < bucket :
-                            ta[index].extend((bucket - len(ta[index])) * [self.PAD_i]) 
-                            #print(str(ta[index]))
-                            tc[index].extend((bucket - len(tc[index])) * [self.PAD_i]) 
-                            #print(str(tc[index]))
-                            dataset[b_ind].append((ta[index] , tc[index]))
+                else:
+                    for bucket_index, bucket_size in enumerate(self.buckets):
+                        if len(first_sentences[i]) < bucket_size and len(second_sentences[i]) < bucket_size:
+                            first_sentences[i].extend((bucket_size - len(first_sentences[i])) * [self.PAD_i])
+                            # print(str(ta[index]))
+                            second_sentences[i].extend((bucket_size - len(second_sentences[i])) * [self.PAD_i])
+                            # print(str(tc[index]))
+                            dataset[bucket_index].append((first_sentences[i], second_sentences[i]))
                             break
-                            
-
 
         return dataset
-
-
-
 
         """
         if self.use_triples:
@@ -149,6 +145,8 @@ class Reader:
         else:
             return (ta, tc)
         """
+
+
 """
 if __name__ == "__main__": 
     train_reader = Reader(buckets = cfg["buckets"], vocab_size=cfg["vocab_size"])
@@ -182,5 +180,4 @@ if __name__ == "__main__":
         
     print(str(counter)+" This is in the bucket 10")
     '''
-"""
 """
