@@ -133,10 +133,10 @@ class Model(object):
                     self.target_weights: train_target_weights,
                     # self.bucket_size: b_size
                 }
+                print(self.train_ops[bid])
 
-                t = self.train_ops[bid]
                 print('Running into bucket %d' % bid)
-                self.model_session.run(fetches=t, feed_dict=food)
+                self.model_session.run(fetches=self.train_ops[bid], feed_dict=food)
 
                 # Log test loss every so often
                 #if self.cfg["out_batch"] > 0 and i > 0 and (i % (self.cfg["out_batch"]) == 0) :
