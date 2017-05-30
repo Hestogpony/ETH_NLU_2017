@@ -8,7 +8,7 @@ cfg = {
         # "validation_labels": "./data/Validation_Shuffled_Dataset_Labels.txt",
         # "output": "./output/group02.perplexity",
     },
-    "buckets": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    "buckets": [50], # list of tuples for the seq2seq model
     "PAD_i": 20000 - 1,
     "vocab_size": 20000,
     "embeddings_size": 100,
@@ -18,7 +18,7 @@ cfg = {
     "max_turns" : -1,
     "max_test_turns" : -1,
     "max_iterations" : 10,
-    "batch_size": 64,
+    "batch_size": 3,
     "out_batch": 100,
     # "generate_length": 20,
 

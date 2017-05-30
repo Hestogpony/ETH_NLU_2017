@@ -32,7 +32,7 @@ def main():
     sys.stdout = Logger(timestamp)
 
     # Read train data
-    train_reader = Reader(buckets=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100], vocab_size=cfg["vocab_size"], max_turns=cfg["max_turns"])
+    train_reader = Reader(buckets=cfg["buckets"], vocab_size=cfg["vocab_size"], max_turns=cfg["max_turns"])
     train_reader.build_dict(cfg["dictionary_name"], cfg["path"]["train"])
     train_reader.read_data(cfg["path"]["train"])
 
