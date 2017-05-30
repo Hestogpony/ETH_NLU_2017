@@ -4,19 +4,6 @@ import tensorflow as tf
 import numpy as np
 import sys
 
-def seq2seq_f(encoder_inputs, decoder_inputs):
-    return tf.contrib.legacy_seq2seq.embedding_rnn_seq2seq(
-        encoder_inputs = encoder_inputs,
-        decoder_inputs = decoder_inputs,
-        cell = tf.contrib.rnn.BasicLSTMCell(self.config["lstm_size"]),
-        num_encoder_symbols = self.cfg["vocab_size"],
-        num_decoder_symbols = self.cfg["vocab_size"],
-        embedding_size = self.cfg["embeddings_size"],
-        output_projection=None,
-        feed_previous=False,
-        dtype=tf.float32,
-        scope=None
-    )
 
 class Model(object):
     def __init__(self, cfg):
@@ -25,6 +12,20 @@ class Model(object):
         self.model_dtype = tf.float32
 
         self.model_session = tf.Session(config=self.tfconfig)
+
+    def seq2seq_f(encoder_inputs, decoder_inputs):
+        return tf.contrib.legacy_seq2seq.embedding_rnn_seq2seq(
+            encoder_inputs = encoder_inputs,
+            decoder_inputs = decoder_inputs,
+            cell = tf.contrib.rnn.BasicLSTMCell(self.config["lstm_size"]),
+            num_encoder_symbols = self.cfg["vocab_size"],
+            num_decoder_symbols = self.cfg["vocab_size"],
+            embedding_size = self.cfg["embeddings_size"],
+            output_projection=None,
+            feed_previous=False,
+            dtype=tf.float32,
+            scope=None
+        )
 
     def build_forward_prop(self):
 
@@ -37,16 +38,17 @@ class Model(object):
         self.input_forward = tf.placeholder(dtype=self.model_dtype, shape=[None, None])
         self.decoder_inputs = tf.placeholder(dtype=self.model_dtype, shape=[None, None])
         targets = tf.slice(self.decoder_inputs, [0,1], [-1,-1])
+        self.bucket_size = tf.placeholder(dtype=tf.int32)
 
         # Weights to avoid including the loss of pad labels when training
         self.target_weights = tf.placeholder(dtype=self.model_dtype, shape=[None, None])
         target_weights_sliced = tf.slice(self.target_weights, [0,1], [-1,-1])
 
         # Transpose everything, as model with buckets requires the batch size to be the last dimension
-        input_forward_t = tf.unstack(tf.transpose(self.input_forward), )
-        decoder_inputs_t = tf.unstack(tf.transpose(self.decoder_inputs))
-        target_weights_t = tf.unstack(tf.transpose(target_weights_sliced))
-        targets_t = tf.unstack(tf.transpose(targets))
+        input_forward_t = tf.unstack(tf.transpose(self.input_forward), num=self.bucket_size)
+        decoder_inputs_t = tf.unstack(tf.transpose(self.decoder_inputs), num=self.bucket_size)
+        target_weights_t = tf.unstack(tf.transpose(target_weights_sliced), num=self.bucket_size)
+        targets_t = tf.unstack(tf.transpose(targets), num=self.bucket_size)
 
 
         # TODO: Maybe apply splitting word-wise
@@ -94,14 +96,15 @@ class Model(object):
             start_epoch = start_batches = time.time()
 
             batch_indices = self.define_minibatches(train_buckets_with_ids)
-            for i, batch_idx in enumerate(batch_indices):
+            for i, (b_size, batch_idx) in enumerate(batch_indices):
                 enc_batch = train_data[0][batch_idx]
                 dec_batch = train_data[1][batch_idx]
 
                 food = {
                     self.input_forward: enc_batch,
                     self.decoder_inputs: dec_batch,
-                    self.target_weights: train_target_weights
+                    self.target_weights: train_target_weights,
+                    self.bucket_size: b_size
                 }
 
                 self.model_session.run(fetches=self.train_op, feed_dict=food)
@@ -135,7 +138,7 @@ class Model(object):
 
     def define_minibatches(self, buckets_with_ids, permute=True):
         """
-        buckets_with_ids     list of #samples in each bucket
+        buckets_with_ids     list of list of samples that are in each bucket, sorted by bucket_id
         return:             list of lists of ndarrays
         """
         batches = []
@@ -153,10 +156,15 @@ class Model(object):
             if rest is not 0:
                 indices_even = indices[:-rest]
                 indices_rest = indices[len(indices_even):]
-                batches.append(np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"]))
-                batches.append(np.array(indices_rest))
+
+                batch_list = np.split(indices_even, indices_or_sections=len(indices_even) / self.cfg["batch_size"])
+                batch_list.append(np.array(indices_rest))
             else:
-                batches.append(np.split(indices, indices_or_sections=len(indices) / self.cfg["batch_size"]))
+                batch_list = np.split(indices, indices_or_sections=len(indices) / self.cfg["batch_size"])
+
+            #append the bucket size
+            batch_tuples = [(self.cfg["buckets"], x) for x in batch_lists]
+            batches.append(batch_tuples)
 
         if permute:
             batches = np.random.permutation(batches)

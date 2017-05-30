@@ -36,6 +36,7 @@ def main():
     train_reader.build_dict(cfg["dictionary_name"], cfg["path"]["train"])
     train_reader.read_data(cfg["path"]["train"])
 
+
     m = Model(cfg)
 
     # Training
