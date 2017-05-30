@@ -43,7 +43,7 @@ def main():
     m.build_forward_prop()
     m.build_backprop()
 
-    m.train((train_reader.dataset_enc, train_reader.dataset_dec), train_reader.buckets_with_ids, None)
+    m.train((train_reader.dataset_enc, train_reader.dataset_dec), train_reader.buckets_with_ids)
 
     # # Read evaluation data
     # eval_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_turns=cfg["max_test_turns"])

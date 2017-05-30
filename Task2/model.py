@@ -98,7 +98,7 @@ class Model(object):
     def validation_loss(self, data):
         return ""
 
-    def train(self, train_data, train_buckets_with_ids, train_target_weights):
+    def train(self, train_data, train_buckets_with_ids):
         # train_data        tuple of whatever the data structure is
         # 
         # Initialize variables
@@ -120,7 +120,11 @@ class Model(object):
                 enc_batch = td0[batch_idx]
                 dec_batch = td1[batch_idx]
 
-                print(enc_batch)
+                # create target weights on the fly, list of
+                train_target_weights = np.ones(shape=(len(batch_idx), self.cfg["buckets"][bid]), dtype=np.float32)
+                
+                print(np.array(enc_batch))
+                print(np.array(dec_batch))
                 print(train_target_weights)
 
                 food = {
@@ -194,5 +198,5 @@ class Model(object):
         if permute:
             batches = np.random.permutation(batches)
 
-        print(batches)
+        # print(batches)
         return batches
