@@ -16,12 +16,27 @@ See readme.md for instruction on how to run the starter code.
 """
 
 # parameters for processing the dataset
-DATA_PATH = 'cornell_data'
-CONVO_FILE = 'movie_conversations.txt'
-LINE_FILE = 'movie_lines.txt'
-OUTPUT_FILE = 'output_convo.txt'
-PROCESSED_PATH = 'processed'
-CPT_PATH = 'checkpoints'
+
+USE_CORNELL = False
+
+if USE_CORNELL:
+    DATA_PATH = 'cornell_data'
+    CONVO_FILE = 'movie_conversations.txt'
+    LINE_FILE = 'movie_lines.txt'
+    OUTPUT_FILE = 'output_convo.txt'
+    PROCESSED_PATH = 'cornell_processed'
+    CPT_PATH = 'cornell_checkpoints'
+else:
+    # <FL> I included as comments the variables that we don't need in our reader
+    # just to provide some reference
+    DATA_PATH = 'our_data'
+    # CONVO_FILE = None
+    LINE_FILE = 'Training_Shuffled_Dataset.txt'
+    # OUTPUT_FILE = None
+    PROCESSED_PATH = 'our_processed'
+    CPT_PATH = 'our_checkpoints'
+
+    MAX_TURNS = 1000
 
 THRESHOLD = 2
 
@@ -30,7 +45,7 @@ UNK_ID = 1
 START_ID = 2
 EOS_ID = 3
 
-TESTSET_SIZE = 25000
+TESTSET_SIZE = 100
 
 # model parameters
 """ Train encoder length distribution:
@@ -59,3 +74,5 @@ MAX_GRAD_NORM = 5.0
 NUM_SAMPLES = 512
 ENC_VOCAB = 24471
 DEC_VOCAB = 24671
+ENC_VOCAB = 1292
+DEC_VOCAB = 1320
