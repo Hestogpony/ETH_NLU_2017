@@ -29,10 +29,10 @@ MODE_R = 'r'
 MODE_W = 'w'
 MODE_A = 'a'
 
-def make_pairs():
+def make_pairs(fpath):
     questions = []
     answers = []
-    with open(os.path.join(config.DATA_PATH, config.LINE_FILE)) as f:
+    with open(fpath) as f:
         if not config.MAX_TURNS or config.MAX_TURNS <= 0:
                 input_data_lines = f.readlines()
         else:
@@ -40,8 +40,12 @@ def make_pairs():
             for i in range(config.MAX_TURNS):
                 input_data_lines.append(f.readline())
 
+    input_data_lines = [x.replace('\n', '') for x in input_data_lines]
+    input_data_lines = [x for x in input_data_lines if len(x) > 0]
+
     for data_line in input_data_lines:
         input_sentences = data_line.split('\t')
+
 
         questions.append(input_sentences[0])
         answers.append(input_sentences[1])
@@ -164,7 +168,7 @@ def token2id(data, mode):
 def prepare_raw_data():
     print('Preparing raw data into train set and test set ...')
     # <FL> Use our own stuff here
-    questions, answers = make_pairs()
+    questions, answers = make_pairs(os.path.join(config.DATA_PATH, config.LINE_FILE))
     prepare_dataset(questions, answers)
 
 def process_data():

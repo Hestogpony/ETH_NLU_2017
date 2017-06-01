@@ -28,6 +28,7 @@ import tensorflow as tf
 
 from model import ChatBotModel
 import config
+import measures
 
 if config.USE_CORNELL:
     import cornell_data as data
@@ -171,6 +172,63 @@ def train():
                     start = time.time()
                 sys.stdout.flush()
 
+def test_perplexity(inpath):
+    """
+    <FL> Mostly the same setup as chat(), except we read from a file.
+    """
+    if config.USE_CORNELL:
+        raise RuntimeError("Testing must have USE_CORNELL = False")
+
+    _, enc_word_to_i = data.load_vocab(os.path.join(config.PROCESSED_PATH, 'vocab.enc'))
+    _, dec_word_to_i = data.load_vocab(os.path.join(config.PROCESSED_PATH, 'vocab.dec'))
+
+    # Obtain the test sentencess
+    questions, answers = data.make_pairs(inpath)
+    questions = [data.sentence2id(enc_word_to_i, x) for x in questions]
+    answers = [data.sentence2id(enc_word_to_i, x) for x in answers]
+
+    # Put every example through one at a time
+    model = ChatBotModel(forward_only=True, batch_size=1)
+    model.build_graph()
+
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        _check_restore_parameters(sess, saver)
+
+        # Right now a triple A B C becomes two pairs
+        # A B and B C. So we first run A, compare against B, and then run B and
+        # compare against C.
+        # We do that because we need two numbers / line
+        for i in range(0, len(questions), 2):
+            assert(answers[i] == questions[i + 1])
+
+            a = questions[i]
+            b = questions[i + 1]
+            c = answers[i + 1]
+
+            bucket_ab = _find_right_bucket2(len(a), len(b))
+            bucket_bc = _find_right_bucket2(len(b), len(c))
+
+            enc_in_a, dec_in_b, dec_masks_b = data.get_batch([(a, b)], bucket_ab, 1)
+            enc_in_b, dec_in_c, dec_masks_c = data.get_batch([(b, c)], bucket_bc, 1)
+
+            # bucket x batch x vocab
+            _, _, logits_b = run_step(sess, model, enc_in_a, dec_in_b,
+                                        dec_masks_b, bucket_ab, forward_only=True)
+
+            _, _, logits_c = run_step(sess, model, enc_in_b, dec_in_c,
+                                        dec_masks_c, bucket_bc, forward_only=True)
+
+            soft_b = np.exp(logits_b) / np.sum(np.exp(logits_b), axis = 0)
+            soft_c = np.exp(logits_c) / np.sum(np.exp(logits_c), axis = 0)
+
+            perp_b = measures.perplexity(soft_b, b, dec_word_to_i)
+            perp_c = measures.perplexity(soft_c, c, dec_word_to_i)
+
+            print("%f %f" % (perp_b, perp_c))
+
+
 def _get_user_input():
     """ Get user's input, which will be transformed into encoder input later """
     print("> ", end="")
@@ -179,8 +237,20 @@ def _get_user_input():
 
 def _find_right_bucket(length):
     """ Find the proper bucket for an encoder input based on its length """
-    return min([b for b in range(len(config.BUCKETS))
-                if config.BUCKETS[b][0] >= length])
+    available = [b for b in range(len(config.BUCKETS))
+                    if config.BUCKETS[b][0] >= length]
+
+    return min(available)
+
+def _find_right_bucket2(lengtha, lengthb):
+    available_a = [b for b in range(len(config.BUCKETS))
+                    if config.BUCKETS[b][0] >= lengtha]
+    available_b = [b for b in range(len(config.BUCKETS))
+                    if config.BUCKETS[b][1] >= lengthb]
+
+    both = set(available_a) & set(available_b)
+    return min(both)
+
 
 def _construct_response(output_logits, inv_dec_vocab):
     """ Construct a response to the user's encoder input.
@@ -245,8 +315,10 @@ def chat():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', choices={'train', 'chat'},
+    parser.add_argument('--mode', choices={'train', 'chat', 'test'},
                         default='train', help="mode. if not specified, it's in the train mode")
+    parser.add_argument('test_file', type=str, nargs='?')
+
     args = parser.parse_args()
 
     if not os.path.isdir(config.PROCESSED_PATH):
@@ -260,6 +332,8 @@ def main():
         train()
     elif args.mode == 'chat':
         chat()
+    elif args.mode == 'test':
+        test_perplexity(args.test_file)
 
 if __name__ == '__main__':
     main()

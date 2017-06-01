@@ -38,6 +38,9 @@ else:
 
     MAX_TURNS = 1000
 
+# <FL> When do we cut off a sentence
+TEST_MAX_SIZE = 80
+
 THRESHOLD = 2
 
 PAD_ID = 0
@@ -62,7 +65,7 @@ These buckets size seem to work the best
 # [37049, 33519, 30223, 33513, 37371]
 # BUCKETS = [(8, 10), (12, 14), (16, 19), (23, 26), (39, 43)]
 
-BUCKETS = [(8, 10), (12, 14), (16, 19)]
+BUCKETS = [(8, 10), (12, 14), (16, 19), (40, 40), (80, 80)]
 
 NUM_LAYERS = 3
 HIDDEN_SIZE = 256
