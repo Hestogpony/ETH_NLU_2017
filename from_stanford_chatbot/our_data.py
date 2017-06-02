@@ -33,16 +33,19 @@ class Reader(object):
     def __init__(self, config):
         self.cfg = config
 
-    def make_pairs(self):
+    def make_pairs(self, fpath):
         questions = []
         answers = []
-        with open(os.path.join(self.cfg['DATA_PATH'], self.cfg['LINE_FILE'])) as f:
+        with open(fpath) as f:
             if not self.cfg['MAX_TURNS'] or self.cfg['MAX_TURNS'] <= 0:
                     input_data_lines = f.readlines()
             else:
                 input_data_lines = []
                 for i in range(self.cfg['MAX_TURNS']):
                     input_data_lines.append(f.readline())
+
+        input_data_lines = [x.replace('\n', '') for x in input_data_lines]
+        input_data_lines = [x for x in input_data_lines if len(x) > 0]
 
         for data_line in input_data_lines:
             input_sentences = data_line.split('\t')
@@ -132,6 +135,7 @@ class Reader(object):
                     #         cf.write('DEC_VOCAB = ' + str(index) + '\n')
                     
                     # <BG> don't write this to file anymore!!!
+
                     if filename[-3:] == 'enc':
                         self.cfg['ENC_VOCAB'] = index
 
@@ -176,7 +180,7 @@ class Reader(object):
     def prepare_raw_data(self):
         print('Preparing raw data into train set and test set ...')
         # <FL> Use our own stuff here
-        questions, answers = self.make_pairs()
+        questions, answers = self.make_pairs(os.path.join(self.cfg['DATA_PATH'], self.cfg['LINE_FILE']))
         self.prepare_dataset(questions, answers)
 
     def process_data(self):
@@ -191,6 +195,7 @@ class Reader(object):
     def load_data(self, enc_filename, dec_filename, max_training_size=None):
         encode_file = open(os.path.join(self.cfg['PROCESSED_PATH'], enc_filename), MODE_R)
         decode_file = open(os.path.join(self.cfg['PROCESSED_PATH'], dec_filename), MODE_R)
+
         encode, decode = encode_file.readline(), decode_file.readline()
         data_buckets = [[] for _ in self.cfg['BUCKETS']]
         i = 0

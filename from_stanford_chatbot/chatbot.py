@@ -31,6 +31,7 @@ from model import ChatBotModel
 
 import config
 from config import cfg
+import measures
 
 class Logger(object):
     def __init__(self, timestamp):
@@ -156,6 +157,7 @@ class Chatbot(object):
                                        decoder_masks, bucket_id, True)
             print('Test bucket {}: loss {}, time {}'.format(bucket_id, step_loss, time.time() - start))
 
+
     def train(self):
         """ Train the bot """
         test_buckets, data_buckets, train_buckets_scale = self._get_buckets()
@@ -234,6 +236,7 @@ class Chatbot(object):
         self.sess.run(tf.global_variables_initializer())
         self._check_restore_parameters(saver)
         output_file = open(os.path.join(self.cfg['PROCESSED_PATH'], self.cfg['OUTPUT_FILE']), 'a+')
+
         # Decode from standard input.
         max_length = self.cfg['BUCKETS'][-1][0]
         print('Welcome to TensorBro. Say something. Enter to exit. Max length is', max_length)
@@ -265,6 +268,72 @@ class Chatbot(object):
         output_file.write('=============================================\n')
         output_file.close()
 
+    def test_perplexity(self, inpath):
+        """
+        <FL> Mostly the same setup as chat(), except we read from a file.
+        """
+        # if self.cfg['USE_CORNELL']:
+        #     raise RuntimeError("Testing must have USE_CORNELL = False")
+
+        _, enc_word_to_i = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.enc'))
+        _, dec_word_to_i = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.dec'))
+
+        # Obtain the test sentencess
+        questions, answers = self.reader.make_pairs(inpath)
+        questions = [self.reader.sentence2id(enc_word_to_i, x) for x in questions]
+        answers = [self.reader.sentence2id(enc_word_to_i, x) for x in answers]
+
+        # Put every example through one at a time
+        model = ChatBotModel(config=self.cfg, forward_only=True, batch_size=1)
+        model.build_graph()
+
+        saver = tf.train.Saver()
+        self.sess.run(tf.global_variables_initializer())
+        self._check_restore_parameters(saver)
+
+        # Right now a triple A B C becomes two pairs
+        # A B and B C. So we first run A, compare against B, and then run B and
+        # compare against C.
+        # We do that because we need two numbers / line
+        for i in range(0, len(questions), 2):
+            assert(answers[i] == questions[i + 1])
+
+            a = questions[i]
+            b = questions[i + 1]
+            c = answers[i + 1]
+
+            bucket_ab = self._find_right_bucket2(len(a), len(b))
+            bucket_bc = self._find_right_bucket2(len(b), len(c))
+
+            enc_in_a, dec_in_b, dec_masks_b = self.reader.get_batch([(a, b)], bucket_ab, 1)
+            enc_in_b, dec_in_c, dec_masks_c = self.reader.get_batch([(b, c)], bucket_bc, 1)
+
+            # bucket x batch x vocab
+            _, _, logits_b = self.run_step(model, enc_in_a, dec_in_b,
+                                        dec_masks_b, bucket_ab, forward_only=True)
+
+            _, _, logits_c = self.run_step(model, enc_in_b, dec_in_c,
+                                        dec_masks_c, bucket_bc, forward_only=True)
+
+            soft_b = np.exp(logits_b) / np.sum(np.exp(logits_b), axis = 0)
+            soft_c = np.exp(logits_c) / np.sum(np.exp(logits_c), axis = 0)
+
+            perp_b = measures.perplexity(self.cfg, soft_b, b, dec_word_to_i)
+            perp_c = measures.perplexity(self.cfg, soft_c, c, dec_word_to_i)
+
+            print("%f %f" % (perp_b, perp_c))
+
+
+
+    def _find_right_bucket2(self, lengtha, lengthb):
+        available_a = [b for b in range(len(self.cfg['BUCKETS']))
+                        if self.cfg['BUCKETS'][b][0] >= lengtha]
+        available_b = [b for b in range(len(self.cfg['BUCKETS']))
+                        if self.cfg['BUCKETS'][b][1] >= lengthb]
+
+        both = set(available_a) & set(available_b)
+        return min(both)
+
 
 
 
@@ -274,16 +343,16 @@ def main():
     sys.stdout = Logger(timestamp)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', choices={'train', 'chat'},
+    parser.add_argument('--mode', choices={'train', 'chat', 'test'},
                         default='train', help="mode. if not specified, it's in the train mode")
     parser.add_argument('--cornell', action='store_true', help="use the cornell movie dialogue corpus")
     parser.add_argument('--conversations', help="limit the number of conversations used in the dataset")
     parser.add_argument('--model', help='specify name (timestamp) of a previously used model')
+    parser.add_argument('test_file', type=str, nargs='?')
 
     # TODO: default model should be the last one that was trained
     #TODO
     parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
-
 
 
     args = parser.parse_args()
@@ -320,6 +389,8 @@ def main():
         bot.train()
     elif args.mode == 'chat':
         bot.chat()
+    elif args.mode == 'test':
+        bot.test_perplexity(args.test_file)
 
 if __name__ == '__main__':
     main()

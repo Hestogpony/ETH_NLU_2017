@@ -31,13 +31,17 @@ cfg = {
     'START_ID': 2,
     'EOS_ID': 3,
     'TESTSET_SIZE': 10,
-    'BUCKETS': [(8,10)], #[(8, 10), (12, 14), (16, 19)],
+    'BUCKETS': [(8,10), (100, 100)], #[(8, 10), (12, 14), (16, 19)],
     'NUM_LAYERS': 3,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 64,
     'LR': 0.5,
     'MAX_GRAD_NORM': 5.0,
-    'NUM_SAMPLES': 128 #512
+    'NUM_SAMPLES': 128, #512
+
+    'TEST_MAX_SIZE': 80,
+    'TESTSET_SIZE': 100
+
 }
 
 def adapt_to_dataset(use_cornell):
@@ -69,7 +73,6 @@ def adapt_paths_to_model():
 def save_cfg(updated_config):
     config_path = os.path.join(updated_config['MODELS_PATH'], updated_config['MODEL_NAME'], "config")
     pickle.dump(updated_config , open(config_path, "wb"))
-    print(updated_config)
     print("Configs saved in file: %s" % (config_path))
 
 def load_cfg(model_name):
@@ -77,6 +80,7 @@ def load_cfg(model_name):
     loaded_cfg = pickle.load(open(config_path, "rb"))
     print("Configs loaded from %s" % (config_path))
     return loaded_cfg
+
 
 # model parameters
 """ Train encoder length distribution:
