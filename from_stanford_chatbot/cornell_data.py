@@ -247,12 +247,12 @@ class Reader(object):
         for _ in range(batch_size):
             encoder_input, decoder_input = random.choice(data_bucket)
             # pad both encoder and decoder, reverse the encoder
-            encoder_inputs.append(list(reversed(_pad_input(encoder_input, encoder_size))))
-            decoder_inputs.append(_pad_input(decoder_input, decoder_size))
+            encoder_inputs.append(list(reversed(self._pad_input(encoder_input, encoder_size))))
+            decoder_inputs.append(self._pad_input(decoder_input, decoder_size))
 
         # now we create batch-major vectors from the data selected above.
-        batch_encoder_inputs = _reshape_batch(encoder_inputs, encoder_size, batch_size)
-        batch_decoder_inputs = _reshape_batch(decoder_inputs, decoder_size, batch_size)
+        batch_encoder_inputs = self._reshape_batch(encoder_inputs, encoder_size, batch_size)
+        batch_decoder_inputs = self._reshape_batch(decoder_inputs, decoder_size, batch_size)
 
         # create decoder_masks to be 0 for decoders that are padding.
         batch_masks = []
