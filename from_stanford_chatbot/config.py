@@ -72,11 +72,10 @@ def save_cfg(updated_config):
     print(updated_config)
     print("Configs saved in file: %s" % (config_path))
 
-# TODO
-
 def load_cfg(model_name):
-    loaded_cfg = pickle.load(open(model_name + ".config", "rb"))
-    print("Configs loaded from %s" % (model_name + ".config"))
+    config_path = os.path.join(cfg['MODELS_PATH'], model_name, "config")
+    loaded_cfg = pickle.load(open(config_path, "rb"))
+    print("Configs loaded from %s" % (config_path))
     return loaded_cfg
 
 # model parameters

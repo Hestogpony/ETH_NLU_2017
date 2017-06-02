@@ -35,6 +35,8 @@ from config import cfg
 class Logger(object):
     def __init__(self, timestamp):
         self.terminal = sys.stdout
+        if not os.path.exists("log"):
+            os.makedirs("log")
         self.log = open("log/" + timestamp + ".log", "w")
 
     def write(self, message):
@@ -224,7 +226,7 @@ class Chatbot(object):
         _, enc_vocab = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.enc'))
         inv_dec_vocab, _ = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.dec'))
 
-        model = ChatBotModel(True, config=self.cfg, batch_size=1)
+        model = ChatBotModel(config=self.cfg, forward_only=True, batch_size=1)
         model.build_graph()
 
         saver = tf.train.Saver()
@@ -267,6 +269,7 @@ class Chatbot(object):
 
 
 def main():
+    global cfg
     timestamp = time.strftime('%Y-%m-%d--%H_%M_%S')
     sys.stdout = Logger(timestamp)
 
@@ -275,22 +278,28 @@ def main():
                         default='train', help="mode. if not specified, it's in the train mode")
     parser.add_argument('--cornell', action='store_true', help="use the cornell movie dialogue corpus")
     parser.add_argument('--conversations', help="limit the number of conversations used in the dataset")
-    parser.add_argument('--use_model', help='specify name (timestamp) of a previously used model')
+    parser.add_argument('--model', help='specify name (timestamp) of a previously used model')
+
+    # TODO: default model should be the last one that was trained
     #TODO
     parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
+
+
 
     args = parser.parse_args()
     config.adapt_to_dataset(args.cornell)
 
-    if(args.use_model):
-        cfg['MODEL_NAME'] = args.use_model
+    if not os.path.exists(cfg['MODELS_PATH']):
+            os.makedirs(cfg['MODELS_PATH'])
+
+    if args.model:
+        cfg = config.load_cfg(args.model)
     else:
         cfg['MODEL_NAME'] = timestamp
         directory = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'])
         if not os.path.exists(directory):
             os.makedirs(directory)
-
-    config.adapt_paths_to_model()
+        config.adapt_paths_to_model()
 
 
     if args.cornell:
