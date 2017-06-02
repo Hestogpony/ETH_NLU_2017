@@ -1,0 +1,10 @@
+cornell_data/*
+cornell_processed/*
+cornell_checkpoints/*
+
+our_data/*
+our_processed/*
+our_checkpoints/*
+
+env/*
+log/*

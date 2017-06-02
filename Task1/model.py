@@ -186,6 +186,7 @@ class Model(object):
                     self.initial_cell: np.zeros((len(batch_idx), self.cfg["lstm_size"]))
                 }
 
+                print("Self train op" + str(self.train_op))
                 self.model_session.run(fetches=self.train_op, feed_dict=food)
 
                 # Log test loss every so often

@@ -32,9 +32,10 @@ def main():
     sys.stdout = Logger(timestamp)
 
     # Read train data
-    train_reader = Reader(buckets=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100], vocab_size=cfg["vocab_size"], max_turns=cfg["max_turns"])
+    train_reader = Reader(buckets=cfg["buckets"], vocab_size=cfg["vocab_size"], max_turns=cfg["max_turns"])
     train_reader.build_dict(cfg["dictionary_name"], cfg["path"]["train"])
     train_reader.read_data(cfg["path"]["train"])
+
 
     m = Model(cfg)
 
@@ -42,7 +43,7 @@ def main():
     m.build_forward_prop()
     m.build_backprop()
 
-    m.train((train_reader.dataset_enc, train_reader.dataset_dec), train_reader.buckets_with_ids, None)
+    m.train((train_reader.dataset_enc, train_reader.dataset_dec), train_reader.buckets_with_ids)
 
     # # Read evaluation data
     # eval_reader = Reader(vocab_size=cfg["vocab_size"], vocab_dict=train_reader.vocab_dict, max_turns=cfg["max_test_turns"])
