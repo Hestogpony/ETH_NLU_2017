@@ -17,9 +17,12 @@ See readme.md for instruction on how to run the starter code.
 from __future__ import print_function
 
 import time
+import os
 
 import numpy as np
 import tensorflow as tf
+
+import config
 
 # import config
 
@@ -36,6 +39,13 @@ class ChatBotModel(object):
         self.cfg = config
         self.fw_only = forward_only
         self.batch_size = batch_size
+
+    def save_model(self, sess):
+        saver = tf.train.Saver()
+        saver.save(sess, os.path.join(self.cfg['CPT_PATH'], 'chatbot'), global_step=self.global_step)
+        config.save_cfg(self.cfg)
+
+
 
     def sampled_loss(self,labels, inputs):
         labels = tf.reshape(labels, [-1, 1])

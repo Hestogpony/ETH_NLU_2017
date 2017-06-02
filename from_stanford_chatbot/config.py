@@ -1,3 +1,5 @@
+import pickle
+import os
 """ A neural chatbot using sequence to sequence model with
 attentional decoder.
 
@@ -18,6 +20,9 @@ See readme.md for instruction on how to run the starter code.
 # parameters for processing the dataset
 
 cfg = {
+    'MODELS_PATH': 'models',
+    'MODEL_NAME': '',
+
     'MAX_TURNS': 100,
     
     'THRESHOLD': 2,
@@ -26,7 +31,7 @@ cfg = {
     'START_ID': 2,
     'EOS_ID': 3,
     'TESTSET_SIZE': 10,
-    'BUCKETS': [(8, 10), (12, 14), (16, 19)],
+    'BUCKETS': [(8,10)], #[(8, 10), (12, 14), (16, 19)],
     'NUM_LAYERS': 3,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 64,
@@ -35,14 +40,13 @@ cfg = {
     'NUM_SAMPLES': 128 #512
 }
 
-USE_CORNELL = False
-
 def adapt_to_dataset(use_cornell):
     if use_cornell:
         cfg['DATA_PATH'] = 'cornell_data'
         cfg['CONVO_FILE'] = 'movie_conversations.txt'
         cfg['LINE_FILE'] = 'movie_lines.txt'
         cfg['OUTPUT_FILE'] = 'output_convo.txt'
+
         cfg['PROCESSED_PATH'] = 'cornell_processed'
         cfg['CPT_PATH'] = 'cornell_checkpoints'        
 
@@ -53,8 +57,27 @@ def adapt_to_dataset(use_cornell):
         cfg['CONVO_FILE'] = 'our_conversations.txt'
         cfg['LINE_FILE'] = 'Training_Shuffled_Dataset.txt'
         cfg['OUTPUT_FILE'] = 'our_output_convo.txt'
+
         cfg['PROCESSED_PATH'] = 'our_processed'
         cfg['CPT_PATH'] = 'our_checkpoints'
+
+def adapt_paths_to_model():
+    cfg['PROCESSED_PATH'] = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'], cfg['PROCESSED_PATH'])
+    cfg['CPT_PATH'] = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'], cfg['CPT_PATH'])
+
+
+def save_cfg(updated_config):
+    config_path = os.path.join(updated_config['MODELS_PATH'], updated_config['MODEL_NAME'], "config")
+    pickle.dump(updated_config , open(config_path, "wb"))
+    print(updated_config)
+    print("Configs saved in file: %s" % (config_path))
+
+# TODO
+
+def load_cfg(model_name):
+    loaded_cfg = pickle.load(open(model_name + ".config", "rb"))
+    print("Configs loaded from %s" % (model_name + ".config"))
+    return loaded_cfg
 
 # model parameters
 """ Train encoder length distribution:
@@ -86,5 +109,5 @@ These buckets size seem to work the best
 # TODO transfer this 
 # ENC_VOCAB = 215
 # DEC_VOCAB = 218
-ENC_VOCAB = 220
-DEC_VOCAB = 222
+# ENC_VOCAB = 220
+# DEC_VOCAB = 222
