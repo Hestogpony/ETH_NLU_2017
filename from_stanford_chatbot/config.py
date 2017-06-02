@@ -86,3 +86,5 @@ These buckets size seem to work the best
 # TODO transfer this 
 # ENC_VOCAB = 215
 # DEC_VOCAB = 218
+ENC_VOCAB = 220
+DEC_VOCAB = 222

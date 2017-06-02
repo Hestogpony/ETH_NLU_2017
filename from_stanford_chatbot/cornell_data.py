@@ -35,7 +35,7 @@ class Reader(object):
 
     def get_lines(self):
         id2line = {}
-        file_path = os.path.join(config.DATA_PATH, config.LINE_FILE)
+        file_path = os.path.join(self.cfg['DATA_PATH'], self.cfg['LINE_FILE'])
         with open(file_path, MODE_R) as f:
             lines = f.readlines()
             for line in lines:
@@ -48,12 +48,12 @@ class Reader(object):
 
     def get_convos(self):
         """ Get conversations from the raw data """
-        file_path = os.path.join(config.DATA_PATH, config.CONVO_FILE)
+        file_path = os.path.join(self.cfg['DATA_PATH'], self.cfg['CONVO_FILE'])
         convos = []
         with open(file_path, MODE_R) as f:
             lines = f.readlines()
-            if config.MAX_TURNS < len(lines):
-                lines = lines[:config.MAX_TURNS]
+            if self.cfg['MAX_TURNS'] < len(lines):
+                lines = lines[:self.cfg['MAX_TURNS']]
             for line in lines:
                 parts = line.split(' +++$+++ ')
                 if len(parts) == 4:
@@ -74,17 +74,17 @@ class Reader(object):
         assert len(questions) == len(answers)
         return questions, answers
 
-    def prepare_dataset(questions, answers):
+    def prepare_dataset(self, questions, answers):
         # create path to store all the train & test encoder & decoder
-        make_dir(config.PROCESSED_PATH)
+        self.make_dir(self.cfg['PROCESSED_PATH'])
 
         # random convos to create the test set
-        test_ids = random.sample([i for i in range(len(questions))],config.TESTSET_SIZE)
+        test_ids = random.sample([i for i in range(len(questions))], self.cfg['TESTSET_SIZE'])
 
         filenames = ['train.enc', 'train.dec', 'test.enc', 'test.dec']
         files = []
         for filename in filenames:
-            files.append(open(os.path.join(config.PROCESSED_PATH, filename),MODE_W))
+            files.append(open(os.path.join(self.cfg['PROCESSED_PATH'], filename),MODE_W))
 
         for i in range(len(questions)):
             if i in test_ids:
@@ -97,14 +97,14 @@ class Reader(object):
         for file in files:
             file.close()
 
-    def make_dir(path):
+    def make_dir(self, path):
         """ Create a directory if there isn't one already. """
         try:
             os.mkdir(path)
         except OSError:
             pass
 
-    def basic_tokenizer(line, normalize_digits=True):
+    def basic_tokenizer(self, line, normalize_digits=True):
         """ A basic tokenizer to tokenize text into tokens.
         Feel free to change this to suit your need. """
         line = re.sub('<u>', '', line)
@@ -123,14 +123,14 @@ class Reader(object):
                 words.append(token)
         return words
 
-    def build_vocab(filename, normalize_digits=True):
-        in_path = os.path.join(config.PROCESSED_PATH, filename)
-        out_path = os.path.join(config.PROCESSED_PATH, 'vocab.{}'.format(filename[-3:]))
+    def build_vocab(self, filename, normalize_digits=True):
+        in_path = os.path.join(self.cfg['PROCESSED_PATH'], filename)
+        out_path = os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.{}'.format(filename[-3:]))
 
         vocab = {}
         with open(in_path, MODE_R) as f:
             for line in f.readlines():
-                for token in basic_tokenizer(line):
+                for token in self.basic_tokenizer(line):
                     if not token in vocab:
                         vocab[token] = 0
                     vocab[token] += 1
@@ -143,34 +143,40 @@ class Reader(object):
             f.write('<\s>' + '\n')
             index = 4
             for word in sorted_vocab:
-                if vocab[word] < config.THRESHOLD:
-                    with open('config.py', MODE_A) as cf:
-                        if filename[-3:] == 'enc':
-                            cf.write('ENC_VOCAB = ' + str(index) + '\n')
-                        else:
-                            cf.write('DEC_VOCAB = ' + str(index) + '\n')
+                if vocab[word] < self.cfg['THRESHOLD']:
+                    # with open('config.py', MODE_A) as cf:
+                    #     if filename[-3:] == 'enc':
+                    #         cf.write('ENC_VOCAB = ' + str(index) + '\n')
+                    #     else:
+                    #         cf.write('DEC_VOCAB = ' + str(index) + '\n')
+                    if filename[-3:] == 'enc':
+                        self.cfg['ENC_VOCAB'] = index
+
+                    else:
+                        self.cfg['DEC_VOCAB'] = index
+                        print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
                     break
                 f.write(word + '\n')
                 index += 1
 
-    def load_vocab(vocab_path):
+    def load_vocab(self, vocab_path):
         with open(vocab_path, MODE_R) as f:
             words = f.read().splitlines()
         return words, {words[i]: i for i in range(len(words))}
 
-    def sentence2id(vocab, line):
-        return [vocab.get(token, vocab['<unk>']) for token in basic_tokenizer(line)]
+    def sentence2id(self, vocab, line):
+        return [vocab.get(token, vocab['<unk>']) for token in self.basic_tokenizer(line)]
 
-    def token2id(data, mode):
+    def token2id(self, data, mode):
         """ Convert all the tokens in the data into their corresponding
         index in the vocabulary. """
         vocab_path = 'vocab.' + mode
         in_path = data + '.' + mode
         out_path = data + '_ids.' + mode
 
-        _, vocab = load_vocab(os.path.join(config.PROCESSED_PATH, vocab_path))
-        in_file = open(os.path.join(config.PROCESSED_PATH, in_path), MODE_R)
-        out_file = open(os.path.join(config.PROCESSED_PATH, out_path), MODE_W)
+        _, vocab = self.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], vocab_path))
+        in_file = open(os.path.join(self.cfg['PROCESSED_PATH'], in_path), MODE_R)
+        out_file = open(os.path.join(self.cfg['PROCESSED_PATH'], out_path), MODE_W)
 
         lines = in_file.read().splitlines()
         for line in lines:
@@ -178,40 +184,40 @@ class Reader(object):
                 ids = [vocab['<s>']]
             else:
                 ids = []
-            ids.extend(sentence2id(vocab, line))
+            ids.extend(self.sentence2id(vocab, line))
             # ids.extend([vocab.get(token, vocab['<unk>']) for token in basic_tokenizer(line)])
             if mode == 'dec':
                 ids.append(vocab['<\s>'])
             out_file.write(' '.join(str(id_) for id_ in ids) + '\n')
 
-    def prepare_raw_data():
+    def prepare_raw_data(self):
         print('Preparing raw data into train set and test set ...')
-        id2line = get_lines()
-        convos = get_convos()
-        questions, answers = question_answers(id2line, convos)
-        prepare_dataset(questions, answers)
+        id2line = self.get_lines()
+        convos = self.get_convos()
+        questions, answers = self.question_answers(id2line, convos)
+        self.prepare_dataset(questions, answers)
 
-    def process_data():
+    def process_data(self):
         print('Preparing data to be model-ready ...')
-        build_vocab('train.enc')
-        build_vocab('train.dec')
-        token2id('train', 'enc')
-        token2id('train', 'dec')
-        token2id('test', 'enc')
-        token2id('test', 'dec')
+        self.build_vocab('train.enc')
+        self.build_vocab('train.dec')
+        self.token2id('train', 'enc')
+        self.token2id('train', 'dec')
+        self.token2id('test', 'enc')
+        self.token2id('test', 'dec')
 
-    def load_data(enc_filename, dec_filename, max_training_size=None):
-        encode_file = open(os.path.join(config.PROCESSED_PATH, enc_filename), MODE_R)
-        decode_file = open(os.path.join(config.PROCESSED_PATH, dec_filename), MODE_R)
+    def load_data(self, enc_filename, dec_filename, max_training_size=None):
+        encode_file = open(os.path.join(self.cfg['PROCESSED_PATH'], enc_filename), MODE_R)
+        decode_file = open(os.path.join(self.cfg['PROCESSED_PATH'], dec_filename), MODE_R)
         encode, decode = encode_file.readline(), decode_file.readline()
-        data_buckets = [[] for _ in config.BUCKETS]
+        data_buckets = [[] for _ in self.cfg['BUCKETS']]
         i = 0
         while encode and decode:
             if (i + 1) % 10000 == 0:
                 print("Bucketing conversation number", i)
             encode_ids = [int(id_) for id_ in encode.split()]
             decode_ids = [int(id_) for id_ in decode.split()]
-            for bucket_id, (encode_max_size, decode_max_size) in enumerate(config.BUCKETS):
+            for bucket_id, (encode_max_size, decode_max_size) in enumerate(self.cfg['BUCKETS']):
                 if len(encode_ids) <= encode_max_size and len(decode_ids) <= decode_max_size:
                     data_buckets[bucket_id].append([encode_ids, decode_ids])
                     break
@@ -219,10 +225,10 @@ class Reader(object):
             i += 1
         return data_buckets
 
-    def _pad_input(input_, size):
-        return input_ + [config.PAD_ID] * (size - len(input_))
+    def _pad_input(self, input_, size):
+        return input_ + [self.cfg['PAD_ID']] * (size - len(input_))
 
-    def _reshape_batch(inputs, size, batch_size):
+    def _reshape_batch(self, inputs, size, batch_size):
         """ Create batch-major inputs. Batch inputs are just re-indexed inputs
         """
         batch_inputs = []
@@ -232,10 +238,10 @@ class Reader(object):
         return batch_inputs
 
 
-    def get_batch(data_bucket, bucket_id, batch_size=1):
+    def get_batch(self, data_bucket, bucket_id, batch_size=1):
         """ Return one batch to feed into the model """
         # only pad to the max length of the bucket
-        encoder_size, decoder_size = config.BUCKETS[bucket_id]
+        encoder_size, decoder_size = self.cfg['BUCKETS'][bucket_id]
         encoder_inputs, decoder_inputs = [], []
 
         for _ in range(batch_size):
@@ -257,7 +263,7 @@ class Reader(object):
                 # the corresponding decoder is decoder_input shifted by 1 forward.
                 if length_id < decoder_size - 1:
                     target = decoder_inputs[batch_id][length_id + 1]
-                if length_id == decoder_size - 1 or target == config.PAD_ID:
+                if length_id == decoder_size - 1 or target == self.cfg['PAD_ID']:
                     batch_mask[batch_id] = 0.0
             batch_masks.append(batch_mask)
         return batch_encoder_inputs, batch_decoder_inputs, batch_masks

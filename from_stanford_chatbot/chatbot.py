@@ -256,6 +256,7 @@ def main():
     parser.add_argument('--cornell', action='store_true', help="use the cornell movie dialogue corpus")
     parser.add_argument('--conversations', help="limit the number of conversations used in the dataset")
     parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
+    # parser.add_argument()
 
     args = parser.parse_args()
     config.adapt_to_dataset(args.cornell)
