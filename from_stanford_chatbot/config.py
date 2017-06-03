@@ -45,7 +45,7 @@ cfg = {
 
     'STANDARD_SOFTMAX': False,
     'KEEP_PREV': False,
-
+    'EPOCHS': 100,
 
 }
 

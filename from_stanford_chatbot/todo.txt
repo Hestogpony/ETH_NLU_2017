@@ -1,5 +1,4 @@
 Problems:
-- solve vocabulary bug
 - <person> tag in our data gets split up into three tokens!
 - Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
@@ -15,6 +14,10 @@ Add weighting of padding to avoid training on padding loss?
 - Full run on the baseline
 - Measure/quantify the limitations of the baseline model
 
+
+###################################
 Stage2:
-- Re-include attention (one line)
+- Re-include attention (one line) - Should we do this now? Maybe that would help improve the quality of the model
 - extend model with other idea(s)
+
+-extend training to triples

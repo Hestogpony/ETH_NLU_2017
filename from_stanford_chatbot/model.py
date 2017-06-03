@@ -48,7 +48,8 @@ class ChatBotModel(object):
             print('Changed hidden size to %d' % self.cfg['HIDDEN_SIZE'])
 
     def save_model(self, sess):
-        print('Saving the model... ', end='')
+        print('Saving the model ... DO NOT TERMINATE NOW! ... ', end='')
+        sys.stdout.flush()
         if not self.cfg['KEEP_PREV']: # delete all previous model files to save disk space
             for f in glob.glob(os.path.join(self.cfg['CPT_PATH'], 'chatbot*')):
                 os.remove(f)
