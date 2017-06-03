@@ -152,7 +152,7 @@ class Reader(object):
                     #         cf.write('ENC_VOCAB = ' + str(index) + '\n')
                     #     else:
                     #         cf.write('DEC_VOCAB = ' + str(index) + '\n')
-\
+
                     if filename[-3:] == 'enc':
                         self.cfg['ENC_VOCAB'] = index
 
