@@ -24,23 +24,23 @@ cfg = {
     'MODEL_NAME': '',
 
     'MAX_TURNS': -1,
+    'TESTSET_SIZE': 100,
+    'TEST_MAX_LENGTH': 80,
     
-    'THRESHOLD': 2,
+    'THRESHOLD': 1, #2 # A word has to appear this many times to be part of the vocabulary. Can't be one
+
     'PAD_ID': 0,
     'UNK_ID': 1,
     'START_ID': 2,
     'EOS_ID': 3,
-    'TESTSET_SIZE': 10,
-    'BUCKETS': [(8,10), (100, 100)], #[(8, 10), (12, 14), (16, 19)],
+
+    'BUCKETS': [(8,10), (16, 19)], #[(8, 10), (12, 14), (16, 19)],
     'NUM_LAYERS': 3,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 64,
     'LR': 0.5,
     'MAX_GRAD_NORM': 5.0,
-    'NUM_SAMPLES': 128, #512
-
-    'TEST_MAX_SIZE': 80,
-    'TESTSET_SIZE': 100
+    'NUM_SAMPLES': 3, #512 # for sampled softmax loss
 
 }
 
@@ -73,7 +73,7 @@ def adapt_paths_to_model():
 def save_cfg(updated_config):
     config_path = os.path.join(updated_config['MODELS_PATH'], updated_config['MODEL_NAME'], "config")
     pickle.dump(updated_config , open(config_path, "wb"))
-    print("Configs saved in file: %s" % (config_path))
+    # print("Configs saved in file: %s" % (config_path))
 
 def load_cfg(model_name):
     config_path = os.path.join(cfg['MODELS_PATH'], model_name, "config")

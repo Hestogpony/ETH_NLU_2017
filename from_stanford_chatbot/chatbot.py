@@ -347,29 +347,43 @@ def main():
                         default='train', help="mode. if not specified, it's in the train mode")
     parser.add_argument('--cornell', action='store_true', help="use the cornell movie dialogue corpus")
     parser.add_argument('--conversations', help="limit the number of conversations used in the dataset")
-    parser.add_argument('--model', help='specify name (timestamp) of a previously used model')
+    parser.add_argument('--model', help='specify name (timestamp) of a previously used model. If none is provided then the newest model available will be used.')
     parser.add_argument('test_file', type=str, nargs='?')
-
-    # TODO: default model should be the last one that was trained
-    #TODO
+    # parser.add_argument('')
     parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
 
 
     args = parser.parse_args()
-    config.adapt_to_dataset(args.cornell)
 
     if not os.path.exists(cfg['MODELS_PATH']):
             os.makedirs(cfg['MODELS_PATH'])
 
+
+    ########### load old config file if necessary ############
     if args.model:
+        # load the corresponding config file
         cfg = config.load_cfg(args.model)
     else:
-        cfg['MODEL_NAME'] = timestamp
-        directory = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'])
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        config.adapt_paths_to_model()
+        if args.mode == 'chat':
+            # default mode: load the config of the last used model
+            saved_models = [name for name in os.listdir(cfg['MODELS_PATH']) if os.path.isdir(os.path.join(cfg['MODELS_PATH'],name))]
+            saved_models = sorted(saved_models) # sorted in ascending order 
+            last_model = saved_models[-1]
+            cfg = config.load_cfg(last_model)
+        else:
+            # create a new model
+            config.adapt_to_dataset(args.cornell)
+            cfg['MODEL_NAME'] = timestamp
+            directory = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'])
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            config.adapt_paths_to_model()
 
+    ####### process other commmand line arguments ##############
+    if args.conversations:
+        cfg['MAX_TURNS'] = int(args.conversations)
+    if args.test_conversations:
+        cfg['TESTSET_SIZE'] = int(args.test_conversations)
 
     if args.cornell:
         import cornell_data as data
@@ -377,10 +391,11 @@ def main():
         import our_data as data
 
     reader = data.Reader(cfg)
-    if not os.path.isdir(cfg['PROCESSED_PATH']):
+    if not os.path.isdir(cfg['PROCESSED_PATH']): # Will not be done if we're in test mode, chat mode or continue training
         reader.prepare_raw_data()
         reader.process_data()
     print('Data ready!')
+
     # create checkpoints folder if there isn't one already
     reader.make_dir(cfg['CPT_PATH'])
 
