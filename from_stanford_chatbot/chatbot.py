@@ -23,6 +23,7 @@ import argparse
 import random
 import sys
 import time
+import shutil
 
 import numpy as np
 import tensorflow as tf
@@ -48,7 +49,8 @@ class Logger(object):
         #this flush method is needed for python 3 compatibility.
         #this handles the flush command by doing nothing.
         #you might want to specify some extra behavior here.
-        pass
+        self.terminal.flush()
+        self.log.flush()
 
 
 
@@ -134,10 +136,19 @@ class Chatbot(object):
             return 30
         return 100
 
-    def _check_restore_parameters(self, saver):
+    def _check_restore_parameters(self, saver, iteration=None):
         """ Restore the previously trained parameters if there are any. """
         ckpt = tf.train.get_checkpoint_state(os.path.dirname(self.cfg['CPT_PATH'] + '/checkpoint'))
         if ckpt and ckpt.model_checkpoint_path:
+            # Load model of intermediate training stage
+            if iteration:
+                tmp = ckpt.model_checkpoint_path.rstrip('1234567890') + str(iteration)
+                print(tmp)
+                if os.path.isfile(tmp + ".index"):
+                    ckpt.model_checkpoint_path = tmp
+                else:
+                    sys.stderr.write('The model at iteration %d you want to load does not exist\n' % iteration)
+                    sys.exit()
             print("Loading parameters for the Chatbot")
             saver.restore(self.sess, ckpt.model_checkpoint_path)
         else:
@@ -222,7 +233,7 @@ class Chatbot(object):
         # Print out sentence corresponding to outputs.
         return " ".join([tf.compat.as_str(inv_dec_vocab[output]) for output in outputs])
 
-    def chat(self):
+    def chat(self, model_iteration=None):
         """ in test mode, we don't to create the backward path
         """
         _, enc_vocab = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.enc'))
@@ -234,7 +245,7 @@ class Chatbot(object):
         saver = tf.train.Saver()
 
         self.sess.run(tf.global_variables_initializer())
-        self._check_restore_parameters(saver)
+        self._check_restore_parameters(saver, iteration=model_iteration)
         output_file = open(os.path.join(self.cfg['PROCESSED_PATH'], self.cfg['OUTPUT_FILE']), 'a+')
 
         # Decode from standard input.
@@ -268,7 +279,7 @@ class Chatbot(object):
         output_file.write('=============================================\n')
         output_file.close()
 
-    def test_perplexity(self, inpath):
+    def test_perplexity(self, inpath, model_iteration=None):
         """
         <FL> Mostly the same setup as chat(), except we read from a file.
         """
@@ -289,7 +300,7 @@ class Chatbot(object):
 
         saver = tf.train.Saver()
         self.sess.run(tf.global_variables_initializer())
-        self._check_restore_parameters(saver)
+        self._check_restore_parameters(saver, iteration=model_iteration)
 
         # Right now a triple A B C becomes two pairs
         # A B and B C. So we first run A, compare against B, and then run B and
@@ -348,12 +359,17 @@ def main():
     parser.add_argument('--cornell', action='store_true', help="use the cornell movie dialogue corpus")
     parser.add_argument('--conversations', help="limit the number of conversations used in the dataset")
     parser.add_argument('--model', help='specify name (timestamp) of a previously used model. If none is provided then the newest model available will be used.')
+    parser.add_argument('--load_iter', help='if you do not want to use an intermediate version of the trained network, specify the iteration number here')
     parser.add_argument('test_file', type=str, nargs='?')
-    # parser.add_argument('')
     parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
+    parser.add_argument('--softmax', action='store_true', help='use standard softmax loss instead of sampled softmax loss')
+    parser.add_argument('--clear', action='store_true', help="delete all existing models to free up disk space")
 
 
     args = parser.parse_args()
+
+    if args.clear:
+        shutil.rmtree(cfg['MODELS_PATH'])
 
     if not os.path.exists(cfg['MODELS_PATH']):
             os.makedirs(cfg['MODELS_PATH'])
@@ -384,6 +400,8 @@ def main():
         cfg['MAX_TURNS'] = int(args.conversations)
     if args.test_conversations:
         cfg['TESTSET_SIZE'] = int(args.test_conversations)
+    if args.softmax:
+        cfg['STANDARD_SOFTMAX'] = args.softmax
 
     if args.cornell:
         import cornell_data as data
@@ -403,9 +421,9 @@ def main():
     if args.mode == 'train':
         bot.train()
     elif args.mode == 'chat':
-        bot.chat()
+        bot.chat(int(args.load_iter))
     elif args.mode == 'test':
-        bot.test_perplexity(args.test_file)
+        bot.test_perplexity(args.test_file, int(args.load_iter))
 
 if __name__ == '__main__':
     main()

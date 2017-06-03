@@ -42,6 +42,8 @@ cfg = {
     'MAX_GRAD_NORM': 5.0,
     'NUM_SAMPLES': 512, #512 # for sampled softmax loss
 
+    'STANDARD_SOFTMAX': False,
+
 }
 
 def adapt_to_dataset(use_cornell):
@@ -55,8 +57,6 @@ def adapt_to_dataset(use_cornell):
         cfg['CPT_PATH'] = 'cornell_checkpoints'        
 
     else:
-        # <FL> I included as comments the variables that we don't need in our reader
-        # just to provide some reference
         cfg['DATA_PATH'] = 'our_data'
         cfg['CONVO_FILE'] = 'our_conversations.txt'
         cfg['LINE_FILE'] = 'Training_Shuffled_Dataset.txt'

@@ -2,7 +2,12 @@ Problems:
 - solve vocabulary bug
 - <person> tag in our data gets split up into three tokens!
 
-Add weighting of padding to avoid training on padding loss
+
+Implement some kind of validation that is run once in a while to do early stopping!!!
+
+
+
+Add weighting of padding to avoid training on padding loss?
 
 - Adapt Cornell dataset to test mode
 
