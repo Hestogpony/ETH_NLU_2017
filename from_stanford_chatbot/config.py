@@ -23,7 +23,7 @@ cfg = {
     'MODELS_PATH': 'models',
     'MODEL_NAME': '',
 
-    'MAX_TURNS': 100,
+    'MAX_TURNS': -1,
     
     'THRESHOLD': 2,
     'PAD_ID': 0,
