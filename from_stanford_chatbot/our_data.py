@@ -30,7 +30,6 @@ MODE_W = 'w'
 MODE_A = 'a'
 
 
-
 class Reader(object):
     def __init__(self, config):
         self.cfg = config

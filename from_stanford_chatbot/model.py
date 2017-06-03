@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import time
 import os
+import sys
 
 import numpy as np
 import tensorflow as tf
@@ -40,6 +41,11 @@ class ChatBotModel(object):
         self.fw_only = forward_only
         self.batch_size = batch_size
 
+        # <BG> dirty fix for regular softmax loss
+        if self.cfg["STANDARD_SOFTMAX"]:
+            self.cfg['HIDDEN_SIZE'] = self.cfg['DEC_VOCAB']
+            print('Changed hidden size to %d' % self.cfg['HIDDEN_SIZE'])
+
     def save_model(self, sess):
         saver = tf.train.Saver()
         saver.save(sess, os.path.join(self.cfg['CPT_PATH'], 'chatbot'), global_step=self.global_step)
@@ -49,8 +55,14 @@ class ChatBotModel(object):
 
     def sampled_loss(self,labels, inputs):
         labels = tf.reshape(labels, [-1, 1])
-        return tf.nn.sampled_softmax_loss(tf.transpose(SAMPLED_w), SAMPLED_b, labels, inputs,
+        # <BG> give the option for standard softmax with cross entropy
+        if self.cfg["STANDARD_SOFTMAX"]:
+            labels = tf.one_hot(indices=tf.cast(labels, dtype=tf.int32), depth=self.cfg['DEC_VOCAB'])
+            return tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=inputs)
+        else:
+            return tf.nn.sampled_softmax_loss(tf.transpose(SAMPLED_w), SAMPLED_b, labels, inputs,
                                         self.cfg['NUM_SAMPLES'], self.cfg['DEC_VOCAB'])
+    # TODO include regular softmax loss
 
     def _create_placeholders(self):
         # Feeds for inputs. It's a list of placeholders
@@ -77,6 +89,9 @@ class ChatBotModel(object):
             SAMPLED_w = tf.get_variable('proj_w', [self.cfg['HIDDEN_SIZE'], self.cfg['DEC_VOCAB']])
             SAMPLED_b = tf.get_variable('proj_b', [self.cfg['DEC_VOCAB']])
             self.output_projection = (SAMPLED_w, SAMPLED_b)
+        else:
+            sys.stderr.write("Sampled softmax is set to sample from more output nodes than the size of the output layer")
+            sys.exit()
 
         single_cell = tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE'])
         self.cell = tf.contrib.rnn.MultiRNNCell([single_cell] * self.cfg['NUM_LAYERS'])

@@ -54,9 +54,13 @@ class Reader(object):
         file_path = os.path.join(self.cfg['DATA_PATH'], self.cfg['CONVO_FILE'])
         convos = []
         with open(file_path, MODE_R, encoding = ENCODING) as f:
-            lines = f.readlines()
-            if self.cfg['MAX_TURNS'] < len(lines):
-                lines = lines[:self.cfg['MAX_TURNS']]
+            if not self.cfg['MAX_TURNS'] or self.cfg['MAX_TURNS'] <= 0:
+                lines = f.readlines()
+            else:
+                lines = []
+                for i in range(self.cfg['MAX_TURNS']):
+                    lines.append(f.readline())
+
             for line in lines:
                 parts = line.split(' +++$+++ ')
                 if len(parts) == 4:
@@ -152,17 +156,15 @@ class Reader(object):
                     #         cf.write('ENC_VOCAB = ' + str(index) + '\n')
                     #     else:
                     #         cf.write('DEC_VOCAB = ' + str(index) + '\n')
-
-                    if filename[-3:] == 'enc':
-                        self.cfg['ENC_VOCAB'] = index
-
-                    else:
-
-                        self.cfg['DEC_VOCAB'] = index
-                        print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
                     break
                 f.write(word + '\n')
                 index += 1
+            if filename[-3:] == 'enc':
+                self.cfg['ENC_VOCAB'] = index
+                print('Enc vocab ' + str(self.cfg['ENC_VOCAB']))
+            else:
+                self.cfg['DEC_VOCAB'] = index
+                print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
 
     def load_vocab(self, vocab_path):
         with open(vocab_path, MODE_R, encoding = ENCODING) as f:
