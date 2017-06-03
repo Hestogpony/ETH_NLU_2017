@@ -17,7 +17,7 @@ See readme.md for instruction on how to run the starter code.
 
 # parameters for processing the dataset
 
-USE_CORNELL = False
+USE_CORNELL = True
 
 if USE_CORNELL:
     DATA_PATH = 'cornell_data'
@@ -79,3 +79,5 @@ ENC_VOCAB = 24471
 DEC_VOCAB = 24671
 ENC_VOCAB = 1292
 DEC_VOCAB = 1320
+ENC_VOCAB = 25882
+DEC_VOCAB = 26105

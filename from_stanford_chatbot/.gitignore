@@ -8,3 +8,4 @@ our_checkpoints/*
 
 env/*
 log/*
+pretrained_stuff/*
