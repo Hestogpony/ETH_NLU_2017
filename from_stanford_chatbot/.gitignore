@@ -6,5 +6,8 @@ our_data/*
 our_processed/*
 our_checkpoints/*
 
+models/*
+log/*
+
 env/*
 log/*
