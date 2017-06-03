@@ -17,7 +17,7 @@ See readme.md for instruction on how to run the starter code.
 
 # parameters for processing the dataset
 
-USE_CORNELL = False
+USE_CORNELL = True
 
 if USE_CORNELL:
     DATA_PATH = 'cornell_data'
@@ -29,14 +29,14 @@ if USE_CORNELL:
 else:
     # <FL> I included as comments the variables that we don't need in our reader
     # just to provide some reference
-    DATA_PATH = 'our_data'
+    DATA_PATH = './data'
     # CONVO_FILE = None
     LINE_FILE = 'Training_Shuffled_Dataset.txt'
-    # OUTPUT_FILE = None
+    OUTPUT_FILE = "our_convo.txt"
     PROCESSED_PATH = 'our_processed'
     CPT_PATH = 'our_checkpoints'
 
-    MAX_TURNS = 1000
+    MAX_TURNS = -1
 
 # <FL> When do we cut off a sentence
 TEST_MAX_SIZE = 80
@@ -79,3 +79,9 @@ ENC_VOCAB = 24471
 DEC_VOCAB = 24671
 ENC_VOCAB = 1292
 DEC_VOCAB = 1320
+ENC_VOCAB = 34680
+DEC_VOCAB = 34538
+ENC_VOCAB = 25880
+DEC_VOCAB = 26100
+ENC_VOCAB = 25880
+DEC_VOCAB = 26100

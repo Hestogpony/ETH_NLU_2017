@@ -29,10 +29,12 @@ MODE_R = 'r'
 MODE_W = 'w'
 MODE_A = 'a'
 
+ENCODING = 'latin-1'
+
 def get_lines():
     id2line = {}
     file_path = os.path.join(config.DATA_PATH, config.LINE_FILE)
-    with open(file_path, MODE_R) as f:
+    with open(file_path, MODE_R, encoding=ENCODING) as f:
         lines = f.readlines()
         for line in lines:
             parts = line.split(' +++$+++ ')
@@ -46,7 +48,7 @@ def get_convos():
     """ Get conversations from the raw data """
     file_path = os.path.join(config.DATA_PATH, config.CONVO_FILE)
     convos = []
-    with open(file_path, MODE_R) as f:
+    with open(file_path, MODE_R, encoding=ENCODING) as f:
         for line in f.readlines():
             parts = line.split(' +++$+++ ')
             if len(parts) == 4:
@@ -77,7 +79,7 @@ def prepare_dataset(questions, answers):
     filenames = ['train.enc', 'train.dec', 'test.enc', 'test.dec']
     files = []
     for filename in filenames:
-        files.append(open(os.path.join(config.PROCESSED_PATH, filename),MODE_W))
+        files.append(open(os.path.join(config.PROCESSED_PATH, filename),MODE_W,encoding=ENCODING))
 
     for i in range(len(questions)):
         if i in test_ids:
@@ -121,7 +123,7 @@ def build_vocab(filename, normalize_digits=True):
     out_path = os.path.join(config.PROCESSED_PATH, 'vocab.{}'.format(filename[-3:]))
 
     vocab = {}
-    with open(in_path, MODE_R) as f:
+    with open(in_path, MODE_R, encoding=ENCODING) as f:
         for line in f.readlines():
             for token in basic_tokenizer(line):
                 if not token in vocab:
@@ -129,7 +131,7 @@ def build_vocab(filename, normalize_digits=True):
                 vocab[token] += 1
 
     sorted_vocab = sorted(vocab, key=vocab.get, reverse=True)
-    with open(out_path, MODE_W) as f:
+    with open(out_path, MODE_W, encoding=ENCODING) as f:
         f.write('<pad>' + '\n')
         f.write('<unk>' + '\n')
         f.write('<s>' + '\n')
@@ -137,7 +139,7 @@ def build_vocab(filename, normalize_digits=True):
         index = 4
         for word in sorted_vocab:
             if vocab[word] < config.THRESHOLD:
-                with open('config.py', MODE_A) as cf:
+                with open('config.py', MODE_A, encoding=ENCODING) as cf:
                     if filename[-3:] == 'enc':
                         cf.write('ENC_VOCAB = ' + str(index) + '\n')
                     else:
@@ -147,7 +149,7 @@ def build_vocab(filename, normalize_digits=True):
             index += 1
 
 def load_vocab(vocab_path):
-    with open(vocab_path, MODE_R) as f:
+    with open(vocab_path, MODE_R, encoding=ENCODING) as f:
         words = f.read().splitlines()
     return words, {words[i]: i for i in range(len(words))}
 
@@ -162,8 +164,8 @@ def token2id(data, mode):
     out_path = data + '_ids.' + mode
 
     _, vocab = load_vocab(os.path.join(config.PROCESSED_PATH, vocab_path))
-    in_file = open(os.path.join(config.PROCESSED_PATH, in_path), MODE_R)
-    out_file = open(os.path.join(config.PROCESSED_PATH, out_path), MODE_W)
+    in_file = open(os.path.join(config.PROCESSED_PATH, in_path), MODE_R, encoding=ENCODING)
+    out_file = open(os.path.join(config.PROCESSED_PATH, out_path), MODE_W, encoding=ENCODING)
 
     lines = in_file.read().splitlines()
     for line in lines:
@@ -194,8 +196,8 @@ def process_data():
     token2id('test', 'dec')
 
 def load_data(enc_filename, dec_filename, max_training_size=None):
-    encode_file = open(os.path.join(config.PROCESSED_PATH, enc_filename), MODE_R)
-    decode_file = open(os.path.join(config.PROCESSED_PATH, dec_filename), MODE_R)
+    encode_file = open(os.path.join(config.PROCESSED_PATH, enc_filename), MODE_R, encoding=ENCODING)
+    decode_file = open(os.path.join(config.PROCESSED_PATH, dec_filename), MODE_R, encoding=ENCODING)
     encode, decode = encode_file.readline(), decode_file.readline()
     data_buckets = [[] for _ in config.BUCKETS]
     i = 0
