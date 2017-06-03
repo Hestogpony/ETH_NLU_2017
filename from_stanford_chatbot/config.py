@@ -27,20 +27,20 @@ cfg = {
     'TESTSET_SIZE': 100,
     'TEST_MAX_LENGTH': 80,
     
-    'THRESHOLD': 1, #2 # A word has to appear this many times to be part of the vocabulary. Can't be one
+    'THRESHOLD': 2, #2 # A word has to appear this many times to be part of the vocabulary. Can't be one
 
     'PAD_ID': 0,
     'UNK_ID': 1,
     'START_ID': 2,
     'EOS_ID': 3,
 
-    'BUCKETS': [(8,10), (16, 19)], #[(8, 10), (12, 14), (16, 19)],
+    'BUCKETS': [(6, 8), (8, 10), (10, 12), (13, 15), (16, 19), (19, 22), (23, 26), (29, 32), (39, 44),(50,50),(60,60)],#[(8,10), (16, 19)], #[(8, 10), (12, 14), (16, 19)],
     'NUM_LAYERS': 3,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 64,
     'LR': 0.5,
     'MAX_GRAD_NORM': 5.0,
-    'NUM_SAMPLES': 3, #512 # for sampled softmax loss
+    'NUM_SAMPLES': 512, #512 # for sampled softmax loss
 
 }
 
