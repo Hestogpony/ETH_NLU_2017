@@ -4,7 +4,7 @@ import math
 import config
 
 
-def perplexity(predicted_softmax_vecs, input_sentence, word_dictionary):
+def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
     """
     predicted_softmax_vecs      sentence length x 1 x vocab_size
     input_sentence              dim 30 , vector of words in sentence
@@ -14,7 +14,7 @@ def perplexity(predicted_softmax_vecs, input_sentence, word_dictionary):
     i = 0                       # Word index in current sentence
     perp_sum = 0
 
-    while i < len(input_sentence) and input_sentence[i] != config.PAD_ID and i < config.TEST_MAX_SIZE: # only 29 output nodes
+    while i < len(input_sentence) and input_sentence[i] != cfg['PAD_ID'] and i < cfg['TEST_MAX_SIZE']: # only 29 output nodes
 
         # These pred
         word_probability = predicted_softmax_vecs[i][0][input_sentence[i]]

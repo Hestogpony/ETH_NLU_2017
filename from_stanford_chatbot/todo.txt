@@ -1,0 +1,11 @@
+- Include command line options
+- Check data reading problems
+- Save trained models with timestamp
+- 
+
+- Full run on the baseline
+- Measure/quantify the limitations of the baseline model
+
+Stage2:
+- Re-include attention (one line)
+- extend model with other idea(s)
