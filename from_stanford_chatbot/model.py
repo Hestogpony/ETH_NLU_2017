@@ -100,7 +100,7 @@ class ChatBotModel(object):
         print('Creating loss... \nIt might take a couple of minutes depending on how many buckets you have.')
         start = time.time()
         def _seq2seq_f(encoder_inputs, decoder_inputs, do_decode):
-            return tf.contrib.legacy_seq2seq.embedding_rnn_seq2seq(
+            return tf.contrib.legacy_seq2seq.embedding_attention_seq2seq(
                     encoder_inputs, decoder_inputs, self.cell,
                     num_encoder_symbols=self.cfg['ENC_VOCAB'],
                     num_decoder_symbols=self.cfg['DEC_VOCAB'],
