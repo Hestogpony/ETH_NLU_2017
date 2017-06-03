@@ -32,7 +32,8 @@ cfg = {
     'START_ID': 2,
     'EOS_ID': 3,
     'TESTSET_SIZE': 10,
-    'BUCKETS': [(8,10), (100, 100)], #[(8, 10), (12, 14), (16, 19)],
+    # I am using another bucket that is provided in the stanford tutorials 
+    'BUCKETS': BUCKETS = [(6, 8), (8, 10), (10, 12), (13, 15), (16, 19), (19, 22), (23, 26), (29, 32), (39, 44),(50,50),(60,60)],#[(10,10), (20,20), (30, 30)(100, 100)], #[(8, 10), (12, 14), (16, 19)],
     'NUM_LAYERS': 3,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 64,
