@@ -19,6 +19,7 @@ from __future__ import print_function
 import time
 import os
 import sys
+import glob
 
 import numpy as np
 import tensorflow as tf
@@ -47,9 +48,15 @@ class ChatBotModel(object):
             print('Changed hidden size to %d' % self.cfg['HIDDEN_SIZE'])
 
     def save_model(self, sess):
+        print('Saving the model... ', end='')
+        if not self.cfg['KEEP_PREV']: # delete all previous model files to save disk space
+            for f in glob.glob(os.path.join(self.cfg['CPT_PATH'], 'chatbot*')):
+                os.remove(f)
+
         saver = tf.train.Saver()
         saver.save(sess, os.path.join(self.cfg['CPT_PATH'], 'chatbot'), global_step=self.global_step)
         config.save_cfg(self.cfg)
+        print('Saved!')
 
 
 

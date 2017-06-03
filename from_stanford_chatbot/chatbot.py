@@ -200,7 +200,6 @@ class Chatbot(object):
                 start = time.time()
                 total_loss = 0
                 model.save_model(sess=self.sess)
-                # saver.save(self.sess, os.path.join(self.cfg['CPT_PATH'], 'chatbot'), global_step=model.global_step)
                 if iteration % (10 * skip_step) == 0:
                     # Run evals on development set and print their loss
                     self._eval_test_set(model, test_buckets)
@@ -364,6 +363,7 @@ def main():
     parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
     parser.add_argument('--softmax', action='store_true', help='use standard softmax loss instead of sampled softmax loss')
     parser.add_argument('--clear', action='store_true', help="delete all existing models to free up disk space")
+    parser.add_argument('--keep_prev', action='store_true', help='keep only the most recent version of the trained network')
 
 
     args = parser.parse_args()
@@ -402,7 +402,12 @@ def main():
         cfg['TESTSET_SIZE'] = int(args.test_conversations)
     if args.softmax:
         cfg['STANDARD_SOFTMAX'] = args.softmax
+    if args.keep_prev:
+        cfg['KEEP_PREV'] = True
+    if args.load_iter:
+        args.load_iter = int(args.load_iter)
 
+    ################ read data #################
     if args.cornell:
         import cornell_data as data
     else:
@@ -414,6 +419,8 @@ def main():
         reader.process_data()
     print('Data ready!')
 
+
+    ########### start using the actual model##################
     # create checkpoints folder if there isn't one already
     reader.make_dir(cfg['CPT_PATH'])
 
@@ -421,9 +428,9 @@ def main():
     if args.mode == 'train':
         bot.train()
     elif args.mode == 'chat':
-        bot.chat(int(args.load_iter))
+        bot.chat(args.load_iter)
     elif args.mode == 'test':
-        bot.test_perplexity(args.test_file, int(args.load_iter))
+        bot.test_perplexity(args.test_file, args.load_iter)
 
 if __name__ == '__main__':
     main()

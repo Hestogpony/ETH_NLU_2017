@@ -1,6 +1,7 @@
 Problems:
 - solve vocabulary bug
 - <person> tag in our data gets split up into three tokens!
+- Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
 
 Implement some kind of validation that is run once in a while to do early stopping!!!
