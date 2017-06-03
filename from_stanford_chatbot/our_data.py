@@ -47,7 +47,6 @@ class Reader(object):
         input_data_lines = [x.replace('\n', '') for x in input_data_lines]
         input_data_lines = [x for x in input_data_lines if len(x) > 0]
 
-        print(input_data_lines)
         for data_line in input_data_lines:
             input_sentences = data_line.split('\t')
 
