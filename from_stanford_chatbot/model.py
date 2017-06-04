@@ -19,6 +19,7 @@ from __future__ import print_function
 import time
 import os
 import sys
+import glob
 
 import numpy as np
 import tensorflow as tf
@@ -47,9 +48,16 @@ class ChatBotModel(object):
             print('Changed hidden size to %d' % self.cfg['HIDDEN_SIZE'])
 
     def save_model(self, sess):
+        print('Saving the model ... DO NOT TERMINATE NOW! ... ', end='')
+        sys.stdout.flush()
+        if not self.cfg['KEEP_PREV']: # delete all previous model files to save disk space
+            for f in glob.glob(os.path.join(self.cfg['CPT_PATH'], 'chatbot*')):
+                os.remove(f)
+
         saver = tf.train.Saver()
         saver.save(sess, os.path.join(self.cfg['CPT_PATH'], 'chatbot'), global_step=self.global_step)
         config.save_cfg(self.cfg)
+        print('Saved!')
 
 
 
@@ -93,14 +101,22 @@ class ChatBotModel(object):
             sys.stderr.write("Sampled softmax is set to sample from more output nodes than the size of the output layer")
             sys.exit()
 
-        single_cell = tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE'])
+
+        # Dropout Wrapper might not work with the tf.contrib version of GRU
+        single_cell = tf.contrib.rnn.DropoutWrapper(
+                tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE']),
+                # rnn_cell.BasicLSTMCell(hidden_size),
+                input_keep_prob=self.cfg['DROPOUT_RATE'],
+                output_keep_prob=self.cfg['DROPOUT_RATE'])
+
+        # single_cell = tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE'])
         self.cell = tf.contrib.rnn.MultiRNNCell([single_cell] * self.cfg['NUM_LAYERS'])
 
     def _create_loss(self):
         print('Creating loss... \nIt might take a couple of minutes depending on how many buckets you have.')
         start = time.time()
         def _seq2seq_f(encoder_inputs, decoder_inputs, do_decode):
-            return tf.contrib.legacy_seq2seq.embedding_rnn_seq2seq(
+            return tf.contrib.legacy_seq2seq.embedding_attention_seq2seq(
                     encoder_inputs, decoder_inputs, self.cell,
                     num_encoder_symbols=self.cfg['ENC_VOCAB'],
                     num_decoder_symbols=self.cfg['DEC_VOCAB'],

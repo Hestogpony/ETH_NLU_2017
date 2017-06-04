@@ -20,32 +20,42 @@ See readme.md for instruction on how to run the starter code.
 # parameters for processing the dataset
 
 
+# <BG> Original parameters are are copied to comments in case of changes 
+
+
 cfg = {
     'MODELS_PATH': 'models',
     'MODEL_NAME': '',
 
     'MAX_TURNS': -1,
-    'TESTSET_SIZE': 100,
-    'TEST_MAX_LENGTH': 80,
+    'EVAL_MULTIPLICATOR': 1,
+
+    'TESTSET_SIZE': 100, # 25000    # Size of the evaluation set
+    'TEST_MAX_LENGTH': 80, # Maximum length of sentences in the test set
     
-    'THRESHOLD': 2, #2 # A word has to appear this many times to be part of the vocabulary. Can't be one
+    'THRESHOLD': 2, #2      # A word has to appear this many times to be part of the vocabulary
 
     'PAD_ID': 0,
     'UNK_ID': 1,
     'START_ID': 2,
     'EOS_ID': 3,
 
+
     'BUCKETS': [(6, 8), (8, 10), (10, 12), (13, 15), (16, 19), (19, 22), (23, 26), (29, 32), (39, 44),(50,50),(60,60)],#[(8,10), (16, 19)], #[(8, 10), (12, 14), (16, 19)],
 
     'NUM_LAYERS': 3,
+
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 64,
     'LR': 0.5,
     'MAX_GRAD_NORM': 5.0,
-    'NUM_SAMPLES': 512, #512 # for sampled softmax loss
+    'NUM_SAMPLES': 3, #512      # for sampled softmax loss
 
 
     'STANDARD_SOFTMAX': False,
+    'KEEP_PREV': False,
+    'EPOCHS': 100,
+    'DROPOUT_RATE': 0.3,
 
 
 }
@@ -104,20 +114,7 @@ These buckets size seem to work the best
 # BUCKETS = [(8, 10), (12, 14), (16, 19), (23, 26), (39, 43)]
 
 
+# <BG> original vocab sizes on the Cornell data set
 # ENC_VOCAB = 24471
 # DEC_VOCAB = 24671
-# ENC_VOCAB = 1292
-# DEC_VOCAB = 1320
-# ENC_VOCAB = 282
-# DEC_VOCAB = 237
-# ENC_VOCAB = 25889
-# DEC_VOCAB = 26107
-
-
-
-# TODO transfer this 
-# ENC_VOCAB = 215
-# DEC_VOCAB = 218
-# ENC_VOCAB = 220
-# DEC_VOCAB = 222
 
