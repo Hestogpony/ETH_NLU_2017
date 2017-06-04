@@ -60,6 +60,43 @@ class Chatbot(object):
         self.reader = reader
         self.sess = tf.Session()
 
+
+
+    ########TO LOAD THE PRETRAIN_WORDDING!!!TURN IT OFF IF IT BEHAVING BADLY#########
+    def load_embbedings(self, sess):
+        """ Initialize embeddings with pre-trained word2vec vectors
+        Will modify the embedding weights of the current loaded model
+        Uses the GoogleNews pre-trained values (path hardcoded)
+        """
+
+        # Fetch embedding variables from model
+        with tf.variable_scope("embedding_rnn_seq2seq/rnn/embedding_wrapper", reuse=True):
+            em_in = tf.get_variable("embedding")
+        with tf.variable_scope("embedding_rnn_seq2seq/embedding_rnn_decoder", reuse=True):
+            em_out = tf.get_variable("embedding")
+
+        # Disable training for embeddings
+        variables = tf.get_collection_ref(tf.GraphKeys.TRAINABLE_VARIABLES)
+        variables.remove(em_in)
+        variables.remove(em_out)
+
+        pretrained_folder="pretrained_stuff"
+        modelname = "pretrain_model"
+
+        model - load_model(pretrained_folder+'/'+modelname, binary = True)
+
+        embedding_matrix_trained = model.syn0
+
+
+        print("Loaded the pretrained word embbedings from model")
+
+         # Initialize input and output embeddings
+        sess.run(em_in.assign(embedding_matrix_trained))
+        sess.run(em_out.assign(embedding_matrix_trained))
+
+
+
+
     def _get_random_bucket(self, train_buckets_scale):
         """ Get a random bucket from which to choose a training sample """
         rand = random.random()
@@ -180,7 +217,18 @@ class Chatbot(object):
 
         print('Running session')
         self.sess.run(tf.global_variables_initializer())
+
+        ###########LOAD THE EMBBEDING FROM THE WORD2VEC##########
+
+        #self.load_embbedings(self.sess)
+
+
+
+
         self._check_restore_parameters(saver)
+
+
+
 
         iteration = model.global_step.eval(session=self.sess)
         total_loss = 0
