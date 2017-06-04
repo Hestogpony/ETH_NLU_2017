@@ -138,7 +138,7 @@ class Chatbot(object):
         """ How many steps should the model train before it saves all the weights. """
         # if iteration < 100:
         #     return 30
-        return 10
+        return self.cfg['SKIP_STEP']
 
     def _check_restore_parameters(self, saver, iteration=None):
         """ Restore the previously trained parameters if there are any. """
@@ -205,14 +205,14 @@ class Chatbot(object):
             total_loss += step_loss
             iteration += 1
 
-            if iteration % (self.cfg['EVAL_MULTIPLICATOR'] * skip_step) == 0:
+            if iteration % skip_step == 0:
                 # Run evals on development set and print their loss
                 self._eval_test_set(model, test_buckets)
                 start = time.time()
                 sys.stdout.flush()
 
             if self.is_epoch_end(iteration):
-                print('Iter {}: loss {}, time {}'.format(iteration, total_loss/skip_step, time.time() - start))
+                print('Iter {}: loss {}, time {}'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - start))
                 start = time.time()
                 total_loss = 0
                 if not save_end:
@@ -384,6 +384,7 @@ def main():
     parser.add_argument('--keep_prev', action='store_true', help='keep only the most recent version of the trained network')
     parser.add_argument('--epochs', help='how many times the network should pass over the entire dataset. Note: Due to random bucketing, this is an approximation.')
     parser.add_argument('--save_end', action='store_true', help='save the model only at the end of training')
+    parser.add_argument('--processed_path', help='Specify if you want to use exisiting preprocessed data')
     args = parser.parse_args()
 
     if args.clear:
@@ -428,6 +429,8 @@ def main():
         args.load_iter = int(args.load_iter)
     if args.epochs:
         cfg['EPOCHS'] = int(args.epochs)
+    if args.processed_path:
+        cfg['PROCESSED_PATH'] = args.processed_path
 
     ################ read data #################
     if args.cornell:

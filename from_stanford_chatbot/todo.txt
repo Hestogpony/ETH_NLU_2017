@@ -1,8 +1,20 @@
+Vocab sizes with threshold 2, sentence lengths 16,19
+- Cornell ~25k
+- Our data ~33k
+
+Corpus sizes, no length limit:
+- Cornell ~ 190k
+- Our data ~ 360k
+
+Corpus sizes, sentence lenghts 16,19:
+- Cornell ~ 105k
+- Our data ~ 170k 
+
 Problems:
 - <person> tag in our data gets split up into three tokens!
 - Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
-
+Include option to reuse the processed version of the corpus, outside of the models folder 
 
 Add weighting of padding to avoid training on padding loss?
 
