@@ -29,6 +29,7 @@ MODE_R = 'r'
 MODE_W = 'w'
 MODE_A = 'a'
 
+
 class Reader(object):
     def __init__(self, config):
         self.cfg = config
@@ -47,6 +48,7 @@ class Reader(object):
         input_data_lines = [x.replace('\n', '') for x in input_data_lines]
         input_data_lines = [x for x in input_data_lines if len(x) > 0]
 
+        print(input_data_lines)
         for data_line in input_data_lines:
             input_sentences = data_line.split('\t')
 
@@ -135,16 +137,16 @@ class Reader(object):
                     #         cf.write('DEC_VOCAB = ' + str(index) + '\n')
                     
                     # <BG> don't write this to file anymore!!!
-
-                    if filename[-3:] == 'enc':
-                        self.cfg['ENC_VOCAB'] = index
-
-                    else:
-                        self.cfg['DEC_VOCAB'] = index
-                        print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
                     break
                 f.write(word + '\n')
                 index += 1
+                
+            if filename[-3:] == 'enc':
+                self.cfg['ENC_VOCAB'] = index
+                print('Enc vocab ' + str(self.cfg['ENC_VOCAB']))
+            else:
+                self.cfg['DEC_VOCAB'] = index
+                print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
 
     def load_vocab(self, vocab_path):
         with open(vocab_path, MODE_R) as f:

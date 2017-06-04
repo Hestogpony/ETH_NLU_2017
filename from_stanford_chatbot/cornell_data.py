@@ -29,6 +29,9 @@ MODE_R = 'r'
 MODE_W = 'w'
 MODE_A = 'a'
 
+ENCODING = 'latin-1'
+
+
 class Reader(object):
     def __init__(self, config):
         self.cfg = config
@@ -36,7 +39,7 @@ class Reader(object):
     def get_lines(self):
         id2line = {}
         file_path = os.path.join(self.cfg['DATA_PATH'], self.cfg['LINE_FILE'])
-        with open(file_path, MODE_R) as f:
+        with open(file_path, MODE_R, encoding = ENCODING) as f:
             lines = f.readlines()
             for line in lines:
                 parts = line.split(' +++$+++ ')
@@ -50,10 +53,14 @@ class Reader(object):
         """ Get conversations from the raw data """
         file_path = os.path.join(self.cfg['DATA_PATH'], self.cfg['CONVO_FILE'])
         convos = []
-        with open(file_path, MODE_R) as f:
-            lines = f.readlines()
-            if self.cfg['MAX_TURNS'] < len(lines):
-                lines = lines[:self.cfg['MAX_TURNS']]
+        with open(file_path, MODE_R, encoding = ENCODING) as f:
+            if not self.cfg['MAX_TURNS'] or self.cfg['MAX_TURNS'] <= 0:
+                lines = f.readlines()
+            else:
+                lines = []
+                for i in range(self.cfg['MAX_TURNS']):
+                    lines.append(f.readline())
+
             for line in lines:
                 parts = line.split(' +++$+++ ')
                 if len(parts) == 4:
@@ -84,7 +91,7 @@ class Reader(object):
         filenames = ['train.enc', 'train.dec', 'test.enc', 'test.dec']
         files = []
         for filename in filenames:
-            files.append(open(os.path.join(self.cfg['PROCESSED_PATH'], filename),MODE_W))
+            files.append(open(os.path.join(self.cfg['PROCESSED_PATH'], filename),MODE_W, encoding = ENCODING))
 
         for i in range(len(questions)):
             if i in test_ids:
@@ -128,7 +135,7 @@ class Reader(object):
         out_path = os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.{}'.format(filename[-3:]))
 
         vocab = {}
-        with open(in_path, MODE_R) as f:
+        with open(in_path, MODE_R, encoding = ENCODING) as f:
             for line in f.readlines():
                 for token in self.basic_tokenizer(line):
                     if not token in vocab:
@@ -136,7 +143,7 @@ class Reader(object):
                     vocab[token] += 1
 
         sorted_vocab = sorted(vocab, key=vocab.get, reverse=True)
-        with open(out_path, MODE_W) as f:
+        with open(out_path, MODE_W, encoding = ENCODING) as f:
             f.write('<pad>' + '\n')
             f.write('<unk>' + '\n')
             f.write('<s>' + '\n')
@@ -149,18 +156,18 @@ class Reader(object):
                     #         cf.write('ENC_VOCAB = ' + str(index) + '\n')
                     #     else:
                     #         cf.write('DEC_VOCAB = ' + str(index) + '\n')
-                    if filename[-3:] == 'enc':
-                        self.cfg['ENC_VOCAB'] = index
-
-                    else:
-                        self.cfg['DEC_VOCAB'] = index
-                        print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
                     break
                 f.write(word + '\n')
                 index += 1
+            if filename[-3:] == 'enc':
+                self.cfg['ENC_VOCAB'] = index
+                print('Enc vocab ' + str(self.cfg['ENC_VOCAB']))
+            else:
+                self.cfg['DEC_VOCAB'] = index
+                print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
 
     def load_vocab(self, vocab_path):
-        with open(vocab_path, MODE_R) as f:
+        with open(vocab_path, MODE_R, encoding = ENCODING) as f:
             words = f.read().splitlines()
         return words, {words[i]: i for i in range(len(words))}
 
@@ -175,8 +182,8 @@ class Reader(object):
         out_path = data + '_ids.' + mode
 
         _, vocab = self.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], vocab_path))
-        in_file = open(os.path.join(self.cfg['PROCESSED_PATH'], in_path), MODE_R)
-        out_file = open(os.path.join(self.cfg['PROCESSED_PATH'], out_path), MODE_W)
+        in_file = open(os.path.join(self.cfg['PROCESSED_PATH'], in_path), MODE_R, encoding = ENCODING)
+        out_file = open(os.path.join(self.cfg['PROCESSED_PATH'], out_path), MODE_W, encoding = ENCODING)
 
         lines = in_file.read().splitlines()
         for line in lines:
@@ -207,8 +214,8 @@ class Reader(object):
         self.token2id('test', 'dec')
 
     def load_data(self, enc_filename, dec_filename, max_training_size=None):
-        encode_file = open(os.path.join(self.cfg['PROCESSED_PATH'], enc_filename), MODE_R)
-        decode_file = open(os.path.join(self.cfg['PROCESSED_PATH'], dec_filename), MODE_R)
+        encode_file = open(os.path.join(self.cfg['PROCESSED_PATH'], enc_filename), MODE_R,encoding = ENCODING)
+        decode_file = open(os.path.join(self.cfg['PROCESSED_PATH'], dec_filename), MODE_R, encoding = ENCODING)
         encode, decode = encode_file.readline(), decode_file.readline()
         data_buckets = [[] for _ in self.cfg['BUCKETS']]
         i = 0
@@ -271,3 +278,4 @@ class Reader(object):
 # if __name__ == '__main__':
 #     prepare_raw_data()
 #     process_data()
+

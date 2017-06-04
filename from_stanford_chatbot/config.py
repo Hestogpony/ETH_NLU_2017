@@ -24,27 +24,29 @@ cfg = {
     'MODELS_PATH': 'models',
     'MODEL_NAME': '',
 
-    'MAX_TURNS': 100,
+    'MAX_TURNS': -1,
+    'TESTSET_SIZE': 100,
+    'TEST_MAX_LENGTH': 80,
     
-    'THRESHOLD': 2,
+    'THRESHOLD': 2, #2 # A word has to appear this many times to be part of the vocabulary. Can't be one
+
     'PAD_ID': 0,
     'UNK_ID': 1,
     'START_ID': 2,
     'EOS_ID': 3,
-    'TESTSET_SIZE': 10,
-    # I am using another bucket that is provided in the stanford tutorials 
-    'BUCKETS': BUCKETS = [(6, 8), (8, 10), (10, 12), (13, 15), (16, 19), (19, 22), (23, 26), (29, 32), (39, 44),(50,50),(60,60)],#[(10,10), (20,20), (30, 30)(100, 100)], #[(8, 10), (12, 14), (16, 19)],
+
+    'BUCKETS': [(6, 8), (8, 10), (10, 12), (13, 15), (16, 19), (19, 22), (23, 26), (29, 32), (39, 44),(50,50),(60,60)],#[(8,10), (16, 19)], #[(8, 10), (12, 14), (16, 19)],
+
     'NUM_LAYERS': 3,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 64,
     'LR': 0.5,
     'MAX_GRAD_NORM': 5.0,
-    'NUM_SAMPLES': 128, #512
+    'NUM_SAMPLES': 512, #512 # for sampled softmax loss
 
-    'TEST_MAX_SIZE': 80,
-    'TESTSET_SIZE': 100,
 
-    #whether to use pretrained
+    'STANDARD_SOFTMAX': False,
+
 
 }
 
@@ -59,8 +61,6 @@ def adapt_to_dataset(use_cornell):
         cfg['CPT_PATH'] = 'cornell_checkpoints'        
 
     else:
-        # <FL> I included as comments the variables that we don't need in our reader
-        # just to provide some reference
         cfg['DATA_PATH'] = 'our_data'
         cfg['CONVO_FILE'] = 'our_conversations.txt'
         cfg['LINE_FILE'] = 'Training_Shuffled_Dataset.txt'
@@ -77,7 +77,7 @@ def adapt_paths_to_model():
 def save_cfg(updated_config):
     config_path = os.path.join(updated_config['MODELS_PATH'], updated_config['MODEL_NAME'], "config")
     pickle.dump(updated_config , open(config_path, "wb"))
-    print("Configs saved in file: %s" % (config_path))
+    # print("Configs saved in file: %s" % (config_path))
 
 def load_cfg(model_name):
     config_path = os.path.join(cfg['MODELS_PATH'], model_name, "config")
@@ -114,8 +114,10 @@ These buckets size seem to work the best
 # DEC_VOCAB = 26107
 
 
+
 # TODO transfer this 
 # ENC_VOCAB = 215
 # DEC_VOCAB = 218
 # ENC_VOCAB = 220
 # DEC_VOCAB = 222
+

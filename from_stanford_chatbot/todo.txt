@@ -1,7 +1,15 @@
-- Include command line options
-- Check data reading problems
-- Save trained models with timestamp
-- 
+Problems:
+- solve vocabulary bug
+- <person> tag in our data gets split up into three tokens!
+
+
+Implement some kind of validation that is run once in a while to do early stopping!!!
+
+
+
+Add weighting of padding to avoid training on padding loss?
+
+- Adapt Cornell dataset to test mode
 
 - Full run on the baseline
 - Measure/quantify the limitations of the baseline model
