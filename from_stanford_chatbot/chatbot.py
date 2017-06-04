@@ -186,6 +186,7 @@ class Chatbot(object):
         print('Running session')
         self.sess.run(tf.global_variables_initializer())
         self._check_restore_parameters(saver)
+        print('Start training ...')
 
         iteration = model.global_step.eval(session=self.sess)
         total_loss = 0
@@ -196,25 +197,28 @@ class Chatbot(object):
         # <BG> moved outside of the loop
         skip_step = self._get_skip_step(iteration)
 
+        epoch_start = time.time()
+        chunk_start = time.time()
         while iteration < stop_at_iteration:
             bucket_id = self._get_random_bucket(train_buckets_scale)
             encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch(data_buckets[bucket_id],
                                                                            bucket_id,
                                                                            batch_size=self.cfg['BATCH_SIZE'])
-            start = time.time()
             _, step_loss, _ = self.run_step(model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, False)
             total_loss += step_loss
             iteration += 1
 
             if iteration % skip_step == 0:
+                print('time: %f for %d iterations' % (time.time() - chunk_start, skip_step))
+                print('At iteration %d ...' % iteration)
                 # Run evals on development set and print their loss
                 self._eval_test_set(model, test_buckets)
-                start = time.time()
+                chunk_start = time.time()
                 sys.stdout.flush()
 
             if self.is_epoch_end(iteration):
-                print('Iter {}: loss {}, time {}'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - start))
-                start = time.time()
+                print('Iter {}: loss {}, time {}'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
+                epoch_start = time.time()
                 total_loss = 0
                 if not save_end:
                     model.save_model(sess=self.sess)

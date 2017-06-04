@@ -14,7 +14,7 @@ Problems:
 - <person> tag in our data gets split up into three tokens!
 - Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
-Include option to reuse the processed version of the corpus, outside of the models folder 
+Copy preprocessed loading to cornell data
 
 Add weighting of padding to avoid training on padding loss?
 
@@ -24,7 +24,7 @@ Add weighting of padding to avoid training on padding loss?
 - Implement vector extrama metric.
 - Use perplexity metric for validation?
 
-- Full run on the baseline (our data)
+- Full run on the baseline (our data) hidden size is 512 now
 - Measure/quantify the limitations of the baseline model
 
 
