@@ -16,11 +16,18 @@ Problems:
 - LOW PRIO: <person> tag in our data gets split up into three tokens!
 - LOW PRIO: Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
-Add weighting of padding to avoid training on padding loss?
 
-Build vocabulary based on the sentences that actually fit in the buckets.
+
+TODO:
+
+- Add another parameter for the embedding size --> Done
+	--> Maybe add another fully connected layer for "output embeddings"
+
+- Build vocabulary based on the sentences that actually fit in the buckets.
 	Pro: Smaller input and output layer, should be a little bit faster
 	Con: Each max bucket size change requires reloading the entire dataset
+
+- Save model on exit
 
 
 - Make it possible to use both datasets at once

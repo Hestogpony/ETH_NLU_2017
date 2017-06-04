@@ -25,6 +25,7 @@ import sys
 import time
 import shutil
 import pickle
+import atexit
 # import pprint
 
 import numpy as np
@@ -188,6 +189,10 @@ class Chatbot(object):
         self._check_restore_parameters(saver)
         print('Start training ...')
 
+        # Save model on program exit
+        if self.cfg['SAVE_AT_EXIT']:
+            atexit.register(model.save_model, self.sess)
+
         iteration = model.global_step.eval(session=self.sess)
 
         # estimate the passes over the data
@@ -231,8 +236,8 @@ class Chatbot(object):
                     model.save_model(sess=self.sess)
                 sys.stdout.flush()
 
-        # Save model at the end of training
-        model.save_model(sess=self.sess)
+        # Obsolete because we save at exit! Save model at the end of training
+        # model.save_model(sess=self.sess)
 
     def _get_user_input(self):
         """ Get user's input, which will be transformed into encoder input later """
@@ -395,8 +400,9 @@ def main():
     parser.add_argument('--clear', action='store_true', help="delete all existing models to free up disk space")
     parser.add_argument('--keep_prev', action='store_true', help='keep only the most recent version of the trained network')
     parser.add_argument('--epochs', help='how many times the network should pass over the entire dataset. Note: Due to random bucketing, this is an approximation.')
-    parser.add_argument('--save_end', action='store_true', help='save the model only at the end of training')
+    parser.add_argument('--save_end', action='store_true', help='save the model ONLY at the end of training')
     parser.add_argument('--processed_path', help='Specify if you want to use exisiting preprocessed data')
+    parser.add_argument('--no_save_at_exit',action='store_true', help='deactivate automatic model saving at keyboard interrupt')
     args = parser.parse_args()
 
     if args.clear:
@@ -445,6 +451,8 @@ def main():
         cfg['PROCESSED_PATH'] = args.processed_path
         vocab_sizes_dict = pickle.load(open(os.path.join(cfg['PROCESSED_PATH'],"vocab_sizes"), "rb"))
         cfg.update(vocab_sizes_dict)
+    if args.no_save_at_exit:
+        cfg['SAVE_AT_EXIT'] = False
 
     ################ read data #################
     if args.cornell:

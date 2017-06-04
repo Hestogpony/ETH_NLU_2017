@@ -44,8 +44,8 @@ class ChatBotModel(object):
 
         # <BG> dirty fix for regular softmax loss
         if self.cfg["STANDARD_SOFTMAX"]:
-            self.cfg['HIDDEN_SIZE'] = self.cfg['DEC_VOCAB']
-            print('Changed hidden size to %d' % self.cfg['HIDDEN_SIZE'])
+            self.cfg['EMBEDDING_SIZE'] = self.cfg['DEC_VOCAB']
+            print('Changed hidden size to %d' % self.cfg['EMBEDDING_SIZE'])
 
     def save_model(self, sess):
         print('Saving the model ... DO NOT TERMINATE NOW! ... ', end='')
@@ -122,7 +122,7 @@ class ChatBotModel(object):
                     encoder_inputs, decoder_inputs, self.cell,
                     num_encoder_symbols=self.cfg['ENC_VOCAB'],
                     num_decoder_symbols=self.cfg['DEC_VOCAB'],
-                    embedding_size=self.cfg['HIDDEN_SIZE'],
+                    embedding_size=self.cfg['EMBEDDING_SIZE'],
                     output_projection=self.output_projection,
                     feed_previous=do_decode)
 

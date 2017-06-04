@@ -44,7 +44,8 @@ cfg = {
     #our numbers 'BUCKETS': [(6, 8), (8, 10), (10, 12), (13, 15), (16, 19), (19, 22), (23, 26), (29, 32), (39, 44),(50,50),(60,60)],#[(8,10), (16, 19)], #[(8, 10), (12, 14), (16, 19)],
     'NUM_LAYERS': 1, #3     # Recurrent Layers in the Mulit-Layer-RNN
     'HIDDEN_SIZE': 256,
-    'BATCH_SIZE': 64,
+    'EMBEDDING_SIZE': 100, #<BG> added it, as HIDDEN_SIZE had a double usage
+    'BATCH_SIZE': 2, #64
     'LR': 0.5,
     'MAX_GRAD_NORM': 5.0,
     'NUM_SAMPLES': 3, #512      # for sampled softmax loss
@@ -53,6 +54,8 @@ cfg = {
     'KEEP_PREV': False,
     'EPOCHS': 100,
     'DROPOUT_RATE': 0.3,
+
+    'SAVE_AT_EXIT': True,
 
 }
 
