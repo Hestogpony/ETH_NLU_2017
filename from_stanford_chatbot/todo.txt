@@ -3,15 +3,16 @@ Problems:
 - Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
 
-Implement some kind of validation that is run once in a while to do early stopping!!!
-
-
 
 Add weighting of padding to avoid training on padding loss?
 
-- Adapt Cornell dataset to test mode
 
-- Full run on the baseline
+- Adapt Cornell dataset to test mode
+- Make it possible to use both datasets at once
+- Implement vector extrama metric.
+- Use perplexity metric for validation?
+
+- Full run on the baseline (our data)
 - Measure/quantify the limitations of the baseline model
 
 

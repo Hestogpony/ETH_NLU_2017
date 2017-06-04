@@ -138,7 +138,7 @@ class Chatbot(object):
         """ How many steps should the model train before it saves all the weights. """
         # if iteration < 100:
         #     return 30
-        return 100
+        return 10
 
     def _check_restore_parameters(self, saver, iteration=None):
         """ Restore the previously trained parameters if there are any. """
@@ -170,7 +170,7 @@ class Chatbot(object):
                                                                             batch_size=self.cfg['BATCH_SIZE'])
             _, step_loss, _ = self.run_step(model, encoder_inputs, decoder_inputs,
                                        decoder_masks, bucket_id, True)
-            print('Test bucket {}: loss {}, time {}'.format(bucket_id, step_loss, time.time() - start))
+            print('\t\tTest bucket {}: loss {}, time {}'.format(bucket_id, step_loss, time.time() - start))
 
 
     def train(self, save_end):
@@ -192,7 +192,9 @@ class Chatbot(object):
         # estimate the passes over the data
         stop_at_iteration = self.cfg['EPOCHS'] * self.cfg['TRAINING_SAMPLES']
 
+        # <BG> moved outside of the loop
         skip_step = self._get_skip_step(iteration)
+
         while iteration < stop_at_iteration:
             bucket_id = self._get_random_bucket(train_buckets_scale)
             encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch(data_buckets[bucket_id],
@@ -203,7 +205,7 @@ class Chatbot(object):
             total_loss += step_loss
             iteration += 1
 
-            if iteration % (10 * skip_step) == 0:
+            if iteration % (self.cfg['EVAL_MULTIPLICATOR'] * skip_step) == 0:
                 # Run evals on development set and print their loss
                 self._eval_test_set(model, test_buckets)
                 start = time.time()
@@ -295,7 +297,9 @@ class Chatbot(object):
     def test_perplexity(self, inpath, model_iteration=None):
         """
         <FL> Mostly the same setup as chat(), except we read from a file.
+        This is used after training for final results on our data set
         """
+
         # if self.cfg['USE_CORNELL']:
         #     raise RuntimeError("Testing must have USE_CORNELL = False")
 
