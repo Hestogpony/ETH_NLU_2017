@@ -85,6 +85,9 @@ class Reader(object):
         # create path to store all the train & test encoder & decoder
         self.make_dir(self.cfg['PROCESSED_PATH'])
 
+        # Save the number of question-answer pairs to config for epoch counting
+        self.cfg['TRAINING_SAMPLES'] = len(questions)
+
         # random convos to create the test set
         test_ids = random.sample([i for i in range(len(questions))], self.cfg['TESTSET_SIZE'])
 

@@ -1,19 +1,24 @@
 Problems:
-- solve vocabulary bug
 - <person> tag in our data gets split up into three tokens!
-
-
-Implement some kind of validation that is run once in a while to do early stopping!!!
+- Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
 
 
 Add weighting of padding to avoid training on padding loss?
 
-- Adapt Cornell dataset to test mode
 
-- Full run on the baseline
+- Adapt Cornell dataset to test mode
+- Make it possible to use both datasets at once
+- Implement vector extrama metric.
+- Use perplexity metric for validation?
+
+- Full run on the baseline (our data)
 - Measure/quantify the limitations of the baseline model
 
+
+###################################
 Stage2:
-- Re-include attention (one line)
+- Re-include attention (one line) - Should we do this now? Maybe that would help improve the quality of the model
 - extend model with other idea(s)
+
+-extend training to triples

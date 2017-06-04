@@ -24,6 +24,7 @@ import random
 import sys
 import time
 import shutil
+# import pprint
 
 import numpy as np
 import tensorflow as tf
@@ -130,11 +131,14 @@ class Chatbot(object):
         print("Bucket scale:\n", train_buckets_scale)
         return test_buckets, data_buckets, train_buckets_scale
 
+    def is_epoch_end(self, iteration):
+        return iteration % self.cfg['TRAINING_SAMPLES'] == 0
+
     def _get_skip_step(self, iteration):
         """ How many steps should the model train before it saves all the weights. """
-        if iteration < 100:
-            return 30
-        return 100
+        # if iteration < 100:
+        #     return 30
+        return 10
 
     def _check_restore_parameters(self, saver, iteration=None):
         """ Restore the previously trained parameters if there are any. """
@@ -166,10 +170,10 @@ class Chatbot(object):
                                                                             batch_size=self.cfg['BATCH_SIZE'])
             _, step_loss, _ = self.run_step(model, encoder_inputs, decoder_inputs,
                                        decoder_masks, bucket_id, True)
-            print('Test bucket {}: loss {}, time {}'.format(bucket_id, step_loss, time.time() - start))
+            print('\t\tTest bucket {}: loss {}, time {}'.format(bucket_id, step_loss, time.time() - start))
 
 
-    def train(self):
+    def train(self, save_end):
         """ Train the bot """
         test_buckets, data_buckets, train_buckets_scale = self._get_buckets()
         # in train mode, we need to create the backward path, so forwrad_only is False
@@ -184,8 +188,14 @@ class Chatbot(object):
 
         iteration = model.global_step.eval(session=self.sess)
         total_loss = 0
-        while True:
-            skip_step = self._get_skip_step(iteration)
+
+        # estimate the passes over the data
+        stop_at_iteration = self.cfg['EPOCHS'] * self.cfg['TRAINING_SAMPLES']
+
+        # <BG> moved outside of the loop
+        skip_step = self._get_skip_step(iteration)
+
+        while iteration < stop_at_iteration:
             bucket_id = self._get_random_bucket(train_buckets_scale)
             encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch(data_buckets[bucket_id],
                                                                            bucket_id,
@@ -195,17 +205,22 @@ class Chatbot(object):
             total_loss += step_loss
             iteration += 1
 
-            if iteration % skip_step == 0:
+            if iteration % (self.cfg['EVAL_MULTIPLICATOR'] * skip_step) == 0:
+                # Run evals on development set and print their loss
+                self._eval_test_set(model, test_buckets)
+                start = time.time()
+                sys.stdout.flush()
+
+            if self.is_epoch_end(iteration):
                 print('Iter {}: loss {}, time {}'.format(iteration, total_loss/skip_step, time.time() - start))
                 start = time.time()
                 total_loss = 0
-                model.save_model(sess=self.sess)
-                # saver.save(self.sess, os.path.join(self.cfg['CPT_PATH'], 'chatbot'), global_step=model.global_step)
-                if iteration % (10 * skip_step) == 0:
-                    # Run evals on development set and print their loss
-                    self._eval_test_set(model, test_buckets)
-                    start = time.time()
+                if not save_end:
+                    model.save_model(sess=self.sess)
                 sys.stdout.flush()
+
+        # Save model at the end of training
+        model.save_model(sess=self.sess)
 
     def _get_user_input(self):
         """ Get user's input, which will be transformed into encoder input later """
@@ -282,7 +297,9 @@ class Chatbot(object):
     def test_perplexity(self, inpath, model_iteration=None):
         """
         <FL> Mostly the same setup as chat(), except we read from a file.
+        This is used after training for final results on our data set
         """
+
         # if self.cfg['USE_CORNELL']:
         #     raise RuntimeError("Testing must have USE_CORNELL = False")
 
@@ -364,8 +381,9 @@ def main():
     parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
     parser.add_argument('--softmax', action='store_true', help='use standard softmax loss instead of sampled softmax loss')
     parser.add_argument('--clear', action='store_true', help="delete all existing models to free up disk space")
-
-
+    parser.add_argument('--keep_prev', action='store_true', help='keep only the most recent version of the trained network')
+    parser.add_argument('--epochs', help='how many times the network should pass over the entire dataset. Note: Due to random bucketing, this is an approximation.')
+    parser.add_argument('--save_end', action='store_true', help='save the model only at the end of training')
     args = parser.parse_args()
 
     if args.clear:
@@ -386,6 +404,8 @@ def main():
             saved_models = sorted(saved_models) # sorted in ascending order 
             last_model = saved_models[-1]
             cfg = config.load_cfg(last_model)
+            # pp = pprint.PrettyPrinter(indent=4)
+            # pp.pprint(cfg)
         else:
             # create a new model
             config.adapt_to_dataset(args.cornell)
@@ -402,7 +422,14 @@ def main():
         cfg['TESTSET_SIZE'] = int(args.test_conversations)
     if args.softmax:
         cfg['STANDARD_SOFTMAX'] = args.softmax
+    if args.keep_prev:
+        cfg['KEEP_PREV'] = True
+    if args.load_iter:
+        args.load_iter = int(args.load_iter)
+    if args.epochs:
+        cfg['EPOCHS'] = int(args.epochs)
 
+    ################ read data #################
     if args.cornell:
         import cornell_data as data
     else:
@@ -414,16 +441,18 @@ def main():
         reader.process_data()
     print('Data ready!')
 
+
+    ########### start using the actual model##################
     # create checkpoints folder if there isn't one already
     reader.make_dir(cfg['CPT_PATH'])
 
     bot = Chatbot(config=cfg, reader=reader)
     if args.mode == 'train':
-        bot.train()
+        bot.train(args.save_end)
     elif args.mode == 'chat':
-        bot.chat(int(args.load_iter))
+        bot.chat(args.load_iter)
     elif args.mode == 'test':
-        bot.test_perplexity(args.test_file, int(args.load_iter))
+        bot.test_perplexity(args.test_file, args.load_iter)
 
 if __name__ == '__main__':
     main()
