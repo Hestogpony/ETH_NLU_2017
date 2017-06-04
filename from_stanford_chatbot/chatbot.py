@@ -24,6 +24,7 @@ import random
 import sys
 import time
 import shutil
+import pickle
 # import pprint
 
 import numpy as np
@@ -431,6 +432,8 @@ def main():
         cfg['EPOCHS'] = int(args.epochs)
     if args.processed_path:
         cfg['PROCESSED_PATH'] = args.processed_path
+        vocab_sizes_dict = pickle.load(open(os.path.join(cfg['PROCESSED_PATH'],"vocab_sizes"), "rb"))
+        cfg.update(vocab_sizes_dict)
 
     ################ read data #################
     if args.cornell:

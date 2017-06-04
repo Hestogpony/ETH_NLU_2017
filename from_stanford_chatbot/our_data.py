@@ -21,6 +21,7 @@ import random
 import re
 import os
 import glob
+import pickle
 
 import numpy as np
 
@@ -33,6 +34,7 @@ MODE_A = 'a'
 class Reader(object):
     def __init__(self, config):
         self.cfg = config
+        self.vocab_size_dict = {}
 
     def make_pairs(self, fpath):
         questions = []
@@ -146,9 +148,11 @@ class Reader(object):
                 
             if filename[-3:] == 'enc':
                 self.cfg['ENC_VOCAB'] = index
+                self.vocab_size_dict['ENC_VOCAB'] = index
                 print('Enc vocab ' + str(self.cfg['ENC_VOCAB']))
             else:
                 self.cfg['DEC_VOCAB'] = index
+                self.vocab_size_dict['DEC_VOCAB'] = index
                 print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
 
     def load_vocab(self, vocab_path):
@@ -192,6 +196,11 @@ class Reader(object):
         print('Preparing data to be model-ready ...')
         self.build_vocab('train.enc')
         self.build_vocab('train.dec')
+
+        #<BG> Dump the determined vocab sizes to the processed path folder
+        path = os.path.join(self.cfg['PROCESSED_PATH'], "vocab_sizes")
+        pickle.dump(self.vocab_size_dict , open(path, "wb"))
+
         self.token2id('train', 'enc')
         self.token2id('train', 'dec')
         self.token2id('test', 'enc')
