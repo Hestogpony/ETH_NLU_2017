@@ -191,7 +191,7 @@ class Chatbot(object):
         iteration = model.global_step.eval(session=self.sess)
 
         # estimate the passes over the data
-        stop_at_iteration = self.cfg['EPOCHS'] * self.cfg['TRAINING_SAMPLES']
+        stop_at_iteration = int((self.cfg['EPOCHS'] * self.cfg['TRAINING_SAMPLES']) / self.cfg['BATCH_SIZE'])
         epoch = 1
 
         # <BG> moved outside of the loop
@@ -214,7 +214,7 @@ class Chatbot(object):
             iteration += 1
 
             if iteration % skip_step == 0:
-                print('Iter {}: loss {}, time {}'.format(iteration, previous_chunks_loss / (self.cfg['BATCH_SIZE'] * skip_step), time.time() - chunk_start))
+                print('Iter {}: loss {}, time {} s'.format(iteration, previous_chunks_loss / (self.cfg['BATCH_SIZE'] * skip_step), time.time() - chunk_start))
                 previous_chunks_loss = 0
                 # Run evals on development set and print their loss
                 self._eval_test_set(model, test_buckets)
@@ -223,7 +223,7 @@ class Chatbot(object):
 
             if self.is_epoch_end(iteration):
                 print('\nEpoch %d is done' % epoch)
-                print('Iter {}: loss {}, time {}\n\n'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
+                print('Iter {}: loss {}, time {} s\n\n'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
                 epoch += 1
                 epoch_start = time.time()
                 total_loss = 0

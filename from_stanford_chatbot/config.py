@@ -26,7 +26,7 @@ cfg = {
     'MODEL_NAME': '', # leave this empty, this is filled with a timestamp
 
     'MAX_TURNS': -1, # Number of conversations to read in
-    'SKIP_STEP': 500, #  # After that many batches, there's a validation run.
+    'SKIP_STEP': 100, #  # After that many batches, there's a validation run.
 
     'TESTSET_SIZE': 100, # 25000    # Size of the evaluation set
     'TEST_MAX_LENGTH': 80, # Maximum length of sentences in the test set

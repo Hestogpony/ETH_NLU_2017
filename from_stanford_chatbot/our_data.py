@@ -65,10 +65,6 @@ class Reader(object):
         # create path to store all the train & test encoder & decoder
         self.make_dir(self.cfg['PROCESSED_PATH'])
 
-
-        # Save the number of question-answer pairs to config for epoch counting
-        self.cfg['TRAINING_SAMPLES'] = len(questions)
-
         # random convos to create the test set
         test_ids = random.sample([i for i in range(len(questions))], self.cfg['TESTSET_SIZE'])
 
@@ -148,11 +144,9 @@ class Reader(object):
                 
             if filename[-3:] == 'enc':
                 self.cfg['ENC_VOCAB'] = index
-                self.vocab_size_dict['ENC_VOCAB'] = index
                 print('Enc vocab ' + str(self.cfg['ENC_VOCAB']))
             else:
                 self.cfg['DEC_VOCAB'] = index
-                self.vocab_size_dict['DEC_VOCAB'] = index
                 print('Dec vocab ' + str(self.cfg['DEC_VOCAB']))
 
     def load_vocab(self, vocab_path):
@@ -197,10 +191,6 @@ class Reader(object):
         self.build_vocab('train.enc')
         self.build_vocab('train.dec')
 
-        #<BG> Dump the determined vocab sizes to the processed path folder
-        path = os.path.join(self.cfg['PROCESSED_PATH'], "vocab_sizes")
-        pickle.dump(self.vocab_size_dict , open(path, "wb"))
-
         self.token2id('train', 'enc')
         self.token2id('train', 'dec')
         self.token2id('test', 'enc')
@@ -224,6 +214,21 @@ class Reader(object):
                     break
             encode, decode = encode_file.readline(), decode_file.readline()
             i += 1
+       
+        #<BG> Save the number of question-answer pairs to config for epoch counting
+        training_samples = np.sum([len(data_buckets[b]) for b in range(len(self.cfg['BUCKETS']))])
+        print(training_samples)
+        self.cfg['TRAINING_SAMPLES'] = training_samples
+        self.vocab_size_dict['TRAINING_SAMPLES'] = training_samples
+        # <BG> Copy stuff over to the extra dict
+        self.vocab_size_dict['ENC_VOCAB'] = self.cfg['ENC_VOCAB']
+        self.vocab_size_dict['DEC_VOCAB'] = self.cfg['DEC_VOCAB']
+
+        #<BG> Dump the determined vocab sizes to the processed path folder
+        path = os.path.join(self.cfg['PROCESSED_PATH'], "vocab_sizes")
+        pickle.dump(self.vocab_size_dict , open(path, "wb"))
+
+
         return data_buckets
 
     def _pad_input(self, input_, size):
