@@ -10,22 +10,25 @@ Corpus sizes, sentence lenghts 16,19:
 - Cornell ~ 105k
 - Our data ~ 170k 
 
+
+
 Problems:
 - <person> tag in our data gets split up into three tokens!
 - Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
-Copy preprocessed loading to cornell data
-
 Add weighting of padding to avoid training on padding loss?
 
+Build vocabulary based on the sentences that actually fit in the buckets.
+	Pro: Smaller input and output layer, should be a little bit faster
+	Con: Each max bucket size change requires reloading the entire dataset
 
-- Adapt Cornell dataset to test mode
+
 - Make it possible to use both datasets at once
 - Implement vector extrama metric.
 - Use perplexity metric for validation?
 
-- Full run on the baseline (our data) hidden size is 512 now
 - Measure/quantify the limitations of the baseline model
+	--> inituitive: Variety of the answers is quite small. All the answers are pretty generic and short
 
 
 ###################################

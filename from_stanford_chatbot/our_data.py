@@ -25,8 +25,6 @@ import pickle
 
 import numpy as np
 
-# import config
-
 MODE_R = 'r'
 MODE_W = 'w'
 MODE_A = 'a'
