@@ -38,9 +38,10 @@ TODO:
 
 Param tuning:
 - Increase threshold for entry in vocabulary
-- Lower drop out rate
+- Lower drop out rate --> No, I think we have an overfitting problem now
 - Only one short bucket, fuck all the other data.
 - Increase Hidden State size of GRU
+- Gradient norm
 
 ###################################
 Stage2:
