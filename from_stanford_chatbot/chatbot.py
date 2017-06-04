@@ -133,7 +133,7 @@ class Chatbot(object):
         return test_buckets, data_buckets, train_buckets_scale
 
     def is_epoch_end(self, iteration):
-        return iteration % self.cfg['TRAINING_SAMPLES'] == 0
+        return iteration % (int(self.cfg['TRAINING_SAMPLES'] / self.cfg['BATCH_SIZE'])) == 0 
 
     def _get_skip_step(self, iteration):
         """ How many steps should the model train before it saves all the weights. """
@@ -189,16 +189,20 @@ class Chatbot(object):
         print('Start training ...')
 
         iteration = model.global_step.eval(session=self.sess)
-        total_loss = 0
 
         # estimate the passes over the data
         stop_at_iteration = self.cfg['EPOCHS'] * self.cfg['TRAINING_SAMPLES']
+        epoch = 1
 
         # <BG> moved outside of the loop
         skip_step = self._get_skip_step(iteration)
 
         epoch_start = time.time()
         chunk_start = time.time()
+        total_loss = 0
+        previous_chunks_loss = 0
+
+
         while iteration < stop_at_iteration:
             bucket_id = self._get_random_bucket(train_buckets_scale)
             encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch(data_buckets[bucket_id],
@@ -206,18 +210,21 @@ class Chatbot(object):
                                                                            batch_size=self.cfg['BATCH_SIZE'])
             _, step_loss, _ = self.run_step(model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, False)
             total_loss += step_loss
+            previous_chunks_loss += step_loss
             iteration += 1
 
             if iteration % skip_step == 0:
-                print('time: %f for %d iterations' % (time.time() - chunk_start, skip_step))
-                print('At iteration %d ...' % iteration)
+                print('Iter {}: loss {}, time {}'.format(iteration, previous_chunks_loss / (self.cfg['BATCH_SIZE'] * skip_step), time.time() - chunk_start))
+                previous_chunks_loss = 0
                 # Run evals on development set and print their loss
                 self._eval_test_set(model, test_buckets)
                 chunk_start = time.time()
                 sys.stdout.flush()
 
             if self.is_epoch_end(iteration):
-                print('Iter {}: loss {}, time {}'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
+                print('\nEpoch %d is done' % epoch)
+                print('Iter {}: loss {}, time {}\n\n'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
+                epoch += 1
                 epoch_start = time.time()
                 total_loss = 0
                 if not save_end:
