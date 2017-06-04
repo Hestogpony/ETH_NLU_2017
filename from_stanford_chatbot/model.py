@@ -101,13 +101,15 @@ class ChatBotModel(object):
             sys.stderr.write("Sampled softmax is set to sample from more output nodes than the size of the output layer")
             sys.exit()
 
-
-        # Dropout Wrapper might not work with the tf.contrib version of GRU
-        single_cell = tf.contrib.rnn.DropoutWrapper(
-                tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE']),
-                # rnn_cell.BasicLSTMCell(hidden_size),
-                input_keep_prob=self.cfg['DROPOUT_RATE'],
-                output_keep_prob=self.cfg['DROPOUT_RATE'])
+        if self.fw_only:
+            single_cell = tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE'])
+        else:    
+            #<BG> Dropout Wrapper might not work with the tf.contrib version of GRU
+            single_cell = tf.contrib.rnn.DropoutWrapper(
+                    tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE']),
+                    # rnn_cell.BasicLSTMCell(hidden_size),
+                    input_keep_prob=self.cfg['DROPOUT_RATE'],
+                    output_keep_prob=self.cfg['DROPOUT_RATE'])
 
         # single_cell = tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE'])
         self.cell = tf.contrib.rnn.MultiRNNCell([single_cell] * self.cfg['NUM_LAYERS'])
