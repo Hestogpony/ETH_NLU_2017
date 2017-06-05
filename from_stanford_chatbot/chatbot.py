@@ -24,6 +24,8 @@ import random
 import sys
 import time
 import shutil
+import pickle
+import atexit
 # import pprint
 
 import numpy as np
@@ -132,13 +134,13 @@ class Chatbot(object):
         return test_buckets, data_buckets, train_buckets_scale
 
     def is_epoch_end(self, iteration):
-        return iteration % self.cfg['TRAINING_SAMPLES'] == 0
+        return iteration % (int(self.cfg['TRAINING_SAMPLES'] / self.cfg['BATCH_SIZE'])) == 0 
 
     def _get_skip_step(self, iteration):
         """ How many steps should the model train before it saves all the weights. """
         # if iteration < 100:
         #     return 30
-        return 10
+        return self.cfg['SKIP_STEP']
 
     def _check_restore_parameters(self, saver, iteration=None):
         """ Restore the previously trained parameters if there are any. """
@@ -185,42 +187,57 @@ class Chatbot(object):
         print('Running session')
         self.sess.run(tf.global_variables_initializer())
         self._check_restore_parameters(saver)
+        print('Start training ...')
+
+        # Save model on program exit
+        if self.cfg['SAVE_AT_EXIT']:
+            atexit.register(model.save_model, self.sess)
 
         iteration = model.global_step.eval(session=self.sess)
-        total_loss = 0
 
         # estimate the passes over the data
-        stop_at_iteration = self.cfg['EPOCHS'] * self.cfg['TRAINING_SAMPLES']
+        stop_at_iteration = int((self.cfg['EPOCHS'] * self.cfg['TRAINING_SAMPLES']) / self.cfg['BATCH_SIZE'])
+        epoch = 1
 
         # <BG> moved outside of the loop
         skip_step = self._get_skip_step(iteration)
+
+        epoch_start = time.time()
+        chunk_start = time.time()
+        total_loss = 0
+        previous_chunks_loss = 0
+
 
         while iteration < stop_at_iteration:
             bucket_id = self._get_random_bucket(train_buckets_scale)
             encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch(data_buckets[bucket_id],
                                                                            bucket_id,
                                                                            batch_size=self.cfg['BATCH_SIZE'])
-            start = time.time()
             _, step_loss, _ = self.run_step(model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, False)
             total_loss += step_loss
+            previous_chunks_loss += step_loss
             iteration += 1
 
-            if iteration % (self.cfg['EVAL_MULTIPLICATOR'] * skip_step) == 0:
+            if iteration % skip_step == 0:
+                print('Iter {}: loss {}, time {} s'.format(iteration, previous_chunks_loss / (self.cfg['BATCH_SIZE'] * skip_step), time.time() - chunk_start))
+                previous_chunks_loss = 0
                 # Run evals on development set and print their loss
                 self._eval_test_set(model, test_buckets)
-                start = time.time()
+                chunk_start = time.time()
                 sys.stdout.flush()
 
             if self.is_epoch_end(iteration):
-                print('Iter {}: loss {}, time {}'.format(iteration, total_loss/skip_step, time.time() - start))
-                start = time.time()
+                print('\nEpoch %d is done' % epoch)
+                print('Iter {}: loss {}, time {} s\n\n'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
+                epoch += 1
+                epoch_start = time.time()
                 total_loss = 0
                 if not save_end:
                     model.save_model(sess=self.sess)
                 sys.stdout.flush()
 
-        # Save model at the end of training
-        model.save_model(sess=self.sess)
+        # Obsolete because we save at exit! Save model at the end of training
+        # model.save_model(sess=self.sess)
 
     def _get_user_input(self):
         """ Get user's input, which will be transformed into encoder input later """
@@ -383,7 +400,9 @@ def main():
     parser.add_argument('--clear', action='store_true', help="delete all existing models to free up disk space")
     parser.add_argument('--keep_prev', action='store_true', help='keep only the most recent version of the trained network')
     parser.add_argument('--epochs', help='how many times the network should pass over the entire dataset. Note: Due to random bucketing, this is an approximation.')
-    parser.add_argument('--save_end', action='store_true', help='save the model only at the end of training')
+    parser.add_argument('--save_end', action='store_true', help='save the model ONLY at the end of training')
+    parser.add_argument('--processed_path', help='Specify if you want to use exisiting preprocessed data')
+    parser.add_argument('--no_save_at_exit',action='store_true', help='deactivate automatic model saving at keyboard interrupt')
     args = parser.parse_args()
 
     if args.clear:
@@ -428,6 +447,12 @@ def main():
         args.load_iter = int(args.load_iter)
     if args.epochs:
         cfg['EPOCHS'] = int(args.epochs)
+    if args.processed_path:
+        cfg['PROCESSED_PATH'] = args.processed_path
+        vocab_sizes_dict = pickle.load(open(os.path.join(cfg['PROCESSED_PATH'],"vocab_sizes"), "rb"))
+        cfg.update(vocab_sizes_dict)
+    if args.no_save_at_exit:
+        cfg['SAVE_AT_EXIT'] = False
 
     ################ read data #################
     if args.cornell:

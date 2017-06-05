@@ -20,10 +20,9 @@ from __future__ import print_function
 import random
 import re
 import os
+import pickle
 
 import numpy as np
-
-import config
 
 MODE_R = 'r'
 MODE_W = 'w'
@@ -35,6 +34,7 @@ ENCODING = 'latin-1'
 class Reader(object):
     def __init__(self, config):
         self.cfg = config
+        self.vocab_size_dict = {}
 
     def get_lines(self):
         id2line = {}
@@ -233,6 +233,21 @@ class Reader(object):
                     break
             encode, decode = encode_file.readline(), decode_file.readline()
             i += 1
+
+        #<BG> Save the number of question-answer pairs to config for epoch counting
+        training_samples = np.sum([len(data_buckets[b]) for b in range(len(self.cfg['BUCKETS']))])
+        print(training_samples)
+        self.cfg['TRAINING_SAMPLES'] = training_samples
+        self.vocab_size_dict['TRAINING_SAMPLES'] = training_samples
+        # <BG> Copy stuff over to the extra dict
+        self.vocab_size_dict['ENC_VOCAB'] = self.cfg['ENC_VOCAB']
+        self.vocab_size_dict['DEC_VOCAB'] = self.cfg['DEC_VOCAB']
+
+        #<BG> Dump the determined vocab sizes to the processed path folder
+        path = os.path.join(self.cfg['PROCESSED_PATH'], "vocab_sizes")
+        pickle.dump(self.vocab_size_dict , open(path, "wb"))
+
+
         return data_buckets
 
     def _pad_input(self, input_, size):

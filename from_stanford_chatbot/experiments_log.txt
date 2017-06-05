@@ -1,0 +1,6 @@
+June 4:
+- Big model works ok after some iterations, but overfits afterwards
+- A model with only one bucket (8,10) overfits even more
+
+June 5:
+- Smaller vocab size (threshold 10), dropout 0.5 --> not really better

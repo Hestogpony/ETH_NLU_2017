@@ -1,24 +1,70 @@
+Vocab sizes with threshold 2, sentence lengths 16,19
+- Cornell ~25k
+- Our data ~33k
+
+Vocab size with threshold 10:
+-
+- Our data ~11k
+
+Corpus sizes, no length limit:
+- Cornell ~ 190k
+- Our data ~ 360k
+
+Corpus sizes, sentence lenghts 16,19:
+- Cornell ~ 105k
+- Our data ~ 170k 
+
+
+
 Problems:
-- <person> tag in our data gets split up into three tokens!
-- Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
+- LOW PRIO: <person> tag in our data gets split up into three tokens!
+- LOW PRIO: Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
 
+####################################
+TODO:
 
-Add weighting of padding to avoid training on padding loss?
+- Add another parameter for the embedding size --> Done
+	--> Maybe add another fully connected layer for "output embeddings"
 
+- Build vocabulary based on the sentences that actually fit in the buckets.
+	Pro: Smaller input and output layer, should be a little bit faster
+	Con: Each max bucket size change requires reloading the entire dataset
 
-- Adapt Cornell dataset to test mode
-- Make it possible to use both datasets at once
-- Implement vector extrama metric.
-- Use perplexity metric for validation?
+- Make it possible to use both datasets at once <SJ>
 
-- Full run on the baseline (our data)
+- Pretrain word embeddings <LG>
+- Implement vector extrema metric <LG>
+
+- Look not only at the TOP1 answer, but at the TOP10
+- Output the input sentence in chat mode after preprocessing
+
 - Measure/quantify the limitations of the baseline model
+	--> inituitive: Variety of the answers is quite small. All the answers are pretty generic and short
 
+
+- MORE DATA!!!!
+	--> IMSDB -- use inikdom parser
+	--> Open subtitles. There is a parser for that. BUT it's reported to be very noisy
+	--> Twitter dataset. Sordoni et al.---> This is an entirely different domain
+
+Param tuning:
+- Increase threshold for entry in vocabulary
+- Increase dropout rate
+- Only one short bucket, fuck all the other data.
+
+- Increase Hidden State size of GRU
+- Gradient norm
 
 ###################################
 Stage2:
-- Re-include attention (one line) - Should we do this now? Maybe that would help improve the quality of the model
 - extend model with other idea(s)
+	- reinforcement approach
+	- 5. Different objective function
+	- Maybe:
+		- Handling of unks (7)
+		- consistent model for input (4) --> Persona-based system. Not so needed at this point 
+	- Beam search. WTF is this?
+	- Google for more stuff!
 
--extend training to triples
+- extend training to triples (both our dataset and cornell)

@@ -21,10 +21,9 @@ import random
 import re
 import os
 import glob
+import pickle
 
 import numpy as np
-
-# import config
 
 MODE_R = 'r'
 MODE_W = 'w'
@@ -34,6 +33,7 @@ MODE_A = 'a'
 class Reader(object):
     def __init__(self, config):
         self.cfg = config
+        self.vocab_size_dict = {}
 
     def make_pairs(self, fpath):
         questions = []
@@ -64,10 +64,6 @@ class Reader(object):
     def prepare_dataset(self, questions, answers):
         # create path to store all the train & test encoder & decoder
         self.make_dir(self.cfg['PROCESSED_PATH'])
-
-
-        # Save the number of question-answer pairs to config for epoch counting
-        self.cfg['TRAINING_SAMPLES'] = len(questions)
 
         # random convos to create the test set
         test_ids = random.sample([i for i in range(len(questions))], self.cfg['TESTSET_SIZE'])
@@ -194,6 +190,7 @@ class Reader(object):
         print('Preparing data to be model-ready ...')
         self.build_vocab('train.enc')
         self.build_vocab('train.dec')
+
         self.token2id('train', 'enc')
         self.token2id('train', 'dec')
         self.token2id('test', 'enc')
@@ -217,6 +214,21 @@ class Reader(object):
                     break
             encode, decode = encode_file.readline(), decode_file.readline()
             i += 1
+       
+        #<BG> Save the number of question-answer pairs to config for epoch counting
+        training_samples = np.sum([len(data_buckets[b]) for b in range(len(self.cfg['BUCKETS']))])
+        print(training_samples)
+        self.cfg['TRAINING_SAMPLES'] = training_samples
+        self.vocab_size_dict['TRAINING_SAMPLES'] = training_samples
+        # <BG> Copy stuff over to the extra dict
+        self.vocab_size_dict['ENC_VOCAB'] = self.cfg['ENC_VOCAB']
+        self.vocab_size_dict['DEC_VOCAB'] = self.cfg['DEC_VOCAB']
+
+        #<BG> Dump the determined vocab sizes to the processed path folder
+        path = os.path.join(self.cfg['PROCESSED_PATH'], "vocab_sizes")
+        pickle.dump(self.vocab_size_dict , open(path, "wb"))
+
+
         return data_buckets
 
     def _pad_input(self, input_, size):
