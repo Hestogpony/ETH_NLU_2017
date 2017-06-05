@@ -353,26 +353,28 @@ class Chatbot(object):
             b = questions[i + 1]
             c = answers[i + 1]
 
+
             bucket_ab = self._find_right_bucket2(len(a), len(b))
             bucket_bc = self._find_right_bucket2(len(b), len(c))
 
-            enc_in_a, dec_in_b, dec_masks_b = self.reader.get_batch([(a, b)], bucket_ab, 1)
-            enc_in_b, dec_in_c, dec_masks_c = self.reader.get_batch([(b, c)], bucket_bc, 1)
+            if bucket_ab is not None and bucket_bc is not None:
+                enc_in_a, dec_in_b, dec_masks_b = self.reader.get_batch([(a, b)], bucket_ab, 1)
+                enc_in_b, dec_in_c, dec_masks_c = self.reader.get_batch([(b, c)], bucket_bc, 1)
 
-            # bucket x batch x vocab
-            _, _, logits_b = self.run_step(model, enc_in_a, dec_in_b,
-                                        dec_masks_b, bucket_ab, forward_only=True)
+                # bucket x batch x vocab
+                _, _, logits_b = self.run_step(model, enc_in_a, dec_in_b,
+                                            dec_masks_b, bucket_ab, forward_only=True)
 
-            _, _, logits_c = self.run_step(model, enc_in_b, dec_in_c,
-                                        dec_masks_c, bucket_bc, forward_only=True)
+                _, _, logits_c = self.run_step(model, enc_in_b, dec_in_c,
+                                            dec_masks_c, bucket_bc, forward_only=True)
 
-            soft_b = np.exp(logits_b) / np.sum(np.exp(logits_b), axis = 0)
-            soft_c = np.exp(logits_c) / np.sum(np.exp(logits_c), axis = 0)
+                soft_b = np.exp(logits_b) / np.sum(np.exp(logits_b), axis = 0)
+                soft_c = np.exp(logits_c) / np.sum(np.exp(logits_c), axis = 0)
 
-            perp_b = measures.perplexity(self.cfg, soft_b, b, dec_word_to_i)
-            perp_c = measures.perplexity(self.cfg, soft_c, c, dec_word_to_i)
+                perp_b = measures.perplexity(self.cfg, soft_b, b, dec_word_to_i)
+                perp_c = measures.perplexity(self.cfg, soft_c, c, dec_word_to_i)
 
-            print("%f %f" % (perp_b, perp_c))
+                print("%f %f" % (perp_b, perp_c))
 
 
 
@@ -383,7 +385,10 @@ class Chatbot(object):
                         if self.cfg['BUCKETS'][b][1] >= lengthb]
 
         both = set(available_a) & set(available_b)
-        return min(both)
+        if len(both) == 0:
+            return None
+        else:
+            return min(both)
 
 
 

@@ -1,9 +1,6 @@
 import numpy as np
 import math
 
-import config
-
-
 def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
     """
     predicted_softmax_vecs      sentence length x 1 x vocab_size

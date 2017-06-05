@@ -29,7 +29,7 @@ cfg = {
     'SKIP_STEP': 100, #  # After that many batches, there's a validation run.
 
     'TESTSET_SIZE': 100, # 25000    # Size of the evaluation set
-    'TEST_MAX_LENGTH': 80, # Maximum length of sentences in the test set
+    'TEST_MAX_LENGTH': 30, # Maximum length of sentences in the test set
     
     'THRESHOLD': 2, #2      # A word has to appear this many times to be part of the vocabulary
 

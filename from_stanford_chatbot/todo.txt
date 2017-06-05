@@ -23,7 +23,7 @@ Corpus sizes, sentence lenghts 16,19:
 TODO prioritized:
 
 2) Code and test a complete evaluation of the model + Implement vector extrema metric <BG>
-2a) Do param tuning on the baseline <BG>
+2a) Do param tuning on the baseline <BG> --> Total disaster
 3) One extension of the model --> Reinforcement learning <LG>
 3a) Use IMSDB dataset (500.000 converstations)
 4) Word embeddings
@@ -45,7 +45,6 @@ Miscellaneous TODO:
 
 
 - Look not only at the TOP1 answer, but at the TOP10
-- Output the input sentence in chat mode after preprocessing
 
 - Measure/quantify the limitations of the baseline model
 	--> inituitive: Variety of the answers is quite small. All the answers are pretty generic and short
