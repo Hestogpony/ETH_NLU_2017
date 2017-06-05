@@ -22,7 +22,6 @@ Corpus sizes, sentence lenghts 16,19:
 ####################################
 TODO prioritized:
 
-1) Make it possible to use both datasets at once <SJ>
 2) Code and test a complete evaluation of the model + Implement vector extrema metric <BG>
 2a) Do param tuning on the baseline <BG>
 3) One extension of the model --> Reinforcement learning <LG>

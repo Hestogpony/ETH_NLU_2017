@@ -297,6 +297,7 @@ class Chatbot(object):
             output_file.write('HUMAN ++++ ' + line + '\n')
             # Get token-ids for the input sentence.
             token_ids = self.reader.sentence2id(enc_vocab, str(line))
+            print(token_ids)
             if (len(token_ids) > max_length):
                 print('Max length I can handle is:', max_length)
                 line = self._get_user_input()
