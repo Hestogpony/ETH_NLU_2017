@@ -17,6 +17,8 @@ See readme.md for instruction on how to run the starter code.
 from __future__ import division
 from __future__ import print_function
 
+
+import gensim
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import argparse
@@ -71,9 +73,9 @@ class Chatbot(object):
         """
 
         # Fetch embedding variables from model
-        with tf.variable_scope("embedding_rnn_seq2seq/rnn/embedding_wrapper", reuse=True):
+        with tf.variable_scope("embedding_attention_seq2seq/rnn/embedding_wrapper", reuse=True):
             em_in = tf.get_variable("embedding")
-        with tf.variable_scope("embedding_rnn_seq2seq/embedding_rnn_decoder", reuse=True):
+        with tf.variable_scope("embedding_attention_seq2seq/embedding_attention_decoder", reuse=True):
             em_out = tf.get_variable("embedding")
 
         # Disable training for embeddings
@@ -84,9 +86,9 @@ class Chatbot(object):
         pretrained_folder="pretrained_stuff"
         modelname = "pretrain_model"
 
-        model - load_model(pretrained_folder+'/'+modelname, binary = True)
+        model = gensim.models.KeyedVectors.load(pretrained_folder+'/'+modelname)
 
-        embedding_matrix_trained = model.syn0
+        embedding_matrix_trained = model.wv.syn0
 
 
         print("Loaded the pretrained word embbedings from model")
@@ -224,7 +226,7 @@ class Chatbot(object):
 
         ###########LOAD THE EMBBEDING FROM THE WORD2VEC##########
 
-        #self.load_embbedings(self.sess)
+        self.load_embbedings(self.sess)
 
 
 
