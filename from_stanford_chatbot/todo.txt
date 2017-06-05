@@ -22,7 +22,8 @@ Corpus sizes, sentence lenghts 16,19:
 ####################################
 TODO prioritized:
 
-2) Code and test a complete evaluation of the model + Implement vector extrema metric <BG>
+2) Code and test a complete evaluation of the model + Implement vector extrema metric <BG> --> vocab size error for old model :(
+	But seems to be an edge case
 2a) Do param tuning on the baseline <BG> --> Total disaster
 3) One extension of the model --> Reinforcement learning <LG>
 3a) Use IMSDB dataset (500.000 converstations)

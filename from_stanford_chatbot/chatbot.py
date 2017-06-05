@@ -346,9 +346,16 @@ class Chatbot(object):
         # A B and B C. So we first run A, compare against B, and then run B and
         # compare against C.
         # We do that because we need two numbers / line
+        
+        total_measure = 0.0
+        num_samples = 0
+
         for i in range(0, len(questions), 2):
             assert(answers[i] == questions[i + 1])
 
+            if i % 100 == 0:
+                print('\tSample %d' % i)
+            
             a = questions[i]
             b = questions[i + 1]
             c = answers[i + 1]
@@ -374,8 +381,11 @@ class Chatbot(object):
                 perp_b = measures.perplexity(self.cfg, soft_b, b, dec_word_to_i)
                 perp_c = measures.perplexity(self.cfg, soft_c, c, dec_word_to_i)
 
+                total_measure += perp_b + perp_c
+                num_samples += 2
                 print("%f %f" % (perp_b, perp_c))
 
+        print('Average perplexity on test set: %f' % total_measure/num_samples)
 
 
     def _find_right_bucket2(self, lengtha, lengthb):

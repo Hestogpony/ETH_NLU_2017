@@ -15,7 +15,7 @@ def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
 
         # These pred
         word_probability = predicted_softmax_vecs[i][0][input_sentence[i]]
-        perp_sum += math.log(word_probability, base=2)
+        perp_sum += math.log(word_probability, 2)
         i += 1
 
     # As specified in task description: ./docs/task_description
