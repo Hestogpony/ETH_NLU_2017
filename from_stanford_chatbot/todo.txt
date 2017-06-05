@@ -6,6 +6,9 @@ Vocab size with threshold 10:
 -
 - Our data ~11k
 
+Vocab size combined datasets, threshold 2:
+- 42k
+
 Corpus sizes, no length limit:
 - Cornell ~ 190k
 - Our data ~ 360k
@@ -16,25 +19,31 @@ Corpus sizes, sentence lenghts 16,19:
 
 
 
-Problems:
-- LOW PRIO: <person> tag in our data gets split up into three tokens!
-- LOW PRIO: Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
-
-
 ####################################
-TODO:
+TODO prioritized:
 
-- Add another parameter for the embedding size --> Done
-	--> Maybe add another fully connected layer for "output embeddings"
+1) - Make it possible to use both datasets at once <SJ>
+2) - Code and test a complete evaluation of the model  + Implement vector extrema metric <LG>
+2a) - Do param tuning on the baseline <BG>
+3) - One extension of the model --> Reinforcement learning
+3a) Use IMSDB dataset (500.000 converstations)
+4) - Word embeddings
+#######################
+
+Time schedule:
+- Monday - Wednesday: Coding
+- Thursday: Final experiments
+- Friday: Write the report
+
+################################
+Miscellaneous TODO:
 
 - Build vocabulary based on the sentences that actually fit in the buckets.
 	Pro: Smaller input and output layer, should be a little bit faster
 	Con: Each max bucket size change requires reloading the entire dataset
 
-- Make it possible to use both datasets at once <SJ>
 
-- Pretrain word embeddings <LG>
-- Implement vector extrema metric <LG>
+
 
 - Look not only at the TOP1 answer, but at the TOP10
 - Output the input sentence in chat mode after preprocessing
@@ -56,7 +65,7 @@ Param tuning:
 - Increase Hidden State size of GRU
 - Gradient norm
 
-###################################
+#####
 Stage2:
 - extend model with other idea(s)
 	- reinforcement approach
@@ -65,6 +74,5 @@ Stage2:
 		- Handling of unks (7)
 		- consistent model for input (4) --> Persona-based system. Not so needed at this point 
 	- Beam search. WTF is this?
-	- Google for more stuff!
 
 - extend training to triples (both our dataset and cornell)

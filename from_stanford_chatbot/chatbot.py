@@ -61,7 +61,10 @@ class Chatbot(object):
     def __init__(self, config, reader):
         self.cfg = config
         self.reader = reader
-        self.sess = tf.Session()
+        self.tfconfig = tf.ConfigProto()
+        self.tfconfig.gpu_options.allow_growth=True
+        #self.tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.4
+        self.sess = tf.Session(config=self.tfconfig)
 
     def _get_random_bucket(self, train_buckets_scale):
         """ Get a random bucket from which to choose a training sample """
