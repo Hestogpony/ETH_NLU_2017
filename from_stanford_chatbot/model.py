@@ -158,7 +158,9 @@ class ChatBotModel(object):
             self.global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
 
             if not self.fw_only:
-                self.optimizer = tf.train.GradientDescentOptimizer(self.cfg['LR'])
+                #<BG> switched to a more sophisticated optimizer
+                self.optimizer = tf.train.AdamOptimizer()
+                # self.optimizer = tf.train.GradientDescentOptimizer(self.cfg['LR'])
                 trainables = tf.trainable_variables()
                 self.gradient_norms = []
                 self.train_ops = []

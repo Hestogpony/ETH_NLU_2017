@@ -2,6 +2,10 @@ Vocab sizes with threshold 2, sentence lengths 16,19
 - Cornell ~25k
 - Our data ~33k
 
+Vocab size with threshold 10:
+-
+- Our data ~11k
+
 Corpus sizes, no length limit:
 - Cornell ~ 190k
 - Our data ~ 360k
@@ -17,7 +21,7 @@ Problems:
 - LOW PRIO: Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
 
 
-
+####################################
 TODO:
 
 - Add another parameter for the embedding size --> Done
@@ -27,19 +31,28 @@ TODO:
 	Pro: Smaller input and output layer, should be a little bit faster
 	Con: Each max bucket size change requires reloading the entire dataset
 
-- Save model on exit
+- Make it possible to use both datasets at once <SJ>
 
+- Pretrain word embeddings <LG>
+- Implement vector extrema metric <LG>
 
-- Make it possible to use both datasets at once
-- Implement vector extrema metric.
+- Look not only at the TOP1 answer, but at the TOP10
+- Output the input sentence in chat mode after preprocessing
 
 - Measure/quantify the limitations of the baseline model
 	--> inituitive: Variety of the answers is quite small. All the answers are pretty generic and short
 
+
+- MORE DATA!!!!
+	--> IMSDB -- use inikdom parser
+	--> Open subtitles. There is a parser for that. BUT it's reported to be very noisy
+	--> Twitter dataset. Sordoni et al.---> This is an entirely different domain
+
 Param tuning:
 - Increase threshold for entry in vocabulary
-- Lower drop out rate --> No, I think we have an overfitting problem now
+- Increase dropout rate
 - Only one short bucket, fuck all the other data.
+
 - Increase Hidden State size of GRU
 - Gradient norm
 
@@ -48,7 +61,9 @@ Stage2:
 - extend model with other idea(s)
 	- reinforcement approach
 	- 5. Different objective function
-	- Maybe: Handling of unks (7), consistent model for input (4) 
+	- Maybe:
+		- Handling of unks (7)
+		- consistent model for input (4) --> Persona-based system. Not so needed at this point 
 	- Beam search. WTF is this?
 	- Google for more stuff!
 
