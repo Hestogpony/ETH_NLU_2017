@@ -231,12 +231,14 @@ class Chatbot(object):
 
             if self.is_epoch_end(iteration):
                 print('\nEpoch %d is done' % epoch)
-                print('Iter {}: loss {}, time {} s\n\n'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
+                print('Iter {}: loss {}, time {} s'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
                 epoch += 1
                 epoch_start = time.time()
                 total_loss = 0
                 if not save_end:
                     model.save_model(sess=self.sess)
+                print('\n')
+                print('Starting epoch %d' % epoch)
                 sys.stdout.flush()
 
         # Obsolete because we save at exit! Save model at the end of training

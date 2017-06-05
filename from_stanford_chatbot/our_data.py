@@ -181,7 +181,11 @@ class Reader(object):
     def prepare_raw_data(self):
         print('Preparing raw data into train set and test set ...')
         # <FL> Use our own stuff here
+        # <BG> load both train and validation and concat, then let the reader split them again
         questions, answers = self.make_pairs(os.path.join(self.cfg['DATA_PATH'], self.cfg['LINE_FILE']))
+        val_questions, val_answers = self.make_pairs(os.path.join(self.cfg['DATA_PATH'], self.cfg['LINE_FILE_VAL']))
+        questions.extend(val_questions)
+        answers.extend(val_answers)
         self.prepare_dataset(questions, answers)
 
     def process_data(self):

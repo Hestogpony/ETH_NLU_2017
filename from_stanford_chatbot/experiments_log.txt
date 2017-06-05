@@ -5,6 +5,6 @@ June 4:
 June 5:
 - Smaller vocab size (threshold 10), dropout 0.5 --> not really better, starts overfitting pretty soon
 - 4 layer GRU, dropout 0.6, embeddings 200, adam optimizer, clipped gradients to 1.
-		Continuation: Gradient norm was maybe too small. Changed it to 2. Now it takes 25% longer to train
+		Continuation: Gradient norm was maybe too small. Changed it to 2. Now it takes 25% longer to train. Batch size 128
 
 

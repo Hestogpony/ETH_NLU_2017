@@ -73,6 +73,7 @@ def adapt_to_dataset(use_cornell):
         cfg['DATA_PATH'] = 'our_data'
         cfg['CONVO_FILE'] = 'our_conversations.txt'
         cfg['LINE_FILE'] = 'Training_Shuffled_Dataset.txt'
+        cfg['LINE_FILE_VAL'] = 'Validation_Shuffled_Dataset.txt'
         cfg['OUTPUT_FILE'] = 'our_output_convo.txt'
 
         cfg['PROCESSED_PATH'] = 'our_processed'
