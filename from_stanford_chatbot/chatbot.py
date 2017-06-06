@@ -107,7 +107,7 @@ class Chatbot(object):
                            model.gradient_norms[bucket_id],  # gradient norm.
                            model.losses[bucket_id]]  # loss for this batch.
         else:
-            output_feed = [model.losses[bucket_id]]  # loss for this batch.
+            output_feed = [model.encoder_states[bucket_id],model.losses[bucket_id]]  # loss for this batch.
             for step in range(decoder_size):  # output logits.
                 output_feed.append(model.outputs[bucket_id][step])
 
@@ -115,7 +115,7 @@ class Chatbot(object):
         if not forward_only:
             return outputs[1], outputs[2], None  # Gradient norm, loss, no outputs.
         else:
-            return None, outputs[0], outputs[1:]  # No gradient norm, loss, outputs.
+            return outputs[0], outputs[1], outputs[2:]  # No gradient norm, loss, outputs.
 
     def _get_buckets(self):
         """ Load the dataset into buckets based on their lengths.
@@ -210,10 +210,10 @@ class Chatbot(object):
 
         while iteration < stop_at_iteration:
             bucket_id = self._get_random_bucket(train_buckets_scale)
-            encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch(data_buckets[bucket_id],
+            encoder_inputs, decoder_inputs, decoder_masks, batch_source_encoder, batch_source_decoder= self.reader.get_batch(data_buckets[bucket_id],
                                                                            bucket_id,
                                                                            batch_size=self.cfg['BATCH_SIZE'])
-            _, step_loss, _ = self.run_step(model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, False)
+            _, step_loss, _ = self.step_rl(model, self.cfg['BUCKETS'],encoder_inputs, decoder_inputs, decoder_masks, batch_source_encoder, batch_source_decoder, bucket_id)
             total_loss += step_loss
             previous_chunks_loss += step_loss
             iteration += 1
@@ -378,6 +378,281 @@ class Chatbot(object):
 
         both = set(available_a) & set(available_b)
         return min(both)
+
+    def step_rl(self, model, buckets, encoder_inputs, decoder_inputs, target_weights, batch_source_encoder,
+              batch_source_decoder, bucket_id, rev_vocab=None, debug=True):
+
+    # initialize
+        init_inputs = [encoder_inputs, decoder_inputs, target_weights, bucket_id]
+
+        batch_mask = [1 for _ in xrange(self.cfg['BATCH_SIZE'])]
+
+        # debug
+        # resp_tokens, resp_txt = self.logits2tokens(encoder_inputs, rev_vocab, sent_max_length, reverse=True)
+        # if debug: print("[INPUT]:", resp_tokens)
+
+        # Initialize
+        #if debug: print("step_rf INPUTS: %s" %encoder_inputs)
+        #if debug: print("step_rf TARGET: %s" %decoder_inputs)
+        #if debug: print("batch_source_encoder: %s" %batch_source_encoder)
+        #if debug: print("batch_source_decoder: %s" %batch_source_decoder)
+
+        ep_rewards, ep_step_loss, enc_states = [], [], []
+        ep_encoder_inputs, ep_target_weights, ep_bucket_id = [], [], []
+        episode, dialog = 0, []
+        # [Episode] per episode = n steps, until break
+        print ("ep_encoder_inputs: %s" %ep_encoder_inputs)
+        print("bucket: %s, bucekt[-1][0]: %s" %(buckets, buckets[-1][0]))
+        while True:
+          #----[Step]------with general function-----------------------------
+
+          #ep_encoder_inputs.append(self.remove_type(encoder_inputs, type=0))
+          ep_encoder_inputs.append(batch_source_encoder)
+          #decoder_len = [len(seq) for seq in batch_source_decoder]
+
+          #if debug: print ("ep_encoder_inputs shape: ", np.shape(ep_encoder_inputs))
+          #if debug: print ("[INPUT]: %s" %ep_encoder_inputs[-1])
+
+          encoder_state, step_loss, output_logits = self.run_step(model, encoder_inputs, decoder_inputs, target_weights,
+                              bucket_id, forward_only=False)
+          print("encoder_state: " , np.shape(encoder_state))
+          ep_target_weights.append(target_weights)
+          ep_bucket_id.append(bucket_id)
+          ep_step_loss.append(step_loss)
+
+          state_tran = np.transpose(encoder_state, axes=(1,0,2))
+          print("state_tran: ", np.shape(state_tran))
+          state_vec = np.reshape(state_tran, (self.cfg['BATCH_SIZE'], -1))
+          print("state_vec: ", np.shape(state_vec))
+          enc_states.append(state_vec)
+
+          resp_tokens = self.remove_type(output_logits, buckets[bucket_id], type=1)
+          #print("remove_type resps: %s" %resp_tokens)
+          #if debug: print("[RESP]: (%.4f), resp len: %s, content: %s" %(step_loss, len(resp_tokens), resp_tokens))
+          try:
+            encoder_trans = np.transpose(ep_encoder_inputs, axes=(1,0))
+          except ValueError:
+            encoder_trans = np.transpose(ep_encoder_inputs, axes=(1,0,2))
+          #if debug: print ("[ep_encoder_inputs] shape: ", np.shape(ep_encoder_inputs))
+          if debug: print ("[encoder_trans] shape: ", np.shape(encoder_trans))
+          #if episode == 5: print (2/0)
+
+          for i, (resp, ep_encoder) in enumerate(zip(resp_tokens, encoder_trans)):
+              print("resp: ", resp)
+
+              if (len(resp) <= 3) or (resp in self.dummy_dialogs) or (resp in ep_encoder.tolist()):
+                  batch_mask[i] = 0
+                  print("make mask index: %d, batch_mask: %s" %(i, batch_mask))
+
+          if sum(batch_mask)==0 or episode>5: break
+
+          #----[Reward]----------------------------------------
+          # r1: Ease of answering
+          print("r1: Ease of answering")
+          r1 = [self.logProb(session, buckets, resp_tokens, [d for _ in resp_tokens], mask= batch_mask) for d in self.dummy_dialogs]
+          print("r1: final value: ", r1)
+          r1 = -np.mean(r1) if r1 else 0
+
+          # r2: Information Flow
+          r2_list = []
+          if len(enc_states) < 2:
+            r2 = 0
+          else:
+            batch_vec_a, batch_vec_b = enc_states[-2], enc_states[-1]
+            for i, (vec_a, vec_b) in enumerate(zip(batch_vec_a, batch_vec_b)):
+              if batch_mask[i] == 0: continue
+              rr2 = sum(vec_a*vec_b) / sum(abs(vec_a)*abs(vec_b))
+              #print("vec_a*vec_b: %s" %sum(vec_a*vec_b))
+              #print("r2: %s" %r2)
+              if(rr2 < 0):
+                print("rr2: ", rr2)
+                print("vec_a: ", vec_a)
+                print("vec_b: ", vec_b)
+                rr2 = -rr2
+              else:
+                rr2 = -log(rr2)
+              r2_list.append(rr2)
+            r2 = sum(r2_list)/len(r2_list)
+          # r3: Semantic Coherence
+          print("r3: Semantic Coherence")
+          r3 = -self.logProb(session, buckets, resp_tokens, ep_encoder_inputs[-1], mask= batch_mask)
+
+          # Episode total reward
+          print("r1: %s, r2: %s, r3: %s" %(r1,r2,r3))
+          R = 0.25*r1 + 0.25*r2 + 0.5*r3
+          ep_rewards.append(R)
+          #----------------------------------------------------
+          episode += 1
+
+          #prepare for next dialogue
+          bk_id = []
+          for i in range(len(resp_tokens)):
+            bk_id.append(min([b for b in range(len(buckets)) if buckets[b][0] >= len(resp_tokens[i])]))
+          bucket_id = max(bk_id)
+          feed_data = {bucket_id: [(resp_tokens, [])]}
+          encoder_inputs, decoder_inputs, target_weights, batch_source_encoder, _ = self.get_batch(feed_data, bucket_id, type=2)
+
+        if len(ep_rewards) == 0: ep_rewards.append(0)
+        print("[Step] final:", episode, ep_rewards)
+        # gradient decent according to batch rewards
+        rto = 0.0
+        if (len(ep_step_loss) <= 1) or (len(ep_rewards) <=1) or (max(ep_rewards) - min(ep_rewards) == 0):
+            rto = 0.0
+        else:
+            rto = (max(ep_step_loss) - min(ep_step_loss)) / (max(ep_rewards) - min(ep_rewards))
+        advantage = [np.mean(ep_rewards)*rto] * len(buckets)
+        print("advantage: %s" %advantage)
+        _, step_loss, _ = self.step(session, init_inputs[0], init_inputs[1], init_inputs[2], init_inputs[3],
+                  forward_only=False, force_dec_input=False, advantage=advantage)
+
+        return None, step_loss, None
+
+
+# log(P(b|a)), the conditional likelyhood
+  def logProb(self, session, buckets, tokens_a, tokens_b, mask=None):
+    def softmax(x):
+      return np.exp(x) / np.sum(np.exp(x), axis=0)
+
+    # prepare for next dialogue
+    #bucket_id = min([b for b in range(len(buckets)) if buckets[b][0] > len(tokens_a) and buckets[b][1] > len(tokens_b)])
+    #print("tokens_a: %s" %tokens_a)
+    print("tokens_b: %s" %tokens_b)
+
+    bk_id = []
+    for i in xrange(len(tokens_a)):
+        bk_id.append(min([b for b in xrange(len(buckets))
+                          if buckets[b][0] >= len(tokens_a[i]) and buckets[b][1] >= len(tokens_b[i])]))
+    bucket_id = max(bk_id)
+
+
+    #print("bucket_id: %s" %bucket_id)
+
+    feed_data = {bucket_id: zip(tokens_a, tokens_b)}
+
+    #print("logProb feed_back: %s" %feed_data[bucket_id])
+    encoder_inputs, decoder_inputs, target_weights, _, _ = self.get_batch(feed_data, bucket_id, type=1)
+    #print("logProb: encoder: %s; decoder: %s" %(encoder_inputs, decoder_inputs))
+    # step
+    _, _, output_logits = self.step(session, encoder_inputs, decoder_inputs, target_weights,
+                        bucket_id, forward_only=True, force_dec_input=True)
+
+    logits_t = np.transpose(output_logits, (1,0,2))
+    print("logits_t shape: " ,np.shape(logits_t))
+
+
+    sum_p = []
+    for i, (tokens, logits) in enumerate(zip(tokens_b, logits_t)):
+        print("tokens: %s, index: %d" %(tokens, i))
+        #print("logits: %s" %logits)
+
+        #if np.sum(tokens) == 0: break
+        if mask[i] == 0: continue
+        p = 1
+        for t, logit in zip(tokens, logits):
+            #print("logProb: logit: %s" %logit)
+            norm = softmax(logit)[t]
+            #print ("t: %s, norm: %s" %(t, norm))
+            p *= norm
+        if p < 1e-100:
+          #print ("p: ", p)
+          p = 1e-100
+        p = log(p) / len(tokens)
+        print ("logProb: p: %s" %(p))
+        sum_p.append(p)
+    re = np.sum(sum_p)/len(sum_p)
+    #print("logProb: P: %s" %(re))
+    return re
+
+  def remove_type(self, sequence, bucket,type=0):
+      tokens = []
+      resps = []
+      if type == 0:
+        tokens = [i for i in [t for t in reversed(sequence)] if i.sum() != 0]
+      elif type == 1:
+        #print ("remove_type type=1 tokens: %s" %sequence)
+
+        for seq in sequence:
+             #print("seq: %s" %seq)
+             token = []
+             for t in seq:
+                 #print("seq_t: %s" %t)
+                 # t = list(t)
+                 # print("list(t): %s" %t)
+                 # t = np.array(t)
+                 # print("array(t): %s" %t)
+                 token.append(int(np.argmax(t, axis=0)))
+             tokens.append(token)
+
+        #tokens = [i for i in [int(np.argmax(t, axis=1)) for t in [seq for seq in sequence]]]
+        #tokens = [i for i in [int(t.index(max(t))) for t in [seq for seq in sequence]]]
+      else:
+        print ("type only 0(encoder_inputs) or 1(decoder_outputs)")
+      #print("remove_type tokens: %s" %tokens)
+      tokens_t = []
+      for col in range(len(tokens[0])):
+            tokens_t.append([tokens[row][col] for row in range(len(tokens))])
+
+      for seq in tokens_t:
+            if data_utils.EOS_ID in seq:
+                resps.append(seq[:seq.index(data_utils.EOS_ID)][:bucket[1]])
+            else:
+                resps.append(seq[:bucket[1]])
+      return resps
+  '''
+  # make logits to tokens
+  def logits2tokens(self, logits, rev_vocab, sent_max_length=None, reverse=False):
+    if reverse:
+      tokens = [t[0] for t in reversed(logits)]
+    else:
+      tokens = [int(np.argmax(t, axis=1)) for t in logits]
+    if data_utils.EOS_ID in tokens:
+      eos = tokens.index(data_utils.EOS_ID)
+      tokens = tokens[:eos]
+    txt = [rev_vocab[t] for t in tokens]
+    if sent_max_length:
+      tokens, txt = tokens[:sent_max_length], txt[:sent_max_length]
+    return tokens, txt
+
+
+  def discount_rewards(self, r, gamma=0.99):
+    """ take 1D float array of rewards and compute discounted reward """
+    discounted_r = np.zeros_like(r)
+    running_add = 0
+    for t in reversed(xrange(0, r.size)):
+        running_add = running_add * gamma + r[t]
+        discounted_r[t] = running_add
+    return discounted_r
+  '''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -142,7 +142,7 @@ class ChatBotModel(object):
                                             self.output_projection[0]) + self.output_projection[1]
                                             for output in self.outputs[bucket]]
         else:
-            self.outputs, self.losses = tf.contrib.legacy_seq2seq.model_with_buckets(
+            self.outputs, self.losses, self.encoder_states = tf.contrib.legacy_seq2seq.model_with_buckets(
                                         self.encoder_inputs,
                                         self.decoder_inputs,
                                         self.targets,

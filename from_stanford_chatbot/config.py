@@ -60,7 +60,7 @@ cfg = {
 }
 
 def adapt_to_dataset(use_cornell):
-    if use_cornell:
+    if False:
         cfg['DATA_PATH'] = 'cornell_data'
         cfg['CONVO_FILE'] = 'movie_conversations.txt'
         cfg['LINE_FILE'] = 'movie_lines.txt'

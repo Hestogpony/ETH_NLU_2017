@@ -22,6 +22,8 @@ import re
 import os
 import glob
 import pickle
+from collections import Counter
+from config import cfg
 
 import numpy as np
 
@@ -49,7 +51,7 @@ class Reader(object):
         input_data_lines = [x.replace('\n', '') for x in input_data_lines]
         input_data_lines = [x for x in input_data_lines if len(x) > 0]
 
-        print(input_data_lines)
+        #print(input_data_lines)
         for data_line in input_data_lines:
             input_sentences = data_line.split('\t')
 
@@ -244,14 +246,26 @@ class Reader(object):
         return batch_inputs
 
 
-    def get_batch(self, data_bucket, bucket_id, batch_size=1):
+    def get_batch(self, data_bucket, bucket_id, batch_size=1, type = 0):
         """ Return one batch to feed into the model """
         # only pad to the max length of the bucket
         encoder_size, decoder_size = self.cfg['BUCKETS'][bucket_id]
         encoder_inputs, decoder_inputs = [], []
 
-        for _ in range(batch_size):
+
+        #This part is for RL 
+
+        batch_source_encoder, batch_source_decoder = [], []
+
+        for batch_index in range(batch_size):
+            if type = 1:
+                encoder_input, decoder_input = data_bucket[batch_index]
+            elif type = 2:
+                encoder_input_a, decoder_input = data_bucket[bucket_index]
+
             encoder_input, decoder_input = random.choice(data_bucket)
+            batch_source_encoder.append(encoder_input)
+            batch_source_decoder.append(decoder_input)
             # pad both encoder and decoder, reverse the encoder
             encoder_inputs.append(list(reversed(self._pad_input(encoder_input, encoder_size))))
             decoder_inputs.append(self._pad_input(decoder_input, decoder_size))
@@ -272,8 +286,44 @@ class Reader(object):
                 if length_id == decoder_size - 1 or target == self.cfg['PAD_ID']:
                     batch_mask[batch_id] = 0.0
             batch_masks.append(batch_mask)
-        return batch_encoder_inputs, batch_decoder_inputs, batch_masks
+        return batch_encoder_inputs, batch_decoder_inputs, batch_masks, batch_source_encoder, batch_source_decoder
 
-# if __name__ == '__main__':
+
+    def generate_dummy_text(self):
+        print("Try to create dummy text")
+        questions, answers = self.make_pairs(os.path.join('our_data','Training_Shuffled_Dataset.txt'))
+        questions.extend(answers)
+        counts1 = Counter(questions)
+        #print(counts1.most_common(1000))
+
+        qq = []
+        for m in counts1.most_common(1000):
+            (a,b) = m
+            qq.append(a)
+            #print(a)
+
+        file1 = open("dummy_text_our","w")
+
+        for item in qq:
+            file1.write(item+'\n')
+
+    def get_dummy_set(dummy_path, vocabulary, vocabulary_size, tokenizer=None):
+        dummy_ids_path = dummy_path + (".ids%d" % vocabulary_size)
+        data_to_token_ids(dummy_path, dummy_ids_path, vocabulary, tokenizer)
+        dummy_set = []
+        with gfile.GFile(dummy_ids_path, "r") as dummy_file:
+            line = dummy_file.readline()
+            counter = 0
+            while line:
+                counter += 1
+                dummy_set.append([int(x) for x in line.split()])
+                line = dummy_file.readline()
+        return dummy_set
+
+
+
+if __name__ == '__main__':
+    reader2 = Reader(cfg)
+    reader2.generate_dummy_text()
 #     prepare_raw_data()
 #     process_data()
