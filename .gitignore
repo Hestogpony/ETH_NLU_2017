@@ -24,3 +24,7 @@ Task2/models/*
 # models
 **/Task1/final_results/final_model_C/*
 /Task2/report/main.aux
+/from_stanford_chatbot/.idea/dictionaries/*.xml
+/from_stanford_chatbot/.idea/*.iml
+/from_stanford_chatbot/.idea/inspectionProfiles/*.xml
+/from_stanford_chatbot/.idea/*.xml
