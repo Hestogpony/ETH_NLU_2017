@@ -22,7 +22,7 @@ See readme.md for instruction on how to run the starter code.
 # <BG> Original parameters are are copied to comments in case of changes 
 
 cfg = {
-    'MODELS_PATH': 'models',
+    'MODELS_PATH': '../models',
     'MODEL_NAME': '', # leave this empty, this is filled with a timestamp
 
     'MAX_TURNS': -1, # Number of conversations to read in
@@ -31,7 +31,7 @@ cfg = {
     'TESTSET_SIZE': 100, # 25000    # Size of the evaluation set
     'TEST_MAX_LENGTH': 80, # Maximum length of sentences in the test set
     
-    'THRESHOLD': 2, #2      # A word has to appear this many times to be part of the vocabulary
+    'THRESHOLD': 3, #2      # A word has to appear this many times to be part of the vocabulary
 
     'PAD_ID': 0,
     'UNK_ID': 1,
@@ -57,11 +57,31 @@ cfg = {
 
     'SAVE_AT_EXIT': True,
 
+    'PROCESSED_PATH': '../data/processed_data/combined_processed',
+    'CPT_PATH': 'combined_checkpoints',
+
+    'CORNELL_DATA': {
+        'PATH': '../data/cornell_data',
+        'CONVO_FILE': 'movie_conversations.txt',
+        'LINE_FILE': 'movie_lines.txt',
+        'OUTPUT_FILE': 'output_convo.txt',
+        'PROCESSED_PATH': '../cornell_processed',
+        'CPT_PATH': 'cornell_checkpoints'
+    },
+    'OUR_DATA': {
+        'PATH': '../data/our_data',
+        'CONVO_FILE': 'our_conversations.txt',
+        'LINE_FILE': 'Training_Shuffled_Dataset.txt',
+        'OUTPUT_FILE': 'our_output_convo.txt',
+        'PROCESSED_PATH': '../our_processed',
+        'CPT_PATH': 'our_checkpoints',
+    },
 }
+
 
 def adapt_to_dataset(use_cornell):
     if use_cornell:
-        cfg['DATA_PATH'] = 'cornell_data'
+        cfg['DATA_PATH'] = '..\cornell_data'
         cfg['CONVO_FILE'] = 'movie_conversations.txt'
         cfg['LINE_FILE'] = 'movie_lines.txt'
         cfg['OUTPUT_FILE'] = 'output_convo.txt'
@@ -70,13 +90,14 @@ def adapt_to_dataset(use_cornell):
         cfg['CPT_PATH'] = 'cornell_checkpoints'        
 
     else:
-        cfg['DATA_PATH'] = 'our_data'
+        cfg['DATA_PATH'] = '..\our_data'
         cfg['CONVO_FILE'] = 'our_conversations.txt'
         cfg['LINE_FILE'] = 'Training_Shuffled_Dataset.txt'
         cfg['OUTPUT_FILE'] = 'our_output_convo.txt'
 
         cfg['PROCESSED_PATH'] = 'our_processed'
         cfg['CPT_PATH'] = 'our_checkpoints'
+
 
 def adapt_paths_to_model():
     cfg['PROCESSED_PATH'] = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'], cfg['PROCESSED_PATH'])
@@ -88,12 +109,12 @@ def save_cfg(updated_config):
     pickle.dump(updated_config , open(config_path, "wb"))
     # print("Configs saved in file: %s" % (config_path))
 
+
 def load_cfg(model_name):
     config_path = os.path.join(cfg['MODELS_PATH'], model_name, "config")
     loaded_cfg = pickle.load(open(config_path, "rb"))
     print("Configs loaded from %s" % (config_path))
     return loaded_cfg
-
 
 
 # model parameters
@@ -113,7 +134,7 @@ These buckets size seem to work the best
 # BUCKETS = [(8, 10), (12, 14), (16, 19), (23, 26), (39, 43)]
 
 
-# <BG> original vocab sizes on the Cornell data set
+# <BG> original vocab sizes on the Cornell our_data set
 # ENC_VOCAB = 24471
 # DEC_VOCAB = 24671
 

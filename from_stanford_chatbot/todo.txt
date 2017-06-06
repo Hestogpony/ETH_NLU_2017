@@ -35,6 +35,9 @@ TODO:
 
 - Measure/quantify the limitations of the baseline model
 	--> inituitive: Variety of the answers is quite small. All the answers are pretty generic and short
+    --> Convergence: Does the responds exhibit convergence as described in cornell_data/chameleons.pdf?
+        - does the respondent’s replies echo the initiator’s use of articles, prepositions, and other
+          apparently minor aspects of lexical choice?
 
 Param tuning:
 - Increase threshold for entry in vocabulary

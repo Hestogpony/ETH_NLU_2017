@@ -18,7 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import argparse
 import random
 import sys
@@ -32,29 +33,27 @@ import numpy as np
 import tensorflow as tf
 
 from model import ChatBotModel
-
 import config
-from config import cfg
 import measures
+
 
 class Logger(object):
     def __init__(self, timestamp):
         self.terminal = sys.stdout
-        if not os.path.exists("log"):
-            os.makedirs("log")
-        self.log = open("log/" + timestamp + ".log", "w")
+        if not os.path.exists("../log"):
+            os.makedirs("../log")
+        self.log = open("../log/" + timestamp + ".log", "w")
 
     def write(self, message):
         self.terminal.write(message)
         self.log.write(message)
 
     def flush(self):
-        #this flush method is needed for python 3 compatibility.
-        #this handles the flush command by doing nothing.
-        #you might want to specify some extra behavior here.
+        # this flush method is needed for python 3 compatibility.
+        # this handles the flush command by doing nothing.
+        # you might want to specify some extra behavior here.
         self.terminal.flush()
         self.log.flush()
-
 
 
 class Chatbot(object):
@@ -63,24 +62,26 @@ class Chatbot(object):
         self.reader = reader
         self.sess = tf.Session()
 
-    def _get_random_bucket(self, train_buckets_scale):
+    @staticmethod
+    def _get_random_bucket(train_buckets_scale):
         """ Get a random bucket from which to choose a training sample """
         rand = random.random()
         return min([i for i in range(len(train_buckets_scale))
                     if train_buckets_scale[i] > rand])
 
-    def _assert_lengths(self, encoder_size, decoder_size, encoder_inputs, decoder_inputs, decoder_masks):
+    @staticmethod
+    def _assert_lengths(encoder_size, decoder_size, encoder_inputs, decoder_inputs, decoder_masks):
         """ Assert that the encoder inputs, decoder inputs, and decoder masks are
         of the expected lengths """
         if len(encoder_inputs) != encoder_size:
             raise ValueError("Encoder length must be equal to the one in bucket,"
-                            " %d != %d." % (len(encoder_inputs), encoder_size))
+                             " %d != %d." % (len(encoder_inputs), encoder_size))
         if len(decoder_inputs) != decoder_size:
             raise ValueError("Decoder length must be equal to the one in bucket,"
-                           " %d != %d." % (len(decoder_inputs), decoder_size))
+                             " %d != %d." % (len(decoder_inputs), decoder_size))
         if len(decoder_masks) != decoder_size:
             raise ValueError("Weights length must be equal to the one in bucket,"
-                           " %d != %d." % (len(decoder_masks), decoder_size))
+                             " %d != %d." % (len(decoder_masks), decoder_size))
 
     def run_step(self, model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, forward_only):
         """ Run one step in training.
@@ -134,7 +135,7 @@ class Chatbot(object):
         return test_buckets, data_buckets, train_buckets_scale
 
     def is_epoch_end(self, iteration):
-        return iteration % (int(self.cfg['TRAINING_SAMPLES'] / self.cfg['BATCH_SIZE'])) == 0 
+        return iteration % (int(self.cfg['TRAINING_SAMPLES'] / self.cfg['BATCH_SIZE'])) == 0
 
     def _get_skip_step(self, iteration):
         """ How many steps should the model train before it saves all the weights. """
@@ -168,12 +169,11 @@ class Chatbot(object):
                 continue
             start = time.time()
             encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch(test_buckets[bucket_id],
-                                                                            bucket_id,
-                                                                            batch_size=self.cfg['BATCH_SIZE'])
+                                                                                  bucket_id,
+                                                                                  batch_size=self.cfg['BATCH_SIZE'])
             _, step_loss, _ = self.run_step(model, encoder_inputs, decoder_inputs,
-                                       decoder_masks, bucket_id, True)
+                                            decoder_masks, bucket_id, True)
             print('\t\tTest bucket {}: loss {}, time {}'.format(bucket_id, step_loss, time.time() - start))
-
 
     def train(self, save_end):
         """ Train the bot """
@@ -195,7 +195,7 @@ class Chatbot(object):
 
         iteration = model.global_step.eval(session=self.sess)
 
-        # estimate the passes over the data
+        # estimate the passes over the our_data
         stop_at_iteration = int((self.cfg['EPOCHS'] * self.cfg['TRAINING_SAMPLES']) / self.cfg['BATCH_SIZE'])
         epoch = 1
 
@@ -207,19 +207,20 @@ class Chatbot(object):
         total_loss = 0
         previous_chunks_loss = 0
 
-
         while iteration < stop_at_iteration:
             bucket_id = self._get_random_bucket(train_buckets_scale)
             encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch(data_buckets[bucket_id],
-                                                                           bucket_id,
-                                                                           batch_size=self.cfg['BATCH_SIZE'])
+                                                                                  bucket_id,
+                                                                                  batch_size=self.cfg['BATCH_SIZE'])
             _, step_loss, _ = self.run_step(model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, False)
             total_loss += step_loss
             previous_chunks_loss += step_loss
             iteration += 1
 
             if iteration % skip_step == 0:
-                print('Iter {}: loss {}, time {} s'.format(iteration, previous_chunks_loss / (self.cfg['BATCH_SIZE'] * skip_step), time.time() - chunk_start))
+                print('Iter {}: loss {}, time {} s'.format(iteration,
+                                                           previous_chunks_loss / (self.cfg['BATCH_SIZE'] * skip_step),
+                                                           time.time() - chunk_start))
                 previous_chunks_loss = 0
                 # Run evals on development set and print their loss
                 self._eval_test_set(model, test_buckets)
@@ -228,7 +229,8 @@ class Chatbot(object):
 
             if self.is_epoch_end(iteration):
                 print('\nEpoch %d is done' % epoch)
-                print('Iter {}: loss {}, time {} s\n\n'.format(iteration, total_loss/self.cfg['TRAINING_SAMPLES'], time.time() - epoch_start))
+                print('Iter {}: loss {}, time {} s\n\n'.format(iteration, total_loss / self.cfg['TRAINING_SAMPLES'],
+                                                               time.time() - epoch_start))
                 epoch += 1
                 epoch_start = time.time()
                 total_loss = 0
@@ -236,10 +238,11 @@ class Chatbot(object):
                     model.save_model(sess=self.sess)
                 sys.stdout.flush()
 
-        # Obsolete because we save at exit! Save model at the end of training
-        # model.save_model(sess=self.sess)
+                # Obsolete because we save at exit! Save model at the end of training
+                # model.save_model(sess=self.sess)
 
-    def _get_user_input(self):
+    @staticmethod
+    def _get_user_input():
         """ Get user's input, which will be transformed into encoder input later """
         print("> ", end="")
         sys.stdout.flush()
@@ -292,7 +295,7 @@ class Chatbot(object):
             output_file.write('HUMAN ++++ ' + line + '\n')
             # Get token-ids for the input sentence.
             token_ids = self.reader.sentence2id(enc_vocab, str(line))
-            if (len(token_ids) > max_length):
+            if len(token_ids) > max_length:
                 print('Max length I can handle is:', max_length)
                 line = self._get_user_input()
                 continue
@@ -300,11 +303,11 @@ class Chatbot(object):
             bucket_id = self._find_right_bucket(len(token_ids))
             # Get a 1-element batch to feed the sentence to the model.
             encoder_inputs, decoder_inputs, decoder_masks = self.reader.get_batch([(token_ids, [])],
-                                                                            bucket_id,
-                                                                            batch_size=1)
+                                                                                  bucket_id,
+                                                                                  batch_size=1)
             # Get output logits for the sentence.
             _, _, output_logits = self.run_step(model, encoder_inputs, decoder_inputs,
-                                           decoder_masks, bucket_id, True)
+                                                decoder_masks, bucket_id, True)
             response = self._construct_response(output_logits, inv_dec_vocab)
             print(response)
             output_file.write('BOT ++++ ' + response + '\n')
@@ -314,7 +317,7 @@ class Chatbot(object):
     def test_perplexity(self, inpath, model_iteration=None):
         """
         <FL> Mostly the same setup as chat(), except we read from a file.
-        This is used after training for final results on our data set
+        This is used after training for final results on our our_data set
         """
 
         # if self.cfg['USE_CORNELL']:
@@ -324,7 +327,7 @@ class Chatbot(object):
         _, dec_word_to_i = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.dec'))
 
         # Obtain the test sentencess
-        questions, answers = self.reader.make_pairs(inpath)
+        questions, answers = self.reader.make_our_data_pairs(inpath)
         questions = [self.reader.sentence2id(enc_word_to_i, x) for x in questions]
         answers = [self.reader.sentence2id(enc_word_to_i, x) for x in answers]
 
@@ -341,7 +344,7 @@ class Chatbot(object):
         # compare against C.
         # We do that because we need two numbers / line
         for i in range(0, len(questions), 2):
-            assert(answers[i] == questions[i + 1])
+            assert (answers[i] == questions[i + 1])
 
             a = questions[i]
             b = questions[i + 1]
@@ -355,62 +358,69 @@ class Chatbot(object):
 
             # bucket x batch x vocab
             _, _, logits_b = self.run_step(model, enc_in_a, dec_in_b,
-                                        dec_masks_b, bucket_ab, forward_only=True)
+                                           dec_masks_b, bucket_ab, forward_only=True)
 
             _, _, logits_c = self.run_step(model, enc_in_b, dec_in_c,
-                                        dec_masks_c, bucket_bc, forward_only=True)
+                                           dec_masks_c, bucket_bc, forward_only=True)
 
-            soft_b = np.exp(logits_b) / np.sum(np.exp(logits_b), axis = 0)
-            soft_c = np.exp(logits_c) / np.sum(np.exp(logits_c), axis = 0)
+            soft_b = np.exp(logits_b) / np.sum(np.exp(logits_b), axis=0)
+            soft_c = np.exp(logits_c) / np.sum(np.exp(logits_c), axis=0)
 
             perp_b = measures.perplexity(self.cfg, soft_b, b, dec_word_to_i)
             perp_c = measures.perplexity(self.cfg, soft_c, c, dec_word_to_i)
 
             print("%f %f" % (perp_b, perp_c))
 
-
-
     def _find_right_bucket2(self, lengtha, lengthb):
         available_a = [b for b in range(len(self.cfg['BUCKETS']))
-                        if self.cfg['BUCKETS'][b][0] >= lengtha]
+                       if self.cfg['BUCKETS'][b][0] >= lengtha]
         available_b = [b for b in range(len(self.cfg['BUCKETS']))
-                        if self.cfg['BUCKETS'][b][1] >= lengthb]
+                       if self.cfg['BUCKETS'][b][1] >= lengthb]
 
         both = set(available_a) & set(available_b)
         return min(both)
 
 
-
-
 def main():
-    global cfg
+    cfg = config.cfg
     timestamp = time.strftime('%Y-%m-%d--%H_%M_%S')
     sys.stdout = Logger(timestamp)
 
+    # region Parameter arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices={'train', 'chat', 'test'},
                         default='train', help="mode. if not specified, it's in the train mode")
     parser.add_argument('--cornell', action='store_true', help="use the cornell movie dialogue corpus")
     parser.add_argument('--conversations', help="limit the number of conversations used in the dataset")
-    parser.add_argument('--model', help='specify name (timestamp) of a previously used model. If none is provided then the newest model available will be used.')
-    parser.add_argument('--load_iter', help='if you do not want to use an intermediate version of the trained network, specify the iteration number here')
+    parser.add_argument('--model',
+                        help='specify name (timestamp) of a previously used model. If none is provided then the '
+                             'newest model available will be used.')
+    parser.add_argument('--load_iter',
+                        help='if you do not want to use an intermediate version of the trained network, specify the '
+                             'iteration number here')
     parser.add_argument('test_file', type=str, nargs='?')
     parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
-    parser.add_argument('--softmax', action='store_true', help='use standard softmax loss instead of sampled softmax loss')
+    parser.add_argument('--softmax', action='store_true',
+                        help='use standard softmax loss instead of sampled softmax loss')
     parser.add_argument('--clear', action='store_true', help="delete all existing models to free up disk space")
-    parser.add_argument('--keep_prev', action='store_true', help='keep only the most recent version of the trained network')
-    parser.add_argument('--epochs', help='how many times the network should pass over the entire dataset. Note: Due to random bucketing, this is an approximation.')
+    parser.add_argument('--keep_prev', action='store_true',
+                        help='keep only the most recent version of the trained network')
+    parser.add_argument('--epochs',
+                        help='how many times the network should pass over the entire dataset. Note: Due to random '
+                             'bucketing, this is an approximation.')
     parser.add_argument('--save_end', action='store_true', help='save the model ONLY at the end of training')
-    parser.add_argument('--processed_path', help='Specify if you want to use exisiting preprocessed data')
-    parser.add_argument('--no_save_at_exit',action='store_true', help='deactivate automatic model saving at keyboard interrupt')
+    parser.add_argument('--processed_path', help='Specify if you want to use exisiting preprocessed our_data')
+    parser.add_argument('--no_save_at_exit', action='store_true',
+                        help='deactivate automatic model saving at keyboard interrupt')
+    parser.add_argument('--combined_data', action='store_true', help='Both cornell data and our data will be used')
+
     args = parser.parse_args()
 
     if args.clear:
         shutil.rmtree(cfg['MODELS_PATH'])
 
     if not os.path.exists(cfg['MODELS_PATH']):
-            os.makedirs(cfg['MODELS_PATH'])
-
+        os.makedirs(cfg['MODELS_PATH'])
 
     ########### load old config file if necessary ############
     if args.model:
@@ -419,8 +429,9 @@ def main():
     else:
         if args.mode == 'chat':
             # default mode: load the config of the last used model
-            saved_models = [name for name in os.listdir(cfg['MODELS_PATH']) if os.path.isdir(os.path.join(cfg['MODELS_PATH'],name))]
-            saved_models = sorted(saved_models) # sorted in ascending order 
+            saved_models = [name for name in os.listdir(cfg['MODELS_PATH']) if
+                            os.path.isdir(os.path.join(cfg['MODELS_PATH'], name))]
+            saved_models = sorted(saved_models)  # sorted in ascending order
             last_model = saved_models[-1]
             cfg = config.load_cfg(last_model)
             # pp = pprint.PrettyPrinter(indent=4)
@@ -449,23 +460,29 @@ def main():
         cfg['EPOCHS'] = int(args.epochs)
     if args.processed_path:
         cfg['PROCESSED_PATH'] = args.processed_path
-        vocab_sizes_dict = pickle.load(open(os.path.join(cfg['PROCESSED_PATH'],"vocab_sizes"), "rb"))
+        vocab_sizes_dict = pickle.load(open(os.path.join(cfg['PROCESSED_PATH'], "vocab_sizes"), "rb"))
         cfg.update(vocab_sizes_dict)
     if args.no_save_at_exit:
         cfg['SAVE_AT_EXIT'] = False
 
-    ################ read data #################
+    # endregion
+
+    ############## read our_data #################
+
     if args.cornell:
         import cornell_data as data
+    elif args.combined_data:
+        import data_reader as data
     else:
         import our_data as data
 
     reader = data.Reader(cfg)
-    if not os.path.isdir(cfg['PROCESSED_PATH']): # Will not be done if we're in test mode, chat mode or continue training
+
+    # reader = data.Reader(cfg)
+    if not os.path.isdir(cfg['PROCESSED_PATH']):  # Not be done if we're in test mode, chat mode or continue training
         reader.prepare_raw_data()
         reader.process_data()
-    print('Data ready!')
-
+        print('Data ready!')
 
     ########### start using the actual model##################
     # create checkpoints folder if there isn't one already
@@ -478,6 +495,7 @@ def main():
         bot.chat(args.load_iter)
     elif args.mode == 'test':
         bot.test_perplexity(args.test_file, args.load_iter)
+
 
 if __name__ == '__main__':
     main()
