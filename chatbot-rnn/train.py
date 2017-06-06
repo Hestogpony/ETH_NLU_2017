@@ -15,13 +15,13 @@ def main():
                        help='data directory containing input.txt')
     parser.add_argument('--save_dir', type=str, default='models/new_save',
                        help='directory for checkpointed models (load from here if one is already present)')
-    parser.add_argument('--rnn_size', type=int, default=1500,
+    parser.add_argument('--rnn_size', type=int, default=1024,
                        help='size of RNN hidden state')
-    parser.add_argument('--num_layers', type=int, default=4,
+    parser.add_argument('--num_layers', type=int, default=3,
                        help='number of layers in the RNN')
-    parser.add_argument('--model', type=str, default='gru',
+    parser.add_argument('--model', type=str, default='lstm',
                        help='rnn, gru, or lstm')
-    parser.add_argument('--batch_size', type=int, default=40,
+    parser.add_argument('--batch_size', type=int, default=32,
                        help='minibatch size')
     parser.add_argument('--seq_length', type=int, default=50,
                        help='RNN sequence length')
