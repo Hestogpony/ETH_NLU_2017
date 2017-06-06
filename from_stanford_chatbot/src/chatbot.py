@@ -461,7 +461,7 @@ def main():
             # pp.pprint(cfg)
         else:
             # create a new model
-            config.adapt_to_dataset(args.cornell)
+            config.adapt_to_dataset(args.cornell, args.combined_data)
             cfg['MODEL_NAME'] = timestamp
             directory = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'])
             if not os.path.exists(directory):

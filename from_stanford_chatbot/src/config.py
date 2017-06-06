@@ -60,37 +60,56 @@ cfg = {
     'PROCESSED_PATH': '../data/processed_data/combined_processed',
     'CPT_PATH': 'combined_checkpoints',
 
+    # Hard coded for the combined reader
+
     'CORNELL_DATA': {
         'PATH': '../data/cornell_data',
         'CONVO_FILE': 'movie_conversations.txt',
         'LINE_FILE': 'movie_lines.txt',
         'OUTPUT_FILE': 'output_convo.txt',
-        'PROCESSED_PATH': '../cornell_processed',
-        'CPT_PATH': 'cornell_checkpoints'
+        # 'PROCESSED_PATH': 'cornell_processed',
+        # 'CPT_PATH': 'cornell_checkpoints'
     },
     'OUR_DATA': {
         'PATH': '../data/our_data',
         'CONVO_FILE': 'our_conversations.txt',
         'LINE_FILE': 'Training_Shuffled_Dataset.txt',
         'OUTPUT_FILE': 'our_output_convo.txt',
-        'PROCESSED_PATH': '../our_processed',
-        'CPT_PATH': 'our_checkpoints',
+        # 'PROCESSED_PATH': 'our_processed',
+        # 'CPT_PATH': 'our_checkpoints',
     },
 }
 
 
-def adapt_to_dataset(use_cornell):
+def adapt_to_dataset(use_cornell, use_combined):
     if use_cornell:
-        cfg['DATA_PATH'] = '..\cornell_data'
+        cfg['DATA_PATH'] = '../data/cornell_data'
         cfg['CONVO_FILE'] = 'movie_conversations.txt'
         cfg['LINE_FILE'] = 'movie_lines.txt'
         cfg['OUTPUT_FILE'] = 'output_convo.txt'
 
         cfg['PROCESSED_PATH'] = 'cornell_processed'
         cfg['CPT_PATH'] = 'cornell_checkpoints'        
+    elif use_combined:
+        cfg.update({
+            'CORNELL_DATA': {
+            'PATH': '../data/cornell_data',
+            'CONVO_FILE': 'movie_conversations.txt',
+            'LINE_FILE': 'movie_lines.txt',
+            'OUTPUT_FILE': 'output_convo.txt',
+            },
+            'OUR_DATA': {
+                'PATH': '../data/our_data',
+                'CONVO_FILE': 'our_conversations.txt',
+                'LINE_FILE': 'Training_Shuffled_Dataset.txt',
+                'OUTPUT_FILE': 'our_output_convo.txt',
+            }
+        })
+        cfg['PROCESSED_PATH'] = 'combined_processed'
+        cfg['CPT_PATH'] = 'combined_checkpoints'   
 
     else:
-        cfg['DATA_PATH'] = '..\our_data'
+        cfg['DATA_PATH'] = '../data/our_data'
         cfg['CONVO_FILE'] = 'our_conversations.txt'
         cfg['LINE_FILE'] = 'Training_Shuffled_Dataset.txt'
         cfg['LINE_FILE_VAL'] = 'Validation_Shuffled_Dataset.txt'
