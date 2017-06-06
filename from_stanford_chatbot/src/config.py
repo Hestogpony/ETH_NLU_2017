@@ -74,18 +74,16 @@ def adapt_to_dataset(use_cornell, use_combined):
     elif use_combined:
         cfg.update({
             'CORNELL_DATA': {
-            'PATH': '../data/cornell_data',
-            'CONVO_FILE': 'movie_conversations.txt',
-            'LINE_FILE': 'movie_lines.txt',
-            'OUTPUT_FILE': 'output_convo.txt',
+                'PATH': '../data/cornell_data',
+                'LINE_FILE': 'movie_lines.txt',
             },
             'OUR_DATA': {
                 'PATH': '../data/our_data',
-                'CONVO_FILE': 'our_conversations.txt',
                 'LINE_FILE': 'Training_Shuffled_Dataset.txt',
-                'OUTPUT_FILE': 'our_output_convo.txt',
             }
         })
+        cfg['CONVO_FILE'] = 'movie_conversations.txt'
+        cfg['OUTPUT_FILE'] = 'output_convo.txt'
         cfg['PROCESSED_PATH'] = 'combined_processed'
         cfg['CPT_PATH'] = 'combined_checkpoints'   
 
