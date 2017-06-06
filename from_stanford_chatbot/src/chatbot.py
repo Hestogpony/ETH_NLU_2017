@@ -505,7 +505,8 @@ def main():
     if not os.path.isdir(cfg['PROCESSED_PATH']):  # Not be done if we're in test mode, chat mode or continue training
         reader.prepare_raw_data()
         reader.process_data()
-        print('Data ready!')
+    
+    print('Data ready!')
 
     ########### start using the actual model##################
     # create checkpoints folder if there isn't one already
