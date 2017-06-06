@@ -747,6 +747,9 @@ def main():
     reader.make_dir(cfg['CPT_PATH'])
 
     bot = Chatbot(config=cfg, reader=reader)
+
+    reader.input2id('dummy_text', 'enc')
+
     if args.mode == 'train':
         bot.train(args.save_end)
     elif args.mode == 'chat':
