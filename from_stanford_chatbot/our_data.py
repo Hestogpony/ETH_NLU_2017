@@ -262,6 +262,7 @@ class Reader(object):
                 encoder_input, decoder_input = data_bucket[batch_index]
             elif type = 2:
                 encoder_input_a, decoder_input = data_bucket[bucket_index]
+                encoder_input = encoder_input
 
             encoder_input, decoder_input = random.choice(data_bucket)
             batch_source_encoder.append(encoder_input)
