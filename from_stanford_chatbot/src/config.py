@@ -59,25 +59,6 @@ cfg = {
 
     'PROCESSED_PATH': '../data/processed_data/combined_processed',
     'CPT_PATH': 'combined_checkpoints',
-
-    # Hard coded for the combined reader
-
-    'CORNELL_DATA': {
-        'PATH': '../data/cornell_data',
-        'CONVO_FILE': 'movie_conversations.txt',
-        'LINE_FILE': 'movie_lines.txt',
-        'OUTPUT_FILE': 'output_convo.txt',
-        # 'PROCESSED_PATH': 'cornell_processed',
-        # 'CPT_PATH': 'cornell_checkpoints'
-    },
-    'OUR_DATA': {
-        'PATH': '../data/our_data',
-        'CONVO_FILE': 'our_conversations.txt',
-        'LINE_FILE': 'Training_Shuffled_Dataset.txt',
-        'OUTPUT_FILE': 'our_output_convo.txt',
-        # 'PROCESSED_PATH': 'our_processed',
-        # 'CPT_PATH': 'our_checkpoints',
-    },
 }
 
 
