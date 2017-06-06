@@ -58,7 +58,7 @@ def pretrain():
 	print("make the input")
 	totallines = get_alllines()
 	print("create a model")
-	model = gensim.models.Word2Vec(totallines, min_count=cfg['THRESHOLD']-1, size = cfg["HIDDEN_SIZE"], trim_rule = None)
+	model = gensim.models.Word2Vec(totallines, min_count=cfg['THRESHOLD'], size = cfg["HIDDEN_SIZE"], trim_rule = None)
 	model.save(os.path.join(foldername,modelname))
 	print("model saved")
 
