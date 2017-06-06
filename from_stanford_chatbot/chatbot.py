@@ -82,7 +82,7 @@ class Chatbot(object):
 			raise ValueError("Weights length must be equal to the one in bucket,"
 						   " %d != %d." % (len(decoder_masks), decoder_size))
 
-	def run_step(self, model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, forward_only):
+	def run_step(self, model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, forward_only = False, advantage=None):
 		""" Run one step in training.
 		@forward_only: boolean value to decide whether a backward path should be created
 		forward_only is set to True when you just want to evaluate on the test set,
@@ -92,6 +92,8 @@ class Chatbot(object):
 
 		# input feed: encoder inputs, decoder inputs, target_weights, as provided.
 		input_feed = {}
+		for step in xrange(len(self.cfg['BUCKETS'])):
+      		input_feed[self.advantage[l].name] = advantage[l] if advantage else 0
 		for step in range(encoder_size):
 			input_feed[model.encoder_inputs[step].name] = encoder_inputs[step]
 		for step in range(decoder_size):
@@ -107,7 +109,7 @@ class Chatbot(object):
 						   model.gradient_norms[bucket_id],  # gradient norm.
 						   model.losses[bucket_id]]  # loss for this batch.
 		else:
-			output_feed = [model.encoder_states[bucket_id],model.losses[bucket_id]]  # loss for this batch.
+			output_feed = [model.encoder_states[bucket_id], model.losses[bucket_id]]  # loss for this batch.
 			for step in range(decoder_size):  # output logits.
 				output_feed.append(model.outputs[bucket_id][step])
 
@@ -449,7 +451,7 @@ class Chatbot(object):
 			  #----[Reward]----------------------------------------
 			  # r1: Ease of answering
 			print("r1: Ease of answering")
-			r1 = [self.logProb(session, buckets, resp_tokens, [d for _ in resp_tokens], mask= batch_mask) for d in self.dummy_dialogs]
+			r1 = [self.logProb(model, self.sess, buckets, resp_tokens, [d for _ in resp_tokens], mask= batch_mask) for d in self.dummy_dialogs]
 			print("r1: final value: ", r1)
 			r1 = -np.mean(r1) if r1 else 0
 
@@ -475,7 +477,7 @@ class Chatbot(object):
 			r2 = sum(r2_list)/len(r2_list)
 			# r3: Semantic Coherence
 			print("r3: Semantic Coherence")
-			r3 = -self.logProb(session, buckets, resp_tokens, ep_encoder_inputs[-1], mask= batch_mask)
+			r3 = -self.logProb(model, self.sess,buckets, resp_tokens, ep_encoder_inputs[-1], mask= batch_mask)
 
 			# Episode total reward
 			print("r1: %s, r2: %s, r3: %s" %(r1,r2,r3))
@@ -502,14 +504,14 @@ class Chatbot(object):
 				rto = (max(ep_step_loss) - min(ep_step_loss)) / (max(ep_rewards) - min(ep_rewards))
 			advantage = [np.mean(ep_rewards)*rto] * len(buckets)
 			print("advantage: %s" %advantage)
-			_, step_loss, _ = self.step(session, init_inputs[0], init_inputs[1], init_inputs[2], init_inputs[3],
+			_, step_loss, _ = self.run_step(model, init_inputs[0], init_inputs[1], init_inputs[2], init_inputs[3],
 					  forward_only=False, force_dec_input=False, advantage=advantage)
 
 			return None, step_loss, None
 
 
 # log(P(b|a)), the conditional likelyhood
-	def logProb(self, session, buckets, tokens_a, tokens_b, mask=None):
+	def logProb(self, model, session, buckets, tokens_a, tokens_b, mask=None):
 		def softmax(x):
 			return np.exp(x) / np.sum(np.exp(x), axis=0)
 
@@ -533,8 +535,8 @@ class Chatbot(object):
 		encoder_inputs, decoder_inputs, target_weights, _, _ = self.get_batch(feed_data, bucket_id, batch_size = cfg['BATCH_SIZE'],type=1)
 		#print("logProb: encoder: %s; decoder: %s" %(encoder_inputs, decoder_inputs))
 		# step
-		_, _, output_logits = self.step(session, encoder_inputs, decoder_inputs, target_weights,
-							bucket_id, forward_only=True, force_dec_input=True)
+		_, _, output_logits = self.run_step(model, encoder_inputs, decoder_inputs, target_weights,
+							bucket_id, forward_only=False)
 
 		logits_t = np.transpose(output_logits, (1,0,2))
 		print("logits_t shape: " ,np.shape(logits_t))

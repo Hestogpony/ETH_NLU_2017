@@ -85,6 +85,10 @@ class ChatBotModel(object):
         # Our targets are decoder inputs shifted by one (to ignore <s> symbol)
         self.targets = [tf.cast(x, tf.float32) for x in self.decoder_inputs[1:]]
 
+        self.force_dec_input = tf.placeholder(tf.bool, name="force_dec_input")
+        self.en_output_proj = tf.placeholder(tf.bool, name="en_output_proj")
+        self.advantage = [tf.placeholder(tf.float32, name="advantage_%i" % i) for i in range(len(self.cfg['BUCKETS']))]
+
     def _inference(self):
         global SAMPLED_w
         global SAMPLED_b
@@ -166,8 +170,10 @@ class ChatBotModel(object):
                 self.train_ops = []
                 start = time.time()
                 for bucket in range(len(self.cfg['BUCKETS'])):
+                    adjusted_losses = tf.subtract(self.losses[bucket], self.advantage[bucket])
+                    #gradients = tf.gradients(adjusted_losses, self.trainables)
 
-                    clipped_grads, norm = tf.clip_by_global_norm(tf.gradients(self.losses[bucket],
+                    clipped_grads, norm = tf.clip_by_global_norm(tf.gradients(adjusted_losses,
                                                                  trainables),
                                                                  self.cfg['MAX_GRAD_NORM'])
                     self.gradient_norms.append(norm)

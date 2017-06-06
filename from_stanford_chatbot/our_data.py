@@ -246,7 +246,7 @@ class Reader(object):
         return batch_inputs
 
 
-    def get_batch(self, data_bucket, bucket_id, batch_size=1, type = 0):
+    def get_batch(self, data_bucket, bucket_id, batch_size=1, type=0):
         """ Return one batch to feed into the model """
         # only pad to the max length of the bucket
         encoder_size, decoder_size = self.cfg['BUCKETS'][bucket_id]
@@ -258,12 +258,12 @@ class Reader(object):
         batch_source_encoder, batch_source_decoder = [], []
 
         for batch_index in range(batch_size):
-            if type = 1:
+            if type == 1:
                 encoder_input, decoder_input = data_bucket[batch_index]
-            elif type = 2:
+            elif type == 2:
                 encoder_input_a, decoder_input = data_bucket[bucket_index]
                 encoder_input = encoder_input
-            elif type = 0:
+            elif type == 0:
                 encoder_input, decoder_input = random.choice(data_bucket)
             batch_source_encoder.append(encoder_input)
             batch_source_decoder.append(decoder_input)
