@@ -263,8 +263,8 @@ class Reader(object):
             elif type = 2:
                 encoder_input_a, decoder_input = data_bucket[bucket_index]
                 encoder_input = encoder_input
-
-            encoder_input, decoder_input = random.choice(data_bucket)
+            elif type = 0:
+                encoder_input, decoder_input = random.choice(data_bucket)
             batch_source_encoder.append(encoder_input)
             batch_source_decoder.append(decoder_input)
             # pad both encoder and decoder, reverse the encoder
