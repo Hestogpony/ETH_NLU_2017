@@ -308,6 +308,30 @@ class Reader(object):
         for item in qq:
             file1.write(item+'\n')
 
+    def input2id(self, data_path, mode):
+        # <BG> based on token2id
+        """ Convert all the tokens in any input file into their corresponding
+        index in the vocabulary. """
+        vocab_path = 'vocab.' + mode
+        in_path = data_path  
+        out_path = data + '_ids'
+
+        _, vocab = self.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], vocab_path))
+        in_file = open(in_path, MODE_R)
+        out_file = open(out_path, MODE_W)
+
+        lines = in_file.read().splitlines()
+        for line in lines:
+            if mode == 'dec': # we only care about '<s>' and </s> in encoder
+                ids = [vocab['<s>']]
+            else:
+                ids = []
+            ids.extend(self.sentence2id(vocab, line))
+            # ids.extend([vocab.get(token, vocab['<unk>']) for token in basic_tokenizer(line)])
+            if mode == 'dec':
+                ids.append(vocab['<\s>'])
+            out_file.write(' '.join(str(id_) for id_ in ids) + '\n')
+
     def get_dummy_set(dummy_path, vocabulary, vocabulary_size, tokenizer=None):
         dummy_ids_path = dummy_path + (".ids%d" % vocabulary_size)
         data_to_token_ids(dummy_path, dummy_ids_path, vocabulary, tokenizer)
@@ -325,6 +349,7 @@ class Reader(object):
 
 if __name__ == '__main__':
     reader2 = Reader(cfg)
-    reader2.generate_dummy_text()
+    # reader2.generate_dummy_text()
+    # reader2.input2id("dummy_text")
 #     prepare_raw_data()
 #     process_data()

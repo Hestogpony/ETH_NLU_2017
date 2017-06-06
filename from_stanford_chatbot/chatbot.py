@@ -656,101 +656,104 @@ class Chatbot(object):
 
 
 def main():
-	global cfg
-	timestamp = time.strftime('%Y-%m-%d--%H_%M_%S')
-	sys.stdout = Logger(timestamp)
+    global cfg
+    timestamp = time.strftime('%Y-%m-%d--%H_%M_%S')
+    sys.stdout = Logger(timestamp)
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--mode', choices={'train', 'chat', 'test'},
-						default='train', help="mode. if not specified, it's in the train mode")
-	parser.add_argument('--cornell', action='store_true', help="use the cornell movie dialogue corpus")
-	parser.add_argument('--conversations', help="limit the number of conversations used in the dataset")
-	parser.add_argument('--model', help='specify name (timestamp) of a previously used model. If none is provided then the newest model available will be used.')
-	parser.add_argument('--load_iter', help='if you do not want to use an intermediate version of the trained network, specify the iteration number here')
-	parser.add_argument('test_file', type=str, nargs='?')
-	parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
-	parser.add_argument('--softmax', action='store_true', help='use standard softmax loss instead of sampled softmax loss')
-	parser.add_argument('--clear', action='store_true', help="delete all existing models to free up disk space")
-	parser.add_argument('--keep_prev', action='store_true', help='keep only the most recent version of the trained network')
-	parser.add_argument('--epochs', help='how many times the network should pass over the entire dataset. Note: Due to random bucketing, this is an approximation.')
-	parser.add_argument('--save_end', action='store_true', help='save the model ONLY at the end of training')
-	parser.add_argument('--processed_path', help='Specify if you want to use exisiting preprocessed data')
-	parser.add_argument('--no_save_at_exit',action='store_true', help='deactivate automatic model saving at keyboard interrupt')
-	args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', choices={'train', 'chat', 'test'},
+                        default='train', help="mode. if not specified, it's in the train mode")
+    parser.add_argument('--cornell', action='store_true', help="use the cornell movie dialogue corpus")
+    parser.add_argument('--conversations', help="limit the number of conversations used in the dataset")
+    parser.add_argument('--model', help='specify name (timestamp) of a previously used model. If none is provided then the newest model available will be used.')
+    parser.add_argument('--load_iter', help='if you do not want to use an intermediate version of the trained network, specify the iteration number here')
+    parser.add_argument('test_file', type=str, nargs='?')
+    parser.add_argument('--test_conversations', help="limit the number of test conversations used in the dataset")
+    parser.add_argument('--softmax', action='store_true', help='use standard softmax loss instead of sampled softmax loss')
+    parser.add_argument('--clear', action='store_true', help="delete all existing models to free up disk space")
+    parser.add_argument('--keep_prev', action='store_true', help='keep only the most recent version of the trained network')
+    parser.add_argument('--epochs', help='how many times the network should pass over the entire dataset. Note: Due to random bucketing, this is an approximation.')
+    parser.add_argument('--save_end', action='store_true', help='save the model ONLY at the end of training')
+    parser.add_argument('--processed_path', help='Specify if you want to use exisiting preprocessed data')
+    parser.add_argument('--no_save_at_exit',action='store_true', help='deactivate automatic model saving at keyboard interrupt')
+    args = parser.parse_args()
 
-	if args.clear:
-		shutil.rmtree(cfg['MODELS_PATH'])
+    if args.clear:
+        shutil.rmtree(cfg['MODELS_PATH'])
 
-	if not os.path.exists(cfg['MODELS_PATH']):
-			os.makedirs(cfg['MODELS_PATH'])
-
-
-	########### load old config file if necessary ############
-	if args.model:
-		# load the corresponding config file
-		cfg = config.load_cfg(args.model)
-	else:
-		if args.mode == 'chat':
-			# default mode: load the config of the last used model
-			saved_models = [name for name in os.listdir(cfg['MODELS_PATH']) if os.path.isdir(os.path.join(cfg['MODELS_PATH'],name))]
-			saved_models = sorted(saved_models) # sorted in ascending order 
-			last_model = saved_models[-1]
-			cfg = config.load_cfg(last_model)
-			# pp = pprint.PrettyPrinter(indent=4)
-			# pp.pprint(cfg)
-		else:
-			# create a new model
-			config.adapt_to_dataset(args.cornell)
-			cfg['MODEL_NAME'] = timestamp
-			directory = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'])
-			if not os.path.exists(directory):
-				os.makedirs(directory)
-			config.adapt_paths_to_model()
-
-	####### process other commmand line arguments ##############
-	if args.conversations:
-		cfg['MAX_TURNS'] = int(args.conversations)
-	if args.test_conversations:
-		cfg['TESTSET_SIZE'] = int(args.test_conversations)
-	if args.softmax:
-		cfg['STANDARD_SOFTMAX'] = args.softmax
-	if args.keep_prev:
-		cfg['KEEP_PREV'] = True
-	if args.load_iter:
-		args.load_iter = int(args.load_iter)
-	if args.epochs:
-		cfg['EPOCHS'] = int(args.epochs)
-	if args.processed_path:
-		cfg['PROCESSED_PATH'] = args.processed_path
-		vocab_sizes_dict = pickle.load(open(os.path.join(cfg['PROCESSED_PATH'],"vocab_sizes"), "rb"))
-		cfg.update(vocab_sizes_dict)
-	if args.no_save_at_exit:
-		cfg['SAVE_AT_EXIT'] = False
-
-	################ read data #################
-	if args.cornell:
-		import cornell_data as data
-	else:
-		import our_data as data
-
-	reader = data.Reader(cfg)
-	if not os.path.isdir(cfg['PROCESSED_PATH']): # Will not be done if we're in test mode, chat mode or continue training
-		reader.prepare_raw_data()
-		reader.process_data()
-	print('Data ready!')
+    if not os.path.exists(cfg['MODELS_PATH']):
+            os.makedirs(cfg['MODELS_PATH'])
 
 
-	########### start using the actual model##################
-	# create checkpoints folder if there isn't one already
-	reader.make_dir(cfg['CPT_PATH'])
+    ########### load old config file if necessary ############
+    if args.model:
+        # load the corresponding config file
+        cfg = config.load_cfg(args.model)
+    else:
+        if args.mode == 'chat':
+            # default mode: load the config of the last used model
+            saved_models = [name for name in os.listdir(cfg['MODELS_PATH']) if os.path.isdir(os.path.join(cfg['MODELS_PATH'],name))]
+            saved_models = sorted(saved_models) # sorted in ascending order 
+            last_model = saved_models[-1]
+            cfg = config.load_cfg(last_model)
+            # pp = pprint.PrettyPrinter(indent=4)
+            # pp.pprint(cfg)
+        else:
+            # create a new model
+            config.adapt_to_dataset(args.cornell)
+            cfg['MODEL_NAME'] = timestamp
+            directory = os.path.join(cfg['MODELS_PATH'], cfg['MODEL_NAME'])
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            config.adapt_paths_to_model()
 
-	bot = Chatbot(config=cfg, reader=reader)
-	if args.mode == 'train':
-		bot.train(args.save_end)
-	elif args.mode == 'chat':
-		bot.chat(args.load_iter)
-	elif args.mode == 'test':
-		bot.test_perplexity(args.test_file, args.load_iter)
+    ####### process other commmand line arguments ##############
+    if args.conversations:
+        cfg['MAX_TURNS'] = int(args.conversations)
+    if args.test_conversations:
+        cfg['TESTSET_SIZE'] = int(args.test_conversations)
+    if args.softmax:
+        cfg['STANDARD_SOFTMAX'] = args.softmax
+    if args.keep_prev:
+        cfg['KEEP_PREV'] = True
+    if args.load_iter:
+        args.load_iter = int(args.load_iter)
+    if args.epochs:
+        cfg['EPOCHS'] = int(args.epochs)
+    if args.processed_path:
+        cfg['PROCESSED_PATH'] = args.processed_path
+        vocab_sizes_dict = pickle.load(open(os.path.join(cfg['PROCESSED_PATH'],"vocab_sizes"), "rb"))
+        cfg.update(vocab_sizes_dict)
+    if args.no_save_at_exit:
+        cfg['SAVE_AT_EXIT'] = False
+
+    ################ read data #################
+    if args.cornell:
+        import cornell_data as data
+    else:
+        import our_data as data
+
+    reader = data.Reader(cfg)
+    if not os.path.isdir(cfg['PROCESSED_PATH']): # Will not be done if we're in test mode, chat mode or continue training
+        reader.prepare_raw_data()
+        reader.process_data()
+    print('Data ready!')
+
+
+    ########### start using the actual model##################
+    # create checkpoints folder if there isn't one already
+    reader.make_dir(cfg['CPT_PATH'])
+
+    bot = Chatbot(config=cfg, reader=reader)
+
+    reader.input2id('dummy_text', 'enc')
+
+    if args.mode == 'train':
+        bot.train(args.save_end)
+    elif args.mode == 'chat':
+        bot.chat(args.load_iter)
+    elif args.mode == 'test':
+        bot.test_perplexity(args.test_file, args.load_iter)
 
 if __name__ == '__main__':
 	main()
