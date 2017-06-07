@@ -148,12 +148,12 @@ def make_pairs(fpath):
 
     for data_line in input_data_lines:
         input_sentences = data_line.split('\t')
+        if len(input_sentences) == 3:
+            questions.append(input_sentences[0])
+            answers.append(input_sentences[1])
 
-        questions.append(input_sentences[0])
-        answers.append(input_sentences[1])
-
-        questions.append(input_sentences[1])
-        answers.append(input_sentences[2])
+            questions.append(input_sentences[1])
+            answers.append(input_sentences[2])
 
     return (questions, answers)
 
