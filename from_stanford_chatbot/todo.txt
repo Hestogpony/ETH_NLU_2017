@@ -1,24 +1,80 @@
-Problems:
-- <person> tag in our data gets split up into three tokens!
-- Regular softmax version fails terribly on small datasets. Maybe due to the dirty fix of the hidden layer size :(
+Vocab sizes with threshold 2, sentence lengths 16,19
+- Cornell ~25k
+- Our data ~33k
+
+Vocab size with threshold 10:
+-
+- Our data ~11k
+
+Vocab size combined datasets, threshold 2:
+- 42k
+
+Corpus sizes, no length limit:
+- Cornell ~ 190k
+- Our data ~ 360k
+
+Corpus sizes, sentence lenghts 16,19:
+- Cornell ~ 105k
+- Our data ~ 170k 
 
 
 
-Add weighting of padding to avoid training on padding loss?
+####################################
+TODO prioritized:
+
+2) Code and test a complete evaluation of the model + Implement vector extrema metric <BG> --> vocab size error for old model :(
+	But seems to be an edge case
+2a) Do param tuning on the baseline <BG> --> Total disaster
+3) One extension of the model --> Reinforcement learning <LG>
+3a) Use IMSDB dataset (500.000 converstations)
+4) Word embeddings
+#######################
+
+Time schedule:
+- Monday - Wednesday: Coding
+- Thursday: Final experiments
+- Friday: Write the report
+
+################################
+Miscellaneous TODO:
+
+- Build vocabulary based on the sentences that actually fit in the buckets.
+	Pro: Smaller input and output layer, should be a little bit faster
+	Con: Each max bucket size change requires reloading the entire dataset
 
 
-- Adapt Cornell dataset to test mode
-- Make it possible to use both datasets at once
-- Implement vector extrama metric.
-- Use perplexity metric for validation?
 
-- Full run on the baseline (our data)
+
+- Look not only at the TOP1 answer, but at the TOP10
+
 - Measure/quantify the limitations of the baseline model
+	--> inituitive: Variety of the answers is quite small. All the answers are pretty generic and short
+    --> Convergence: Does the responds exhibit convergence as described in cornell_data/chameleons.pdf?
+        - does the respondent’s replies echo the initiator’s use of articles, prepositions, and other
+          apparently minor aspects of lexical choice?
 
 
-###################################
+- MORE DATA!!!!
+	--> IMSDB -- use inikdom parser
+	--> Open subtitles. There is a parser for that. BUT it's reported to be very noisy
+	--> Twitter dataset. Sordoni et al.---> This is an entirely different domain
+
+Param tuning:
+- Increase threshold for entry in vocabulary
+- Increase dropout rate
+- Only one short bucket, fuck all the other data.
+
+- Increase Hidden State size of GRU
+- Gradient norm
+
+#####
 Stage2:
-- Re-include attention (one line) - Should we do this now? Maybe that would help improve the quality of the model
 - extend model with other idea(s)
+	- reinforcement approach
+	- 5. Different objective function
+	- Maybe:
+		- Handling of unks (7)
+		- consistent model for input (4) --> Persona-based system. Not so needed at this point 
+	- Beam search. WTF is this?
 
--extend training to triples
+- extend training to triples (both our dataset and cornell)

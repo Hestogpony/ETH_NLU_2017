@@ -44,8 +44,8 @@ class ChatBotModel(object):
 
         # <BG> dirty fix for regular softmax loss
         if self.cfg["STANDARD_SOFTMAX"]:
-            self.cfg['HIDDEN_SIZE'] = self.cfg['DEC_VOCAB']
-            print('Changed hidden size to %d' % self.cfg['HIDDEN_SIZE'])
+            self.cfg['EMBEDDING_SIZE'] = self.cfg['DEC_VOCAB']
+            print('Changed hidden size to %d' % self.cfg['EMBEDDING_SIZE'])
 
     def save_model(self, sess):
         print('Saving the model ... DO NOT TERMINATE NOW! ... ', end='')
@@ -101,13 +101,15 @@ class ChatBotModel(object):
             sys.stderr.write("Sampled softmax is set to sample from more output nodes than the size of the output layer")
             sys.exit()
 
-
-        # Dropout Wrapper might not work with the tf.contrib version of GRU
-        single_cell = tf.contrib.rnn.DropoutWrapper(
-                tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE']),
-                # rnn_cell.BasicLSTMCell(hidden_size),
-                input_keep_prob=self.cfg['DROPOUT_RATE'],
-                output_keep_prob=self.cfg['DROPOUT_RATE'])
+        if self.fw_only:
+            single_cell = tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE'])
+        else:    
+            #<BG> Dropout Wrapper might not work with the tf.contrib version of GRU
+            single_cell = tf.contrib.rnn.DropoutWrapper(
+                    tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE']),
+                    # rnn_cell.BasicLSTMCell(hidden_size),
+                    input_keep_prob=self.cfg['DROPOUT_RATE'],
+                    output_keep_prob=self.cfg['DROPOUT_RATE'])
 
         # single_cell = tf.contrib.rnn.GRUCell(self.cfg['HIDDEN_SIZE'])
         self.cell = tf.contrib.rnn.MultiRNNCell([single_cell] * self.cfg['NUM_LAYERS'])
@@ -120,7 +122,7 @@ class ChatBotModel(object):
                     encoder_inputs, decoder_inputs, self.cell,
                     num_encoder_symbols=self.cfg['ENC_VOCAB'],
                     num_decoder_symbols=self.cfg['DEC_VOCAB'],
-                    embedding_size=self.cfg['HIDDEN_SIZE'],
+                    embedding_size=self.cfg['EMBEDDING_SIZE'],
                     output_projection=self.output_projection,
                     feed_previous=do_decode)
 
@@ -156,6 +158,8 @@ class ChatBotModel(object):
             self.global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
 
             if not self.fw_only:
+                #<BG> switched to a more sophisticated optimizer. But that takes more memory and training time
+                # self.optimizer = tf.train.AdamOptimizer()
                 self.optimizer = tf.train.GradientDescentOptimizer(self.cfg['LR'])
                 trainables = tf.trainable_variables()
                 self.gradient_norms = []

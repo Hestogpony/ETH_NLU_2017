@@ -1,0 +1,10 @@
+1. Create a virtual environment, make sure you use python version 2.7.
+	Something like: virtualenv -p /usr/bin/python2.7 old_tf
+
+2. Activate that environment: source old_tf/bin/activate
+
+3. Find the correct wheel for your machine here https://tensorflow.blog/2016/11/13/tensorflow-v0-11-release/
+		and follow the instructions on the page. Avoid the sudo when calling pip if possible, that can cause problems
+
+4. That's it :)
+
