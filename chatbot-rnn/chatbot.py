@@ -9,12 +9,15 @@ import cPickle
 import copy
 import sys
 import string
+import io
 
 from utils import TextLoader
 from model import Model
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--test', type=str, default=None,
+                        help='Option to test this model all files in the given directory')
     parser.add_argument('--save_dir', type=str, default='models/reddit',
                        help='model directory to store checkpointed models')
     parser.add_argument('-n', type=int, default=500,
@@ -72,9 +75,13 @@ def sample_main(args):
         # Restore the saved variables, replacing the initialized values.
         print("Restoring weights...")
         saver.restore(sess, model_path)
-        chatbot(net, sess, chars, vocab, args.n, args.beam_width, args.relevance, args.temperature)
-        #beam_sample(net, sess, chars, vocab, args.n, args.prime,
-            #args.beam_width, args.relevance, args.temperature)
+
+        if args.test is not None:
+            test_model(args=args, net=net, sess=sess, chars=chars, vocab=vocab)
+        else:
+            chatbot(net, sess, chars, vocab, args.n, args.beam_width, args.relevance, args.temperature)
+            #beam_sample(net, sess, chars, vocab, args.n, args.prime,
+                #args.beam_width, args.relevance, args.temperature)
 
 def initial_state(net, sess):
     # Return freshly initialized model states.
@@ -123,6 +130,33 @@ def sanitize_text(vocab, text):
 def initial_state_with_relevance_masking(net, sess, relevance):
     if relevance <= 0.: return initial_state(net, sess)
     else: return [initial_state(net, sess), initial_state(net, sess)]
+
+def test_model(args, net, sess, chars, vocab):
+    states = initial_state_with_relevance_masking(net, sess, relevance)
+    #TextLoader(args.test, batch_size=1, args.seq_length)
+
+    # Read the test file, keep it simple
+    # if input_file.endswith(".bz2"): file_reference = BZ2File(input_file, "r")
+    file_reference = io.open(input_file, "r", encoding='utf-8')
+    raw_data = file_reference.readlines() #oder nur read()
+    file_reference.close()
+
+    for line in raw_data:
+        line = sanitize_text(vocab, line)
+        states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
+        computer_response_generator = beam_search_generator(sess=sess, net=net,
+            initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
+            early_term_token=vocab['\n'], beam_width=args.beam_width, forward_model_fn=forward_with_mask,
+            forward_args=(args.relevance, vocab['\n']), temperature=args.temperature)
+        for i, char_token in enumerate(computer_response_generator):
+            print(chars[char_token], end='')
+            states = forward_text(net, sess, states, vocab, chars[char_token])
+            sys.stdout.flush()
+            if i >= max_length: break
+        states = forward_text(net, sess, states, vocab, '\n> ')
+
+
+    
 
 def chatbot(net, sess, chars, vocab, max_length, beam_width, relevance, temperature):
     states = initial_state_with_relevance_masking(net, sess, relevance)
