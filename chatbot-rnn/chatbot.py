@@ -131,28 +131,75 @@ def initial_state_with_relevance_masking(net, sess, relevance):
     if relevance <= 0.: return initial_state(net, sess)
     else: return [initial_state(net, sess), initial_state(net, sess)]
 
+def make_pairs(fpath):
+    """
+    We process the raw file here, as we will have to provide a script that does exactly that
+    TODO: Do the regexp preprocessing if desired
+    """
+
+    questions = []
+    answers = []
+    file_reference = io.open(fpath, "r", encoding='utf-8')
+    input_data_lines = file_reference.readlines()
+    file_reference.close()
+
+    input_data_lines = [x.replace('\n', '') for x in input_data_lines]
+    input_data_lines = [x for x in input_data_lines if len(x) > 0]
+
+    for data_line in input_data_lines:
+        input_sentences = data_line.split('\t')
+
+        questions.append(input_sentences[0])
+        answers.append(input_sentences[1])
+
+        questions.append(input_sentences[1])
+        answers.append(input_sentences[2])
+
+    return (questions, answers)
+
+
+
 def test_model(args, net, sess, chars, vocab):
+    """
+    <BG> This should be used with the validation set of the provided data set and also for the final executable that we hand in
+    """
+
     states = initial_state_with_relevance_masking(net, sess, args.relevance)
     #TextLoader(args.test, batch_size=1, args.seq_length)
 
-    # Read the test file, keep it simple
-    # if input_file.endswith(".bz2"): file_reference = BZ2File(input_file, "r")
-    file_reference = io.open(args.test, "r", encoding='utf-8')
-    raw_data = file_reference.readlines() #oder nur read()
-    file_reference.close()
+    #Process triples
+    questions, answers = make_pairs(fpath=args.test)
 
-    for line in raw_data:
+    # Accumulators
+    perplexities = []
+    vector_extrema = []
+
+    for i, line in enumerate(questions):
         line = sanitize_text(vocab, line)
+        generated_line = ''
+
         states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
         computer_response_generator = beam_search_generator(sess=sess, net=net,
             initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
             early_term_token=vocab['\n'], beam_width=args.beam_width, forward_model_fn=forward_with_mask,
             forward_args=(args.relevance, vocab['\n']), temperature=args.temperature)
         for i, char_token in enumerate(computer_response_generator):
-            print(chars[char_token], end='')
+            # print(chars[char_token], end='')
+            generated_line += chars[char_token]
             states = forward_text(net, sess, states, vocab, chars[char_token])
             sys.stdout.flush()
             if i >= args.n: break
+        print(generated_line)
+
+
+        # for vector extrema, we only need the reference sentence, e.g. the next line.
+        # Careful, we're working with the triples of our dataset here.
+
+        # for perplexity, we need the softmax output vectors (do we have them???)
+        #   and the words that are in the sentence + inverse dict
+        #   or directly their ids.
+
+        # <BG> not sure if I need this
         states = forward_text(net, sess, states, vocab, '\n> ')
 
 
