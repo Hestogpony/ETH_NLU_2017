@@ -41,7 +41,7 @@ class TextLoader():
                 self._preprocess(self.input_files[i], self.tensor_file_template.format(i))
                 self.tensor_sizes.append(self.tensor.size)
 
-            with open(sizes_file, 'wb', encoding=self.encoding) as f:
+            with io.open(sizes_file, 'wb') as f:
                 cPickle.dump(self.tensor_sizes, f)
 
             print ("processed input text file: {} characters loaded".format(self.tensor.size))
@@ -50,7 +50,7 @@ class TextLoader():
             print "loading vocab file"
             self._load_vocab(vocab_file)
             print "loading sizes file"
-            with open(sizes_file, 'rb', encoding=self.encoding) as f:
+            with io.open(sizes_file, 'rb') as f:
                 self.tensor_sizes = cPickle.load(f)
         self.tensor_batch_counts = [n / (self.batch_size * self.seq_length) for n in self.tensor_sizes]
         self.total_batch_count = sum(self.tensor_batch_counts)
@@ -121,14 +121,14 @@ class TextLoader():
         # This is a lookup device to convert a character to its index number.
         self.vocab = dict(zip(self.chars, range(len(self.chars))))
         # Save the characters tuple to vocab.pkl (tiny file).
-        with open(vocab_file, 'wb', encoding=self.encoding) as f:
+        with io.open(vocab_file, 'wb') as f:
             cPickle.dump(self.chars, f)
         print("saved vocab (vocab size: {})".format(self.vocab_size))
 
     def _load_vocab(self, vocab_file):
         # Load the character tuple (vocab.pkl) to self.chars.
         # Remember that it is in descending order of character frequency in the data.
-        with open(vocab_file, 'rb', encoding=self.encoding) as f:
+        with io.open(vocab_file, 'rb') as f:
             self.chars = cPickle.load(f)
         # Use the character tuple to regenerate vocab_size and the vocab dictionary.
         self.vocab_size = len(self.chars)
