@@ -79,6 +79,11 @@ class Reader(object):
                 questions.append(id2line[convo[index]])
                 answers.append(id2line[convo[index + 1]])
         assert len(questions) == len(answers)
+
+        # for question in questions:
+        #     with open('../data/cornell_output.txt', "a", encoding=ENCODING) as f:
+        #         f.write("> " + question + "\n")
+        #     f.close()
         return questions, answers
 
     def prepare_dataset(self, questions, answers):
