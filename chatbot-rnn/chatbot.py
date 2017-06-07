@@ -132,12 +132,12 @@ def initial_state_with_relevance_masking(net, sess, relevance):
     else: return [initial_state(net, sess), initial_state(net, sess)]
 
 def test_model(args, net, sess, chars, vocab):
-    states = initial_state_with_relevance_masking(net, sess, relevance)
+    states = initial_state_with_relevance_masking(net, sess, args.relevance)
     #TextLoader(args.test, batch_size=1, args.seq_length)
 
     # Read the test file, keep it simple
     # if input_file.endswith(".bz2"): file_reference = BZ2File(input_file, "r")
-    file_reference = io.open(input_file, "r", encoding='utf-8')
+    file_reference = io.open(args.test, "r", encoding='utf-8')
     raw_data = file_reference.readlines() #oder nur read()
     file_reference.close()
 
@@ -152,7 +152,7 @@ def test_model(args, net, sess, chars, vocab):
             print(chars[char_token], end='')
             states = forward_text(net, sess, states, vocab, chars[char_token])
             sys.stdout.flush()
-            if i >= max_length: break
+            if i >= args.n: break
         states = forward_text(net, sess, states, vocab, '\n> ')
 
 
