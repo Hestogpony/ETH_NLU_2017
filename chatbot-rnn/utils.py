@@ -88,7 +88,7 @@ class TextLoader():
         # Load up the input.txt file and use it to create a vocab file and a tensor file
         # at the specified file paths.
         if input_file.endswith(".bz2"): file_reference = BZ2File(input_file, "r")
-        elif input_file.endswith(".txt"): file_reference = io.open(input_file, "r")
+        elif input_file.endswith(".txt"): file_reference = io.open(input_file, "r", encoding=self.encoding)
         raw_data = file_reference.read()
         file_reference.close()
         u_data = raw_data.encode(encoding=self.encoding)
@@ -136,7 +136,7 @@ class TextLoader():
 
     def _preprocess(self, input_file, tensor_file):
         if input_file.endswith(".bz2"): file_reference = BZ2File(input_file, "r")
-        elif input_file.endswith(".txt"): file_reference = io.open(input_file, "r")
+        elif input_file.endswith(".txt"): file_reference = io.open(input_file, "r", encoding=self.encoding)
         raw_data = file_reference.read()
         file_reference.close()
         data = raw_data.encode(encoding=self.encoding)
