@@ -1,6 +1,14 @@
 import numpy as np
 import math
+import gensim
+from gensim.models.word2vec import Word2Vec
 
+# TODO make this nice
+embeddings_file = ""
+model = Word2Vec.load(embeddings_file)
+emb_size = 100
+
+# TODO adapt this to the character based model
 def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
     """
     predicted_softmax_vecs      sentence length x 1 x vocab_size
@@ -22,3 +30,31 @@ def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
     # perp = 2^{(-1/n)*\sum^{n}_{t}(log_2(p(w_t | w_1, ... , w_t-1))} -
     perp = math.pow(2, (-1/i) * perp_sum)
     return perp
+
+ 
+# TODO adapt once it's plugged in
+def vector_extrema_dist(reference, output):
+    """
+    reference       string
+    output          string
+    """
+
+    def extrema(sentence):
+        sentence = sentence.split(" ")
+        vector_extrema = np.zeros(shape=(emb_size))
+        for i, word in enumerate(sentence):
+            if model[word] is not None:
+                n = model[word]
+                abs_n = np.abs(next)
+                abs_v = np.abs(vector_extrema)
+                for e in range(emb_size):
+                    if abs_n > abs_v:
+                        vector_extrema[e] = n[e]
+
+        return vector_extrema
+
+    ref_ext = extrema(reference)
+    out_ext = extrema(output)
+    return scipy.spatial.distance.cosine(ref_ext, out_ext)
+
+

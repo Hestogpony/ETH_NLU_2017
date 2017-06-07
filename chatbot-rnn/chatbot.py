@@ -189,6 +189,7 @@ def test_model(args, net, sess, chars, vocab):
             states = forward_text(net, sess, states, vocab, chars[char_token])
             sys.stdout.flush()
             if i >= args.n: break
+        print(i)
         print(generated_line)
 
 
