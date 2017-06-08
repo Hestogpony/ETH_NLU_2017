@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import os
 import time
+import string
 
 def get_input_file_list(data_dir):
     suffixes = ['.txt', '.bz2']
@@ -23,9 +24,18 @@ def get_input_file_list(data_dir):
 def train(args):
     sentences = []
     files = get_input_file_list(args.data_dir)
+    counter = 0
     for file in files:
-        sentences += gensim.models.word2vec.LineSentence(file)
-
+        if file is args.data_dir+"new_processed":
+            continue
+        else: 
+            if os.path.exists(args.data_dir+"new_processed"):
+                continue
+            else:
+                new_file_address = process_a_bit(args,file,counter)
+                counter += 1
+                sentences += gensim.models.word2vec.LineSentence(new_file_address)
+                print sentences
     start = time.time()
     model = Word2Vec(sentences=sentences, size=args.size, window=5, min_count=args.min_count, workers=args.workers)
     print('Word embeddings created in %f s and saved to \'%s\'' % (time.time() - start, args.save_path))
@@ -33,16 +43,39 @@ def train(args):
     if not os.path.isdir(args.save_path):
         os.mkdir(args.save_path)
     model.save(args.save_path+'/'+args.save_path)
-    
+
+def process_a_bit(args,fpath,counter):
+    file_processing = open(fpath,"r")
+    lines = []
+    file_new = open(args.data_dir+"/new_processed_"+str(counter), "w")
+    for line in file_processing:
+        line = line[2:].lower()
+        for c in string.punctuation:
+            if c == '_':
+                continue
+            elif c =='<':
+                line = line.replace(c," "+c)
+            elif c =='>':
+                line = line.replace(c, c+" ")
+            else :
+                line = line.replace(c," "+c+" ")
+        file_new.write(line)
+        #print line
+            
+    file_processing.close()
+    return args.data_dir+"/new_processed_"+str(counter)
+    #file_new = open 
+
+
 
 def main():
     """
     This is simplistic. Technically, the embeddings should only be trained on answers, not the questions.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', type=str,
+    parser.add_argument('--data_dir', type=str, default="preprocessed_train",
                         help='Preprocessed text documents that the word embeddings are trained on')
-    parser.add_argument('--save_path', type=str, default="embeddings"
+    parser.add_argument('--save_path', type=str, default="embeddings",
                         help='Where the embeddings should be stored')
     parser.add_argument('--size', type=int, default=100,
                         help='Embeddings size')
