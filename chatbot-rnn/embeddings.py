@@ -35,7 +35,7 @@ def train(args):
                 new_file_address = process_a_bit(args,file,counter)
                 counter += 1
                 sentences += gensim.models.word2vec.LineSentence(new_file_address)
-                print sentences
+                # print sentences
     start = time.time()
     model = Word2Vec(sentences=sentences, size=args.size, window=5, min_count=args.min_count, workers=args.workers)
     print('Word embeddings created in %f s and saved to \'%s\'' % (time.time() - start, args.save_path))

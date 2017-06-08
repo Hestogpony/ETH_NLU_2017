@@ -55,7 +55,7 @@ class Measure(object):
                 # some special treatment for special tags
                 sentence = re.sub(r"(<)", r" \1", sentence)
                 sentence = re.sub(r"(>)", r"\1 ", sentence)
-                sentence = sentence.split(" ")
+                sentence = sentence.split()
                 vector_extrema = np.zeros(shape=(self.emb_size))
                 for i, word in enumerate(sentence):
                     if word in self.model.wv.vocab:

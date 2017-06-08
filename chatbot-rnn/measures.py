@@ -66,10 +66,11 @@ class Measure(object):
 			sentence = re.sub(r"(<)", r" \1", sentence)
 			sentence = re.sub(r"(>)", r"\1 ", sentence)
 
-			sentence = sentence.split(" ")
+			sentence = sentence.split()
 			vector_extrema = np.zeros(shape=(self.emb_size))
 			for i, word in enumerate(sentence):
 				if word in self.model.wv.vocab:
+					print(self.model.wv.index2word[i])
 					n = self.model[word]
 					abs_n = np.abs(n)
 					#print("abs")
@@ -78,7 +79,7 @@ class Measure(object):
 						if abs_n[e] > abs_v[e]:
 							vector_extrema[e] = n[e]
 				else:
-					print("unknown token")
+					print("unknown token" + str(word))
 
 
 			return vector_extrema
