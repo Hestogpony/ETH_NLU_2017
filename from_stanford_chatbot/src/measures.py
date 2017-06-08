@@ -16,11 +16,10 @@ class Measure(object):
         embeddings_file = fpath
         return Word2Vec.load(embeddings_file)
 
-    def perplexity(self, cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
+    def perplexity(self, cfg, predicted_softmax_vecs, input_sentence):
         """
         predicted_softmax_vecs      sentence length x 1 x vocab_size
         input_sentence              dim: vector of words in sentence
-        word_dictionary             dictionary incl. pad, unk, bos and eos.  id -> word
         """
 
         i = 0                       # Word index in current sentence

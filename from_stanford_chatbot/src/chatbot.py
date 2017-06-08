@@ -329,8 +329,10 @@ class Chatbot(object):
         # if self.cfg['USE_CORNELL']:
         #     raise RuntimeError("Testing must have USE_CORNELL = False")
 
-        _, enc_word_to_i = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.enc'))
-        _, dec_word_to_i = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.dec'))
+
+        # <BG> use the vocabulary list as reversed dictionary
+        _ , enc_word_to_i = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.enc'))
+        dec_i_to_word, dec_word_to_i = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.dec'))
 
         # Obtain the test sentencess
         questions, answers = self.reader.make_pairs(inpath)
@@ -386,12 +388,12 @@ class Chatbot(object):
                 soft_c = np.exp(logits_c) / np.sum(np.exp(logits_c), axis = 0)
 
 
-                perp_b = meas.perplexity(self.cfg, soft_b, b, dec_word_to_i)
-                perp_c = meas.perplexity(self.cfg, soft_c, c, dec_word_to_i)
+                perp_b = meas.perplexity(self.cfg, soft_b, b)
+                perp_c = meas.perplexity(self.cfg, soft_c, c)
 
                 # Vector extrema metric
-                ve_b = meas.vector_extrema_dist(soft_b, b, dec_word_to_i)
-                ve_c = meas.vector_extrema_dist(soft_c, c, dec_word_to_i)
+                ve_b = meas.vector_extrema_dist(soft_b, b, dec_i_to_word)
+                ve_c = meas.vector_extrema_dist(soft_c, c, dec_i_to_word)
                 
                 total_perp += perp_b + perp_c
                 total_ve += ve_b + ve_c 
