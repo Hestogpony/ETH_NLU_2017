@@ -237,7 +237,7 @@ def test_model(args, net, sess, chars, vocab):
 
         counter+=1
         if counter%100 == 0:
-            print("This is the "+counter+"th iteration")
+            print("This is the "+ str(counter)+ "th iteration")
         #print("The quesiton is "+line)
         #print("Generated line "+generated_line)
         #print("Vector extrema for this pair "+str(each_vector_extreme))
