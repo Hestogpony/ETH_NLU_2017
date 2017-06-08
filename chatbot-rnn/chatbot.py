@@ -180,6 +180,8 @@ def test_model(args, net, sess, chars, vocab):
     perplexities = []
     vector_extrema = []
 
+    counter = 0
+
     for i, line in enumerate(questions):
         line = sanitize_text(vocab, line)
         generated_line = ''
@@ -225,9 +227,12 @@ def test_model(args, net, sess, chars, vocab):
         #states = forward_text(net, sess, states, vocab, '\n> ')
         each_vector_extreme = model.vector_extrema_dist(answers[i], generated_line)
         vector_extrema.append(each_vector_extreme)
-        #print("The quesiton is "+line)
-        #print("Generated line "+generated_line)
-        #print("Vector extrema for this pair "+str(each_vector_extreme))
+        counter+=1
+        if counter%100 == 0:
+            print("This is the "+counter+"th iteration")
+        print("The quesiton is "+line)
+        print("Generated line "+generated_line)
+        print("Vector extrema for this pair "+str(each_vector_extreme))
 
         #states = forward_text(net, sess, states, vocab, '\n> ')
 

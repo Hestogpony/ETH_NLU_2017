@@ -1,13 +1,16 @@
-from bash import bash
+import os
 
 
 print("start experiment")
-bash('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=1')
-bash('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=2')
-bash('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=3')
-bash('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=4')
-bash('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=5')
 
-
-
-#bash('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=1')
+try:
+	os.system('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=1')
+	os.system('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=2')
+	os.system('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=3')
+	os.system('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=4')
+	os.system('python chatbot.py --test=data/our_data/Validation_Shuffled_Dataset.txt  --save_dir=models/combined_model --beam_width=5')
+except KeyboardInterrupt:
+	sys.exit()
+except:
+	#report error
+	print("There is an error")
