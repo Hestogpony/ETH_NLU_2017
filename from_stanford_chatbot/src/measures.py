@@ -2,7 +2,7 @@ import numpy as np
 import math
 import gensim
 from gensim.models.word2vec import Word2Vec
-import scipy
+import scipy.spatial
 
 class Measure(object):
     """docstring for Measure"""
@@ -51,14 +51,14 @@ class Measure(object):
 
             def extrema(sentence):
                 # sentence = sentence.split(" ")    # Not needed here
-                vector_extrema = np.zeros(shape=(emb_size))
+                vector_extrema = np.zeros(shape=(self.emb_size))
                 for i, word in enumerate(sentence):
                     if word in self.model.wv.vocab:
                         n = self.model[word]
                         abs_n = np.abs(n)
                         #print("abs")
                         abs_v = np.abs(vector_extrema)
-                        for e in range(emb_size):
+                        for e in range(self.emb_size):
                             if abs_n[e] > abs_v[e]:
                                 vector_extrema[e] = n[e]
 
@@ -69,5 +69,4 @@ class Measure(object):
 
             ref_ext = extrema(reference)
             out_ext = extrema(output)
-
             return scipy.spatial.distance.cosine(normalize(ref_ext), normalize(out_ext))
