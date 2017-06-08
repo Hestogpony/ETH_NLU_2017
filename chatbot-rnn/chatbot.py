@@ -13,6 +13,8 @@ import io
 
 from utils import TextLoader
 from model import Model
+import measures
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -34,6 +36,8 @@ def main():
                        'higher is more pressure, 0.4 is probably as high as it can go without'
                        'noticeably degrading coherence;'
                        'set to <0 to disable relevance masking')
+    parser.add_argument('--embedding_model', type = str, default = 'embeddings/embbedings',
+                        help = 'The word2vec embedding model for calculation of vector extrema'  )
     args = parser.parse_args()
     sample_main(args)
 
@@ -137,7 +141,7 @@ def make_pairs(fpath):
     TODO: Do the regexp preprocessing if desired
     """
 
-    questions = []
+    questions = [] 
     answers = []
     file_reference = io.open(fpath, "r", encoding='utf-8')
     input_data_lines = file_reference.readlines()
@@ -202,6 +206,15 @@ def test_model(args, net, sess, chars, vocab):
 
         # <BG> not sure if I need this
         states = forward_text(net, sess, states, vocab, '\n> ')
+        each_vector_extrememeasure.vector_extrema_dist(answers[i], generated_line, args.embedding_model)
+        print("The quesiton is "questions)
+
+
+       
+    vector_extrema_value = sum(vector_extrema)/len(vector_extrema)
+
+    print("The vector extrema is "+vector_extrema_value)
+
 
 
     

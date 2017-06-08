@@ -3,10 +3,14 @@ import math
 import gensim
 from gensim.models.word2vec import Word2Vec
 
+
+
+def load_model(fpath):
+
 # TODO make this nice
-embeddings_file = ""
-model = Word2Vec.load(embeddings_file)
-emb_size = 100
+    embeddings_file = fpath
+    return Word2Vec.load(embeddings_file)
+    #emb_size = 100
 
 # TODO adapt this to the character based model
 def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
@@ -33,11 +37,13 @@ def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
 
  
 # TODO adapt once it's plugged in
-def vector_extrema_dist(reference, output):
+def vector_extrema_dist(reference, output, embbeding_path):
     """
     reference       string
     output          string
     """
+
+    model = load_model(embbeding_path)
 
     def extrema(sentence):
         sentence = sentence.split(" ")

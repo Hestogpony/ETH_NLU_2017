@@ -29,8 +29,10 @@ def train(args):
     start = time.time()
     model = Word2Vec(sentences=sentences, size=args.size, window=5, min_count=args.min_count, workers=args.workers)
     print('Word embeddings created in %f s and saved to \'%s\'' % (time.time() - start, args.save_path))
-    print(model['jhsdgfkshfgsd'])
-    model.save(args.save_path)
+    #print(model['jhsdgfkshfgsd'])
+    if not os.path.isdir(args.save_path):
+        os.mkdir(args.save_path)
+    model.save(args.save_path+'/'+args.save_path)
     
 
 def main():
