@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm
 import math
 import gensim
 from gensim.models.word2vec import Word2Vec
@@ -51,12 +52,11 @@ class Measure(object):
 		reference       string
 		output          string
 		"""
-		def normalize(v):
-			norm=np.linalg.norm(v)
-			if norm==0:
-                                print(v)
-				return v
-			return v/norm
+		# def normalize(v):
+		# 	norm=np.linalg.norm(v)
+		# 	if norm==0:
+		# 		return v
+		# 	return v/norm
 
 		def extrema(sentence):
 			sentence = sentence.split(" ")
@@ -76,6 +76,9 @@ class Measure(object):
 		ref_ext = extrema(reference)
 		out_ext = extrema(output)
 
-		return scipy.spatial.distance.cosine(normalize(ref_ext), normalize(out_ext))
+		if norm(ref_ext) != 0 and norm(out_ext != 0):
+			return scipy.spatial.distance.cosine(ref_ext, out_ext)
+		else:
+			return 2.0
 
 

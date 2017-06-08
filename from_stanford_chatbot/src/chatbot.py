@@ -399,8 +399,8 @@ class Chatbot(object):
                 total_ve += ve_b + ve_c 
                 num_samples += 2
 
-                print("Perp %f %f" % (perp_b, perp_c))
-                print("VE %f %f" % (ve_b, ve_c))
+                # print("Perp %f %f" % (perp_b, perp_c))
+                # print("VE %f %f" % (ve_b, ve_c))
 
         print('Average perplexity on test set: %f' % total_perp/num_samples)
         print('Average vector extrema cosine distance on test set: %f' % total_ve/num_samples)
