@@ -42,7 +42,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str,
                         help='Preprocessed text documents that the word embeddings are trained on')
-    parser.add_argument('--save_path', type=str,
+    parser.add_argument('--save_path', type=str, default="embeddings"
                         help='Where the embeddings should be stored')
     parser.add_argument('--size', type=int, default=100,
                         help='Embeddings size')

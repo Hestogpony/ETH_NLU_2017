@@ -80,9 +80,10 @@ class Reader(object):
                 answers.append(id2line[convo[index + 1]])
         assert len(questions) == len(answers)
 
-        # with open('../data/cornell_output.txt', "a", encoding='utf-8') as f:
-        #     for question in questions:
-        #         f.write("> " + question + "\n")
+        # with open('../data/cornell_output.txt', "a", encoding='ascii') as f:
+            # for question in questions:
+                # question = re.sub(r'[^\x00-\x7F]',' ', question)
+                # f.write("> " + str(question) + "\n")
 
         return questions, answers
 
