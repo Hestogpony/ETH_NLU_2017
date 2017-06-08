@@ -5,6 +5,7 @@ import gensim
 from gensim.models.word2vec import Word2Vec
 import scipy
 import re
+import time
 
 class Measure(object):
 	"""docstring for Measure"""

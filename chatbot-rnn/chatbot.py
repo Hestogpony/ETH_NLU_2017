@@ -39,6 +39,8 @@ def main():
                        'set to <0 to disable relevance masking')
     parser.add_argument('--embedding_model', type = str, default = 'embeddings/embeddings',
                         help = 'The word2vec embedding model for calculation of vector extrema'  )
+    parser.add_argument('--test_samples', type=int, default=3,
+                        help='limit the number converstations too look at')
     args = parser.parse_args()
     sample_main(args)
 
@@ -183,9 +185,9 @@ def test_model(args, net, sess, chars, vocab):
 
     counter = 0
 
-    for i, line in enumerate(questions):
-        start = time.time()
-        line = sanitize_text(vocab, line)
+    for i in range(args.test_samples):
+        # start = time.time()
+        line = sanitize_text(vocab, questions[i])
         generated_line = ''
 
         softmaxes = []
@@ -224,7 +226,7 @@ def test_model(args, net, sess, chars, vocab):
         # Careful, we're working with the triples of our dataset here.
 
         # <BG> not sure if I need this
-        print("Forward prop took " + str(time.time() - start) )
+        # print("Forward prop took " + str(time.time() - start) )
         
         #states = forward_text(net, sess, states, vocab, '\n> ')
         each_vector_extreme = model.vector_extrema_dist(answers[i], generated_line)
@@ -249,14 +251,14 @@ def test_model(args, net, sess, chars, vocab):
        
     vector_extrema_value = np.sum(vector_extrema)/len(vector_extrema)
 
-    print("The average cosine dist of the vector extrema is "+vector_extrema_value)
+    print("The average cosine dist of the vector extrema is " + str(vector_extrema_value))
 
     save_experiment_data = "experiment"
     if not os.path.isdir(save_experiment_data):
         os.mkdir(save_experiment_data)
         print("create dir experiment")
 
-    experiment_log = open(save_experiment_data+"/experient_log","w")
+    experiment_log = open(save_experiment_data+"/experient_log","a")
     experiment_log.write(str(args.beam_width)+"++++$$$$$++++")
     experiment_log.write(str(args.temperature)+"++++$$$$$++++")
     experiment_log.write(str(args.relevance)+"++++$$$$$++++")
