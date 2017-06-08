@@ -227,6 +227,7 @@ class TextLoader():
     def reset_batch_pointer(self):
         self.pointer = 0
 
+    # <BG> use this in testing as well
     def cue_batch_pointer_to_epoch_fraction(self, epoch_fraction):
         step_target = (epoch_fraction - int(epoch_fraction)) * self.total_batch_count
         self._cue_batch_pointer_to_step_count(step_target)
