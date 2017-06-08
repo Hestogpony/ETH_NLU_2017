@@ -28,3 +28,5 @@ Task2/models/*
 /from_stanford_chatbot/.idea/*.iml
 /from_stanford_chatbot/.idea/inspectionProfiles/*.xml
 /from_stanford_chatbot/.idea/*.xml
+/chatbot-rnn/.idea
+.idea
