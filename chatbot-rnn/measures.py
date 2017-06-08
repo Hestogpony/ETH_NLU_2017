@@ -4,26 +4,20 @@ import gensim
 from gensim.models.word2vec import Word2Vec
 import scipy
 
-emb_size = 100
-
-
 class Measure(object):
 	"""docstring for Measure"""
 	def __init__(self, embbeding_path_from_chatbot_args_parameter):
 		#super(Measure, self).__init__()
 		self.model = self.load_model(embbeding_path_from_chatbot_args_parameter)
-		
+		self.emb_size = 100
 		
 
 
 
 	def load_model(self,fpath):
 
-	# TODO make this nice
-
 		embeddings_file = fpath
 		return Word2Vec.load(embeddings_file)
-		#emb_size = 100
 
 
 	def perplexity(self,predicted_softmaxes, actual_answer, char_to_id):
@@ -52,17 +46,11 @@ class Measure(object):
 		return perp
 
 
-	# TODO adapt once it's plugged in
 	def vector_extrema_dist(self,reference, output):
 		"""
 		reference       string
 		output          string
 		"""
-		#xemb_size = 100
-
-		#model = load_model(embbeding_path)
-
-		#def normalize():
 		def normalize(v):
 			norm=np.linalg.norm(v)
 			if norm==0: 
@@ -71,14 +59,14 @@ class Measure(object):
 
 		def extrema(sentence):
 			sentence = sentence.split(" ")
-			vector_extrema = np.zeros(shape=(emb_size))
+			vector_extrema = np.zeros(shape=(self.emb_size))
 			for i, word in enumerate(sentence):
 				if word in self.model.wv.vocab:
 					n = self.model[word]
 					abs_n = np.abs(n)
 					#print("abs")
 					abs_v = np.abs(vector_extrema)
-					for e in range(emb_size):
+					for e in range(self.emb_size):
 						if abs_n[e] > abs_v[e]:
 							vector_extrema[e] = n[e]
 
@@ -86,10 +74,6 @@ class Measure(object):
 
 		ref_ext = extrema(reference)
 		out_ext = extrema(output)
-
-		#print(ref_ext)
-		#print(normalize(ref_ext))
-
 
 		return scipy.spatial.distance.cosine(normalize(ref_ext), normalize(out_ext))
 
