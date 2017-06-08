@@ -205,16 +205,16 @@ def test_model(args, net, sess, chars, vocab):
             if i >= args.n: break
 
         #print(i)
-        print("")
-        print(line)
+        #print("")
+        #print(line)
         #print(answers[i])
-        print('--> ' + generated_line)
+        #print('--> ' + generated_line)
         #print(np.sum(softmaxes,axis=1))
 
         # Compute perplexity against ground-truth answer.
-        this_perp = model.perplexity(softmaxes, answers[i], vocab)
-        print(this_perp)
-        perplexities.append(this_perp)
+        #this_perp = model.perplexity(softmaxes, answers[i], vocab)
+        #print(this_perp)
+        #perplexities.append(this_perp)
 
         # for vector extrema, we only need the reference sentence, e.g. the next line.
         # Careful, we're working with the triples of our dataset here.
@@ -224,17 +224,17 @@ def test_model(args, net, sess, chars, vocab):
         
         #states = forward_text(net, sess, states, vocab, '\n> ')
         each_vector_extreme = model.vector_extrema_dist(answers[i], generated_line)
-        print("The quesiton is "+line)
-        print("Generated line "+generated_line)
-        print("Vector extrema for this pair "+str(each_vector_extreme))
-
+        #print("The quesiton is "+line)
+        #print("Generated line "+generated_line)
+        print("VE "+str(each_vector_extreme))
+        vector_extrema.append(each_vector_extreme)
         #states = forward_text(net, sess, states, vocab, '\n> ')
 
 
        
-    vector_extrema_value = sum(vector_extrema)/len(vector_extrema)
+    vector_extrema_value = np.sum(vector_extrema)/len(vector_extrema)
 
-    print("The vector extrema is "+vector_extrema_value)
+    print("The average cosine dist of the vector extrema is "+vector_extrema_value)
 
 
 

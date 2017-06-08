@@ -53,7 +53,8 @@ class Measure(object):
 		"""
 		def normalize(v):
 			norm=np.linalg.norm(v)
-			if norm==0: 
+			if norm==0:
+                                print(v)
 				return v
 			return v/norm
 
