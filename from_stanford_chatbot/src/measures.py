@@ -4,6 +4,7 @@ import math
 import gensim
 from gensim.models.word2vec import Word2Vec
 import scipy.spatial
+import re
 
 class Measure(object):
     """docstring for Measure"""
@@ -46,13 +47,16 @@ class Measure(object):
             """
 
             def extrema(sentence):
-                # sentence = sentence.split(" ")    # Not needed here
+                # <BG> kind of a redundant move to concat everything before splitting it up again.
+                # But this way we ensure consistent splitting of non-alphanumeric characters
+                sentence = " ".join(sentence)
+                sentence = re.sub(r"(\W^<>)", r" \1 ", sentence)
+                sentence = sentence.split(" ")    # Not needed here
                 vector_extrema = np.zeros(shape=(self.emb_size))
                 for i, word in enumerate(sentence):
                     if word in self.model.wv.vocab:
                         n = self.model[word]
                         abs_n = np.abs(n)
-                        #print("abs")
                         abs_v = np.abs(vector_extrema)
                         for e in range(self.emb_size):
                             if abs_n[e] > abs_v[e]:
@@ -62,6 +66,7 @@ class Measure(object):
 
             reference = [word_dictionary[x] for x in reference_ids]
             output = [word_dictionary[np.argmax(x[0])] for x in predicted_softmax_vecs]
+            
 
             ref_ext = extrema(reference)
             out_ext = extrema(output)

@@ -4,6 +4,7 @@ import math
 import gensim
 from gensim.models.word2vec import Word2Vec
 import scipy
+import re
 
 class Measure(object):
 	"""docstring for Measure"""
@@ -59,6 +60,7 @@ class Measure(object):
 		# 	return v/norm
 
 		def extrema(sentence):
+			sentence = re.sub(r"(\W^<>)", r" \1 ", sentence)
 			sentence = sentence.split(" ")
 			vector_extrema = np.zeros(shape=(self.emb_size))
 			for i, word in enumerate(sentence):
@@ -70,6 +72,9 @@ class Measure(object):
 					for e in range(self.emb_size):
 						if abs_n[e] > abs_v[e]:
 							vector_extrema[e] = n[e]
+				else:
+					print("unknown token")
+
 
 			return vector_extrema
 
