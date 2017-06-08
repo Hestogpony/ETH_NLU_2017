@@ -15,6 +15,9 @@ def perplexity(predicted_softmaxes, actual_answer, char_to_id):
     char_to_id                  maps characters to their ID
     """
 
+    # Not entirely clear
+    VOCAB_SIZE = 42000
+
     i = 0                       # Word index in current sentence
     perp_sum = 0
 
@@ -25,7 +28,9 @@ def perplexity(predicted_softmaxes, actual_answer, char_to_id):
 
     # As specified in task description: ./docs/task_description
     # perp = 2^{(-1/n)*\sum^{n}_{t}(log_2(p(w_t | w_1, ... , w_t-1))} -
-    perp = math.pow(2, (-1/i) * perp_sum)
+    average_bpc = (-1/i) * perp_sum
+    factor = len(char_to_id) / 30000
+    perp = math.pow(2, average_bpc * (len(char_to_id) / float(VOCAB_SIZE)))
     return perp
 
 
