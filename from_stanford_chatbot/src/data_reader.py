@@ -20,7 +20,7 @@ class Reader(object):
         # <FL> Use our own stuff here
 
         questions, answers = self.make_cornell_data_pairs(self.get_cornell_lines(), self.get_cornell_convos())
-        our_data_questions, our_data_answers = self.make_our_data_pairs(os.path.join(self.cfg['OUR_DATA']['PATH'],
+        our_data_questions, our_data_answers = self.make_pairs(os.path.join(self.cfg['OUR_DATA']['PATH'],
                                                                                      self.cfg['OUR_DATA']['LINE_FILE']))
 
         questions.extend(our_data_questions)
@@ -72,7 +72,7 @@ class Reader(object):
                     convos.append(convo)
         return convos
 
-    def make_our_data_pairs(self, file_path):
+    def make_pairs(self, file_path):
         questions = []
         answers = []
         with open(file_path) as f:

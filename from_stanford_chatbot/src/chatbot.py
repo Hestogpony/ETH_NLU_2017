@@ -333,7 +333,7 @@ class Chatbot(object):
         _, dec_word_to_i = self.reader.load_vocab(os.path.join(self.cfg['PROCESSED_PATH'], 'vocab.dec'))
 
         # Obtain the test sentencess
-        questions, answers = self.reader.make_our_data_pairs(inpath)
+        questions, answers = self.reader.make_pairs(inpath)
         questions = [self.reader.sentence2id(enc_word_to_i, x) for x in questions]
         answers = [self.reader.sentence2id(enc_word_to_i, x) for x in answers]
 
@@ -397,7 +397,7 @@ class Chatbot(object):
                 total_perp += perp_b + perp_c
                 total_ve += ve_b + ve_c 
                 num_samples += 2
-                
+
                 print("Perp %f %f" % (perp_b, perp_c))
                 print("VE %f %f" % (ve_b, ve_c))
 
