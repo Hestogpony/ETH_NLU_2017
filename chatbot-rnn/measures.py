@@ -76,7 +76,7 @@ class Measure(object):
 		ref_ext = extrema(reference)
 		out_ext = extrema(output)
 
-		if norm(ref_ext) != 0 and norm(out_ext != 0):
+		if norm(ref_ext) != 0 and norm(out_ext) != 0:
 			return scipy.spatial.distance.cosine(ref_ext, out_ext)
 		else:
 			return 2.0
