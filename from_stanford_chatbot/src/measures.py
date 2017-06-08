@@ -5,6 +5,7 @@ import gensim
 from gensim.models.word2vec import Word2Vec
 import scipy.spatial
 import re
+import time
 
 class Measure(object):
     """docstring for Measure"""
@@ -69,6 +70,7 @@ class Measure(object):
 
                 return vector_extrema
 
+            start = time.time()
             reference = [word_dictionary[x] for x in reference_ids]
             output = [word_dictionary[np.argmax(x[0])] for x in predicted_softmax_vecs]
             
@@ -76,6 +78,7 @@ class Measure(object):
             ref_ext = extrema(reference)
             out_ext = extrema(output)
             
+            print("VE took " + str(time.time() - start))
             if norm(ref_ext) != 0 and norm(out_ext) != 0:
                 return scipy.spatial.distance.cosine(ref_ext, out_ext)
             else:

@@ -10,6 +10,7 @@ import copy
 import sys
 import string
 import io
+import time
 
 from utils import TextLoader
 from model import Model
@@ -183,6 +184,7 @@ def test_model(args, net, sess, chars, vocab):
     counter = 0
 
     for i, line in enumerate(questions):
+        start = time.time()
         line = sanitize_text(vocab, line)
         generated_line = ''
 
@@ -222,7 +224,7 @@ def test_model(args, net, sess, chars, vocab):
         # Careful, we're working with the triples of our dataset here.
 
         # <BG> not sure if I need this
-
+        print("Forward prop took " + str(time.time() - start) )
         
         #states = forward_text(net, sess, states, vocab, '\n> ')
         each_vector_extreme = model.vector_extrema_dist(answers[i], generated_line)
