@@ -60,7 +60,12 @@ class Measure(object):
 		# 	return v/norm
 
 		def extrema(sentence):
-			sentence = re.sub(r"(\W^<>)", r" \1 ", sentence)
+			#seperate most of the special chars from other tokens
+			sentence = re.sub(r"([^a-zA-Z0-9_<>])", r" \1 ", sentence)
+			# some special treatment for special tags
+			sentence = re.sub(r"(<)", r" \1", sentence)
+			sentence = re.sub(r"(>)", r"\1 ", sentence)
+
 			sentence = sentence.split(" ")
 			vector_extrema = np.zeros(shape=(self.emb_size))
 			for i, word in enumerate(sentence):

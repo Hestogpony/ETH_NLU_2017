@@ -50,8 +50,12 @@ class Measure(object):
                 # <BG> kind of a redundant move to concat everything before splitting it up again.
                 # But this way we ensure consistent splitting of non-alphanumeric characters
                 sentence = " ".join(sentence)
-                sentence = re.sub(r"(\W^<>)", r" \1 ", sentence)
-                sentence = sentence.split(" ")    # Not needed here
+                #seperate most of the special chars from other tokens
+                sentence = re.sub(r"([^a-zA-Z0-9_<>])", r" \1 ", sentence)
+                # some special treatment for special tags
+                sentence = re.sub(r"(<)", r" \1", sentence)
+                sentence = re.sub(r"(>)", r"\1 ", sentence)
+                sentence = sentence.split(" ")
                 vector_extrema = np.zeros(shape=(self.emb_size))
                 for i, word in enumerate(sentence):
                     if word in self.model.wv.vocab:
