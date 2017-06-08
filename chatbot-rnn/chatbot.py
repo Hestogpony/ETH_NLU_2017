@@ -13,6 +13,7 @@ import io
 
 from utils import TextLoader
 from model import Model
+import measures
 
 def main():
     parser = argparse.ArgumentParser()
@@ -198,8 +199,12 @@ def test_model(args, net, sess, chars, vocab):
 
             if i >= args.n: break
 
-        print(i)
-        print(generated_line)
+        #print(i)
+        print("")
+        print(line)
+        #print(answers[i])
+        print('--> ' + generated_line)
+        #print(np.sum(softmaxes,axis=1))
 
         # Compute perplexity against ground-truth answer.
         this_perp = measures.perplexity(softmaxes, answers[i], vocab)

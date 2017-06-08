@@ -4,9 +4,9 @@ import gensim
 from gensim.models.word2vec import Word2Vec
 
 # TODO make this nice
-embeddings_file = ""
-model = Word2Vec.load(embeddings_file)
-emb_size = 100
+#embeddings_file = ""
+#model = Word2Vec.load(embeddings_file)
+#emb_size = 100
 
 def perplexity(predicted_softmaxes, actual_answer, char_to_id):
     """
