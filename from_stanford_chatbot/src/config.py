@@ -28,32 +28,32 @@ cfg = {
     'MAX_TURNS': -1, # Number of conversations to read in
     'SKIP_STEP': 100, #  # After that many batches, there's a validation run.
 
-    'TESTSET_SIZE': 100, # 25000    # Size of the evaluation set
-    'TEST_MAX_LENGTH': 30, # Maximum length of sentences in the test set
+    'TESTSET_SIZE': 25000, # 25000    # Size of the evaluation set
+    'TEST_MAX_LENGTH': 16, # Maximum length of sentences in the test set
     
-    'THRESHOLD': 3, #2      # A word has to appear this many times to be part of the vocabulary
+    'THRESHOLD': 2, #2      # A word has to appear this many times to be part of the vocabulary
 
     'PAD_ID': 0,
     'UNK_ID': 1,
     'START_ID': 2,
     'EOS_ID': 3,
 
-    'BUCKETS': [(30,30),(50,50)],
+    #'BUCKETS': [(30,30)],
     # original 'BUCKETS': [(8, 10), (12, 14), (16, 19), (23, 26), (39, 43)],
-    # small version 'BUCKETS': [(8, 10), (12, 14), (16, 19)], 
+    'BUCKETS': [(8, 10), (12, 14), (16, 19)], 
     #our numbers 'BUCKETS': [(6, 8), (8, 10), (10, 12), (13, 15), (16, 19), (19, 22), (23, 26), (29, 32), (39, 44),(50,50),(60,60)],#[(8,10), (16, 19)], #[(8, 10), (12, 14), (16, 19)],
-    'NUM_LAYERS': 1, #3     # Recurrent Layers in the Mulit-Layer-RNN
-    'HIDDEN_SIZE': 256,
-    'EMBEDDING_SIZE': 100, #<BG> added it, as HIDDEN_SIZE had a double usage
-    'BATCH_SIZE': 2, #64
+    'NUM_LAYERS': 3, #3     # Recurrent Layers in the Mulit-Layer-RNN
+    'HIDDEN_SIZE': 1024,
+    'EMBEDDING_SIZE': 200, #<BG> added it, as HIDDEN_SIZE had a double usage
+    'BATCH_SIZE': 64, #64
     'LR': 0.5,
     'MAX_GRAD_NORM': 5.0,
-    'NUM_SAMPLES': 3, #512      # for sampled softmax loss
+    'NUM_SAMPLES': 512, #512      # for sampled softmax loss
 
     'STANDARD_SOFTMAX': False,
-    'KEEP_PREV': False,
+    'KEEP_PREV': True,
     'EPOCHS': 100,
-    'DROPOUT_RATE': 0.3,
+    'DROPOUT_RATE': 0.5,
 
     'SAVE_AT_EXIT': True,
 
