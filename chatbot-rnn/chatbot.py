@@ -9,12 +9,15 @@ import cPickle
 import copy
 import sys
 import string
+import io
 
 from utils import TextLoader
 from model import Model
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--test', type=str, default=None,
+                        help='Option to test this model all files in the given directory')
     parser.add_argument('--save_dir', type=str, default='models/reddit',
                        help='model directory to store checkpointed models')
     parser.add_argument('-n', type=int, default=500,
@@ -72,9 +75,13 @@ def sample_main(args):
         # Restore the saved variables, replacing the initialized values.
         print("Restoring weights...")
         saver.restore(sess, model_path)
-        chatbot(net, sess, chars, vocab, args.n, args.beam_width, args.relevance, args.temperature)
-        #beam_sample(net, sess, chars, vocab, args.n, args.prime,
-            #args.beam_width, args.relevance, args.temperature)
+
+        if args.test is not None:
+            test_model(args=args, net=net, sess=sess, chars=chars, vocab=vocab)
+        else:
+            chatbot(net, sess, chars, vocab, args.n, args.beam_width, args.relevance, args.temperature)
+            #beam_sample(net, sess, chars, vocab, args.n, args.prime,
+                #args.beam_width, args.relevance, args.temperature)
 
 def initial_state(net, sess):
     # Return freshly initialized model states.
@@ -123,6 +130,81 @@ def sanitize_text(vocab, text):
 def initial_state_with_relevance_masking(net, sess, relevance):
     if relevance <= 0.: return initial_state(net, sess)
     else: return [initial_state(net, sess), initial_state(net, sess)]
+
+def make_pairs(fpath):
+    """
+    We process the raw file here, as we will have to provide a script that does exactly that
+    TODO: Do the regexp preprocessing if desired
+    """
+
+    questions = []
+    answers = []
+    file_reference = io.open(fpath, "r", encoding='utf-8')
+    input_data_lines = file_reference.readlines()
+    file_reference.close()
+
+    input_data_lines = [x.replace('\n', '') for x in input_data_lines]
+    input_data_lines = [x for x in input_data_lines if len(x) > 0]
+
+    for data_line in input_data_lines:
+        input_sentences = data_line.split('\t')
+        if len(input_sentences) == 3:
+            questions.append(input_sentences[0])
+            answers.append(input_sentences[1])
+
+            questions.append(input_sentences[1])
+            answers.append(input_sentences[2])
+
+    return (questions, answers)
+
+
+
+def test_model(args, net, sess, chars, vocab):
+    """
+    <BG> This should be used with the validation set of the provided data set and also for the final executable that we hand in
+    """
+
+    states = initial_state_with_relevance_masking(net, sess, args.relevance)
+    #TextLoader(args.test, batch_size=1, args.seq_length)
+
+    #Process triples
+    questions, answers = make_pairs(fpath=args.test)
+
+    # Accumulators
+    perplexities = []
+    vector_extrema = []
+
+    for i, line in enumerate(questions):
+        line = sanitize_text(vocab, line)
+        generated_line = ''
+
+        states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
+        computer_response_generator = beam_search_generator(sess=sess, net=net,
+            initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
+            early_term_token=vocab['\n'], beam_width=args.beam_width, forward_model_fn=forward_with_mask,
+            forward_args=(args.relevance, vocab['\n']), temperature=args.temperature)
+        for i, char_token in enumerate(computer_response_generator):
+            # print(chars[char_token], end='')
+            generated_line += chars[char_token]
+            states = forward_text(net, sess, states, vocab, chars[char_token])
+            sys.stdout.flush()
+            if i >= args.n: break
+        print(i)
+        print(generated_line)
+
+
+        # for vector extrema, we only need the reference sentence, e.g. the next line.
+        # Careful, we're working with the triples of our dataset here.
+
+        # for perplexity, we need the softmax output vectors (do we have them???)
+        #   and the words that are in the sentence + inverse dict
+        #   or directly their ids.
+
+        # <BG> not sure if I need this
+        states = forward_text(net, sess, states, vocab, '\n> ')
+
+
+    
 
 def chatbot(net, sess, chars, vocab, max_length, beam_width, relevance, temperature):
     states = initial_state_with_relevance_masking(net, sess, relevance)
