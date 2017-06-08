@@ -8,22 +8,19 @@ embeddings_file = ""
 model = Word2Vec.load(embeddings_file)
 emb_size = 100
 
-# TODO adapt this to the character based model
-def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
+def perplexity(predicted_softmaxes, actual_answer, char_to_id):
     """
-    predicted_softmax_vecs      sentence length x 1 x vocab_size
-    input_sentence              dim: vector of words in sentence
-    word_dictionary             dictionary incl. pad, unk, bos and eos.  id -> word
+    predicted_softmaxes         matrix of [answer length (in chars) x vocab_size]
+    actual_answer               the ground-truth answer in the corpus (a string)
+    char_to_id                  maps characters to their ID
     """
 
     i = 0                       # Word index in current sentence
     perp_sum = 0
 
-    while i < len(input_sentence) and input_sentence[i] != cfg['PAD_ID'] and i < cfg['TEST_MAX_LENGTH']: # only 29 output nodes
-
-        # These pred
-        word_probability = predicted_softmax_vecs[i][0][input_sentence[i]]
-        perp_sum += math.log(word_probability, 2)
+    while i < len(actual_answer) and i < len(predicted_softmaxes):
+        char_prob = predicted_softmaxes[i][char_to_id[actual_answer[i]]]
+        perp_sum += math.log(char_prob, 2)
         i += 1
 
     # As specified in task description: ./docs/task_description
@@ -31,7 +28,7 @@ def perplexity(cfg, predicted_softmax_vecs, input_sentence, word_dictionary):
     perp = math.pow(2, (-1/i) * perp_sum)
     return perp
 
- 
+
 # TODO adapt once it's plugged in
 def vector_extrema_dist(reference, output):
     """

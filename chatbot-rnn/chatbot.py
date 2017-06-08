@@ -92,15 +92,15 @@ def forward_text(net, sess, states, vocab, prime_text=None):
         for char in prime_text:
             if len(states) == 2:
                 # Automatically forward the primary net.
-                _, states[0] = net.forward_model(sess, states[0], vocab[char])
+                latest_prob, states[0] = net.forward_model(sess, states[0], vocab[char])
                 # If the token is newline, reset the mask net state; else, forward it.
                 if vocab[char] == '\n':
                     states[1] = initial_state(net, sess)
                 else:
-                    _, states[1] = net.forward_model(sess, states[1], vocab[char])
+                    latest_prob, states[1] = net.forward_model(sess, states[1], vocab[char])
             else:
-                _, states = net.forward_model(sess, states, vocab[char])
-    return states
+                latest_prob, states = net.forward_model(sess, states, vocab[char])
+    return latest_prob, states
 
 def scale_prediction(prediction, temperature):
     if (temperature == 1.0): return prediction # Temperature 1.0 makes no change
@@ -114,12 +114,12 @@ def scale_prediction(prediction, temperature):
 def beam_sample(net, sess, chars, vocab, max_length=200, prime='The ',
     beam_width = 2, relevance=3.0, temperature=1.0):
     states = [initial_state(net, sess), initial_state(net, sess)]
-    states = forward_text(net, sess, states, vocab, prime)
+    _, states = forward_text(net, sess, states, vocab, prime)
     computer_response_generator = beam_search_generator(sess, net, states, vocab[' '],
         None, beam_width, forward_with_mask, (temperature, vocab['\n']))
     for i, char_token in enumerate(computer_response_generator):
         print(chars[char_token], end='')
-        states = forward_text(net, sess, states, vocab, chars[char_token])
+        _, states = forward_text(net, sess, states, vocab, chars[char_token])
         sys.stdout.flush()
         if i >= max_length: break
     print()
@@ -167,7 +167,7 @@ def test_model(args, net, sess, chars, vocab):
     states = initial_state_with_relevance_masking(net, sess, args.relevance)
     #TextLoader(args.test, batch_size=1, args.seq_length)
 
-    #Process triples
+    #Process triples, obtain text
     questions, answers = make_pairs(fpath=args.test)
 
     # Accumulators
@@ -178,33 +178,43 @@ def test_model(args, net, sess, chars, vocab):
         line = sanitize_text(vocab, line)
         generated_line = ''
 
-        states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
+        softmaxes = []
+
+        # Perp is a list of length vocab_size
+        # Start generating response
+        sm, states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
+        softmaxes.append(sm)
         computer_response_generator = beam_search_generator(sess=sess, net=net,
             initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
             early_term_token=vocab['\n'], beam_width=args.beam_width, forward_model_fn=forward_with_mask,
             forward_args=(args.relevance, vocab['\n']), temperature=args.temperature)
+
+        # Generate rest of response
         for i, char_token in enumerate(computer_response_generator):
-            # print(chars[char_token], end='')
+
             generated_line += chars[char_token]
-            states = forward_text(net, sess, states, vocab, chars[char_token])
-            sys.stdout.flush()
+            sm, states = forward_text(net, sess, states, vocab, chars[char_token])
+            softmaxes.append(sm)
+
             if i >= args.n: break
+
         print(i)
         print(generated_line)
 
+        # Compute perplexity against ground-truth answer.
+        this_perp = measures.perplexity(softmaxes, answers[i], vocab)
+        print(this_perp)
+        perplexities.append(this_perp)
 
         # for vector extrema, we only need the reference sentence, e.g. the next line.
         # Careful, we're working with the triples of our dataset here.
 
-        # for perplexity, we need the softmax output vectors (do we have them???)
-        #   and the words that are in the sentence + inverse dict
-        #   or directly their ids.
-
         # <BG> not sure if I need this
-        states = forward_text(net, sess, states, vocab, '\n> ')
+        # <FL> Probably not I think?
+        # _, states = forward_text(net, sess, states, vocab, '\n> ')
 
 
-    
+
 
 def chatbot(net, sess, chars, vocab, max_length, beam_width, relevance, temperature):
     states = initial_state_with_relevance_masking(net, sess, relevance)
@@ -214,17 +224,17 @@ def chatbot(net, sess, chars, vocab, max_length, beam_width, relevance, temperat
             user_input, states, relevance, temperature, beam_width)
         if reset: states = initial_state_with_relevance_masking(net, sess, relevance)
         if user_command_entered: continue
-        states = forward_text(net, sess, states, vocab, '> ' + user_input + "\n>")
+        _, states = forward_text(net, sess, states, vocab, '> ' + user_input + "\n>")
         computer_response_generator = beam_search_generator(sess=sess, net=net,
             initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
             early_term_token=vocab['\n'], beam_width=beam_width, forward_model_fn=forward_with_mask,
             forward_args=(relevance, vocab['\n']), temperature=temperature)
         for i, char_token in enumerate(computer_response_generator):
             print(chars[char_token], end='')
-            states = forward_text(net, sess, states, vocab, chars[char_token])
+            _, states = forward_text(net, sess, states, vocab, chars[char_token])
             sys.stdout.flush()
             if i >= max_length: break
-        states = forward_text(net, sess, states, vocab, '\n> ')
+        _, states = forward_text(net, sess, states, vocab, '\n> ')
 
 def process_user_command(user_input, states, relevance, temperature, beam_width):
     user_command_entered = False
