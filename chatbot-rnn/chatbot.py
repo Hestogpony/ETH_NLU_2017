@@ -229,7 +229,7 @@ def test_model(args, net, sess, chars, vocab):
 
         #print("The quesiton is "+line)
         #print("Generated line "+generated_line)
-        print("VE "+str(each_vector_extreme))
+        # print("VE "+str(each_vector_extreme))
         vector_extrema.append(each_vector_extreme)
 
 

@@ -65,21 +65,21 @@ class Measure(object):
 			# some special treatment for special tags
 			sentence = re.sub(r"(<)", r" \1", sentence)
 			sentence = re.sub(r"(>)", r"\1 ", sentence)
+			sentence = sentence.lower()
 
 			sentence = sentence.split()
 			vector_extrema = np.zeros(shape=(self.emb_size))
 			for i, word in enumerate(sentence):
 				if word in self.model.wv.vocab:
-					print(self.model.wv.index2word[i])
+					# print(self.model.wv.index2word[i])
 					n = self.model[word]
 					abs_n = np.abs(n)
-					#print("abs")
 					abs_v = np.abs(vector_extrema)
 					for e in range(self.emb_size):
 						if abs_n[e] > abs_v[e]:
 							vector_extrema[e] = n[e]
-				else:
-					print("unknown token" + str(word))
+				# else:
+					# print("unknown token" + str(word))
 
 
 			return vector_extrema
