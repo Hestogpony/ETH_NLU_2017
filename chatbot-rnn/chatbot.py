@@ -205,15 +205,15 @@ def test_model(args, net, sess, chars, vocab):
             if i >= args.n: break
 
         #print(i)
-        print("")
-        print(line)
+        #print("")
+        #print(line)
         #print(answers[i])
-        print('--> ' + generated_line)
+        #print('--> ' + generated_line)
         #print(np.sum(softmaxes,axis=1))
 
         # Compute perplexity against ground-truth answer.
         this_perp = model.perplexity(softmaxes, answers[i], vocab)
-        print(this_perp)
+        #print(this_perp)
         perplexities.append(this_perp)
 
         # for vector extrema, we only need the reference sentence, e.g. the next line.
@@ -224,9 +224,10 @@ def test_model(args, net, sess, chars, vocab):
         
         #states = forward_text(net, sess, states, vocab, '\n> ')
         each_vector_extreme = model.vector_extrema_dist(answers[i], generated_line)
-        print("The quesiton is "+line)
-        print("Generated line "+generated_line)
-        print("Vector extrema for this pair "+str(each_vector_extreme))
+        vector_extrema.append(each_vector_extreme)
+        #print("The quesiton is "+line)
+        #print("Generated line "+generated_line)
+        #print("Vector extrema for this pair "+str(each_vector_extreme))
 
         #states = forward_text(net, sess, states, vocab, '\n> ')
 
@@ -235,6 +236,29 @@ def test_model(args, net, sess, chars, vocab):
     vector_extrema_value = sum(vector_extrema)/len(vector_extrema)
 
     print("The vector extrema is "+vector_extrema_value)
+
+    save_experiment_data = "experiment"
+    if not os.path.isdir(save_experiment_data):
+        os.mkdir(save_experiment_data)
+        print("create dir experiment")
+
+    experiment_log = open(save_experiment_data+"/experient_log","w")
+    experiment_log.write(str(args.beam_width)+"++++$$$$$++++")
+    experiment_log.write(str(args.temperature)+"++++$$$$$++++")
+    experiment_log.write(str(args.relevance)+"++++$$$$$++++")
+    experiment_log.write(str(vector_extrema)+"++++$$$$$++++")
+    experiment_log.write("The experiment config is the following:"+"++++$$$$$++++")
+    experiment_log.write("The beam_width is "+str(args.beam_width)+"++++$$$$$++++")
+    experiment_log.write("The temperature is "+str(args.temperature)+"++++$$$$$++++")
+    experiment_log.write("The relevance is "+str(args.relevance)+"++++$$$$$++++")
+    experiment_log.write("The vector extrema is "+str(vector_extrema)+"++++$$$$$++++")
+    experiment_log.write("\n")
+    experiment_log.close()
+
+    print("one round of experiment done")
+
+
+
 
 
 
