@@ -1,5 +1,8 @@
 import numpy as np
 import math
+import gensim
+from gensim.models.word2vec import Word2Vec
+import scipy
 
 class Measure(object):
     """docstring for Measure"""
@@ -35,10 +38,11 @@ class Measure(object):
         perp = math.pow(2, (-1/i) * perp_sum)
         return perp
 
-    def vector_extrema_dist(self, reference, output):
+    def vector_extrema_dist(self, predicted_softmax_vecs, reference_ids, word_dictionary):
             """
-            reference       string
-            output          string
+            predicted_softmax_vecs      sentence length x 1 x vocab_size
+            reference_ids               vector of word ids
+            word_dictionary             dictionary incl. pad, unk, bos and eos.  id -> word
             """
             def normalize(v):
                 norm=np.linalg.norm(v)
@@ -47,7 +51,7 @@ class Measure(object):
                 return v/norm
 
             def extrema(sentence):
-                sentence = sentence.split(" ")
+                # sentence = sentence.split(" ")    # Not needed here
                 vector_extrema = np.zeros(shape=(emb_size))
                 for i, word in enumerate(sentence):
                     if word in self.model.wv.vocab:
@@ -60,6 +64,9 @@ class Measure(object):
                                 vector_extrema[e] = n[e]
 
                 return vector_extrema
+
+            reference = [word_dictionary[x] for x in reference_ids]
+            output = [word_dictionary[np.argmax(x[0])] for x in predicted_softmax_vecs]
 
             ref_ext = extrema(reference)
             out_ext = extrema(output)

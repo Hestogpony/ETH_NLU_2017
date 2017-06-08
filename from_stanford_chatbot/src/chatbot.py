@@ -364,7 +364,6 @@ class Chatbot(object):
                 print('\tSample %d' % i)
             
             a = questions[i]
-            print(a)
             b = questions[i + 1]
             c = answers[i + 1]
 
@@ -391,8 +390,8 @@ class Chatbot(object):
                 perp_c = meas.perplexity(self.cfg, soft_c, c, dec_word_to_i)
 
                 # Vector extrema metric
-                ve_b = meas.vector_extrema_dist(a,b)
-                ve_c = meas.vector_extrema_dist(b,c)
+                ve_b = meas.vector_extrema_dist(soft_b, b, dec_word_to_i)
+                ve_c = meas.vector_extrema_dist(soft_c, c, dec_word_to_i)
                 
                 total_perp += perp_b + perp_c
                 total_ve += ve_b + ve_c 
