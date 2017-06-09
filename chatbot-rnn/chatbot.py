@@ -80,7 +80,7 @@ def sample_main(args):
         tf.initialize_all_variables().run()
         saver = tf.train.Saver(net.save_variables_list())
         # Restore the saved variables, replacing the initialized values.
-        print("Restoring weights...")
+        # print("Restoring weights...")
         saver.restore(sess, model_path)
 
         if args.test is not None:
