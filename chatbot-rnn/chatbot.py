@@ -27,12 +27,12 @@ def main():
                        help='number of characters to sample')
     parser.add_argument('--prime', type=str, default=' ',
                        help='prime text')
-    parser.add_argument('--beam_width', type=int, default=3,
+    parser.add_argument('--beam_width', type=int, default=2,
                        help='Width of the beam for beam search, default 2')
-    parser.add_argument('--temperature', type=float, default=0.6,
+    parser.add_argument('--temperature', type=float, default=1.0,
                        help='sampling temperature'
                        '(lower is more conservative, default is 1.0, which is neutral)')
-    parser.add_argument('--relevance', type=float, default=0.1,
+    parser.add_argument('--relevance', type=float, default=0.3,
                        help='amount of "relevance masking/MMI (disabled by default):"'
                        'higher is more pressure, 0.4 is probably as high as it can go without'
                        'noticeably degrading coherence;'

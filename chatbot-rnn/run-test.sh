@@ -20,4 +20,4 @@ pip install --upgrade $TF_BINARY_URL
 pip install gensim
 
 TESTFILE=$1
-python chatbot.py --save_dir=models/combined_model --test=${TESTFILE}
+python chatbot.py --save_dir=models/combined_model --relevance=0.3 --beam_width=2 --temperature=1.0 --test=${TESTFILE}
