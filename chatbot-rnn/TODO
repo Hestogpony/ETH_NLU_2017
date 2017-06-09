@@ -1,6 +1,0 @@
-- Check why dynamic changing of parameters in chat mode doesn't work
-- Include the preprocessing of the provided data in the source code. They will use that for testing performance
-
-- Compare baseline and advanced model on both vector extrema and perplexity
-	Perp. will be good on the baseline as well, that's why it's a shit metric
-	Vector extrema on the baseline will suck
