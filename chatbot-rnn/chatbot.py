@@ -183,63 +183,60 @@ def test_model(args, net, sess, chars, vocab):
     perplexities = []
     vector_extrema = []
 
-    counter = 0
+    # counter = 0
 
     for i in range(args.test_samples):
-        start = time.time()
-        line = sanitize_text(vocab, questions[i])
-        generated_line = ''
+        for j in [0,1]:
+            line = sanitize_text(vocab, questions[i+j])
+            generated_line = ''
 
-        softmaxes = []
+            softmaxes = []
 
-        # Perp is a list of length vocab_size
-        # Start generating response
-        sm, states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
-        softmaxes.append(sm)
-        computer_response_generator = beam_search_generator(sess=sess, net=net,
-            initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
-            early_term_token=vocab['\n'], beam_width=args.beam_width, forward_model_fn=forward_with_mask,
-            forward_args=(args.relevance, vocab['\n']), temperature=args.temperature)
-
-        # Generate rest of response
-        for i, char_token in enumerate(computer_response_generator):
-
-            generated_line += chars[char_token]
-            sm, states = forward_text(net, sess, states, vocab, chars[char_token])
+            # Perp is a list of length vocab_size
+            # Start generating response
+            sm, states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
             softmaxes.append(sm)
+            computer_response_generator = beam_search_generator(sess=sess, net=net,
+                initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
+                early_term_token=vocab['\n'], beam_width=args.beam_width, forward_model_fn=forward_with_mask,
+                forward_args=(args.relevance, vocab['\n']), temperature=args.temperature)
 
-            if i >= args.n: break
+            # Generate rest of response
+            for c, char_token in enumerate(computer_response_generator):
 
-        #print(i)
-        #print("")
-        #print(line)
-        #print(answers[i])
-        #print('--> ' + generated_line)
-        #print(np.sum(softmaxes,axis=1))
+                generated_line += chars[char_token]
+                sm, states = forward_text(net, sess, states, vocab, chars[char_token])
+                softmaxes.append(sm)
 
-        # Compute perplexity against ground-truth answer.
-        #this_perp = model.perplexity(softmaxes, answers[i], vocab)
-        #print(this_perp)
-        #perplexities.append(this_perp)
+                if c >= args.n: break
 
-        # for vector extrema, we only need the reference sentence, e.g. the next line.
-        # Careful, we're working with the triples of our dataset here.
+            #print(i)
+            #print("")
+            #print(line)
+            #print(answers[i])
+            #print('--> ' + generated_line)
+            #print(np.sum(softmaxes,axis=1))
 
-        # <BG> not sure if I need this
-        print("Forward prop took " + str(time.time() - start) )
-        
-        #states = forward_text(net, sess, states, vocab, '\n> ')
-        each_vector_extreme = model.vector_extrema_dist(answers[i], generated_line)
+            # Compute perplexity against ground-truth answer.
+            #this_perp = model.perplexity(softmaxes, answers[i], vocab)
+            #print(this_perp)
+            #perplexities.append(this_perp)
 
-        #print("The quesiton is "+line)
-        #print("Generated line "+generated_line)
-        # print("VE "+str(each_vector_extreme))
-        vector_extrema.append(each_vector_extreme)
+            # for vector extrema, we only need the reference sentence, e.g. the next line.
+            # Careful, we're working with the triples of our dataset here.
 
+            # print("Forward prop took " + str(time.time() - start) )
+            
+            each_vector_extreme = model.vector_extrema_dist(answers[i+j], generated_line)
 
-        counter+=1
-        if counter%100 == 0:
-            print("This is the "+ str(counter)+ "th iteration")
+            #print("The quesiton is "+line)
+            #print("Generated line "+generated_line)
+            vector_extrema.append(each_vector_extreme)
+
+        print('%f %f' % (vector_extrema[i], vector_extrema[i+1]))
+        # counter+=1
+        # if counter%100 == 0:
+        #     print("This is the "+ str(counter)+ "th iteration")
         #print("The quesiton is "+line)
         #print("Generated line "+generated_line)
         #print("Vector extrema for this pair "+str(each_vector_extreme))
