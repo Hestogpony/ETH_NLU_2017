@@ -84,7 +84,6 @@ class Measure(object):
 
 
 			return vector_extrema
-
 		ref_ext = extrema(reference)
 		out_ext = extrema(output)
 

@@ -27,19 +27,19 @@ def main():
                        help='number of characters to sample')
     parser.add_argument('--prime', type=str, default=' ',
                        help='prime text')
-    parser.add_argument('--beam_width', type=int, default=2,
+    parser.add_argument('--beam_width', type=int, default=3,
                        help='Width of the beam for beam search, default 2')
-    parser.add_argument('--temperature', type=float, default=1.0,
+    parser.add_argument('--temperature', type=float, default=0.6,
                        help='sampling temperature'
                        '(lower is more conservative, default is 1.0, which is neutral)')
-    parser.add_argument('--relevance', type=float, default=-1.,
+    parser.add_argument('--relevance', type=float, default=0.1,
                        help='amount of "relevance masking/MMI (disabled by default):"'
                        'higher is more pressure, 0.4 is probably as high as it can go without'
                        'noticeably degrading coherence;'
                        'set to <0 to disable relevance masking')
     parser.add_argument('--embedding_model', type = str, default = 'embeddings/embeddings',
                         help = 'The word2vec embedding model for calculation of vector extrema'  )
-    parser.add_argument('--test_samples', type=int, default=3,
+    parser.add_argument('--test_samples', type=int, default=100,
                         help='limit the number converstations too look at')
     args = parser.parse_args()
     sample_main(args)
@@ -186,7 +186,7 @@ def test_model(args, net, sess, chars, vocab):
     counter = 0
 
     for i in range(args.test_samples):
-        # start = time.time()
+        start = time.time()
         line = sanitize_text(vocab, questions[i])
         generated_line = ''
 
@@ -226,7 +226,7 @@ def test_model(args, net, sess, chars, vocab):
         # Careful, we're working with the triples of our dataset here.
 
         # <BG> not sure if I need this
-        # print("Forward prop took " + str(time.time() - start) )
+        print("Forward prop took " + str(time.time() - start) )
         
         #states = forward_text(net, sess, states, vocab, '\n> ')
         each_vector_extreme = model.vector_extrema_dist(answers[i], generated_line)
@@ -258,7 +258,7 @@ def test_model(args, net, sess, chars, vocab):
         os.mkdir(save_experiment_data)
         print("create dir experiment")
 
-    experiment_log = open(save_experiment_data+"/experiment_log","a")
+    experiment_log = open(save_experiment_data+"/small_experiment_log","a")
     experiment_log.write("The experiment config is the following:\n")
     experiment_log.write("The beam_width is "+str(args.beam_width)+"\n")
     experiment_log.write("The temperature is "+str(args.temperature)+"\n")
