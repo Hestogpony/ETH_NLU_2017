@@ -359,7 +359,7 @@ class Chatbot(object):
         #TODO move the embeddings path to config
         meas = measures.Measure(self.cfg, "../../chatbot-rnn/embeddings/embeddings")
 
-        for i in range(0, len(questions), 2):
+        for i in range(0, 200, 2):
             assert (answers[i] == questions[i + 1])
 
             if i % 100 == 0:
@@ -402,8 +402,8 @@ class Chatbot(object):
                 # print("Perp %f %f" % (perp_b, perp_c))
                 # print("VE %f %f" % (ve_b, ve_c))
 
-        print('Average perplexity on test set: %f' % total_perp/num_samples)
-        print('Average vector extrema cosine distance on test set: %f' % total_ve/num_samples)
+        print('Average perplexity on test set: %f' % (total_perp/num_samples))
+        print('Average vector extrema cosine distance on test set: %f' % (total_ve/num_samples))
 
 
     def _find_right_bucket2(self, lengtha, lengthb):
