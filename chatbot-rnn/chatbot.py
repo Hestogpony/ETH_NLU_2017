@@ -27,19 +27,19 @@ def main():
                        help='number of characters to sample')
     parser.add_argument('--prime', type=str, default=' ',
                        help='prime text')
-    parser.add_argument('--beam_width', type=int, default=3,
+    parser.add_argument('--beam_width', type=int, default=2,
                        help='Width of the beam for beam search, default 2')
-    parser.add_argument('--temperature', type=float, default=0.6,
+    parser.add_argument('--temperature', type=float, default=1.0,
                        help='sampling temperature'
                        '(lower is more conservative, default is 1.0, which is neutral)')
-    parser.add_argument('--relevance', type=float, default=0.1,
+    parser.add_argument('--relevance', type=float, default=0.3,
                        help='amount of "relevance masking/MMI (disabled by default):"'
                        'higher is more pressure, 0.4 is probably as high as it can go without'
                        'noticeably degrading coherence;'
                        'set to <0 to disable relevance masking')
     parser.add_argument('--embedding_model', type = str, default = 'embeddings/embeddings',
                         help = 'The word2vec embedding model for calculation of vector extrema'  )
-    parser.add_argument('--test_samples', type=int, default=100,
+    parser.add_argument('--test_samples', type=int, default=-1,
                         help='limit the number converstations too look at')
     args = parser.parse_args()
     sample_main(args)
@@ -80,7 +80,7 @@ def sample_main(args):
         tf.initialize_all_variables().run()
         saver = tf.train.Saver(net.save_variables_list())
         # Restore the saved variables, replacing the initialized values.
-        print("Restoring weights...")
+        # print("Restoring weights...")
         saver.restore(sess, model_path)
 
         if args.test is not None:
@@ -180,98 +180,60 @@ def test_model(args, net, sess, chars, vocab):
     model = measures.Measure(args.embedding_model)
 
     # Accumulators
-    perplexities = []
+    # perplexities = []
     vector_extrema = []
 
-    counter = 0
+    # counter = 0
+    
+    if args.test_samples == -1:
+        args.test_samples = int(len(questions) / 2)
 
     for i in range(args.test_samples):
-        start = time.time()
-        line = sanitize_text(vocab, questions[i])
-        generated_line = ''
+        for j in [0,1]:
+            line = sanitize_text(vocab, questions[i+j])
+            generated_line = ''
 
-        softmaxes = []
+            softmaxes = []
 
-        # Perp is a list of length vocab_size
-        # Start generating response
-        sm, states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
-        softmaxes.append(sm)
-        computer_response_generator = beam_search_generator(sess=sess, net=net,
-            initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
-            early_term_token=vocab['\n'], beam_width=args.beam_width, forward_model_fn=forward_with_mask,
-            forward_args=(args.relevance, vocab['\n']), temperature=args.temperature)
-
-        # Generate rest of response
-        for i, char_token in enumerate(computer_response_generator):
-
-            generated_line += chars[char_token]
-            sm, states = forward_text(net, sess, states, vocab, chars[char_token])
+            # Perp is a list of length vocab_size
+            # Start generating response
+            sm, states = forward_text(net=net, sess=sess, states=states, vocab=vocab, prime_text=line)
             softmaxes.append(sm)
+            computer_response_generator = beam_search_generator(sess=sess, net=net,
+                initial_state=copy.deepcopy(states), initial_sample=vocab[' '],
+                early_term_token=vocab['\n'], beam_width=args.beam_width, forward_model_fn=forward_with_mask,
+                forward_args=(args.relevance, vocab['\n']), temperature=args.temperature)
 
-            if i >= args.n: break
+            # Generate rest of response
+            for c, char_token in enumerate(computer_response_generator):
 
-        #print(i)
-        #print("")
-        #print(line)
-        #print(answers[i])
-        #print('--> ' + generated_line)
-        #print(np.sum(softmaxes,axis=1))
+                generated_line += chars[char_token]
+                sm, states = forward_text(net, sess, states, vocab, chars[char_token])
+                softmaxes.append(sm)
 
-        # Compute perplexity against ground-truth answer.
-        #this_perp = model.perplexity(softmaxes, answers[i], vocab)
-        #print(this_perp)
-        #perplexities.append(this_perp)
-
-        # for vector extrema, we only need the reference sentence, e.g. the next line.
-        # Careful, we're working with the triples of our dataset here.
-
-        # <BG> not sure if I need this
-        print("Forward prop took " + str(time.time() - start) )
-        
-        #states = forward_text(net, sess, states, vocab, '\n> ')
-        each_vector_extreme = model.vector_extrema_dist(answers[i], generated_line)
-
-        #print("The quesiton is "+line)
-        #print("Generated line "+generated_line)
-        # print("VE "+str(each_vector_extreme))
-        vector_extrema.append(each_vector_extreme)
+                if c >= args.n: break
 
 
-        counter+=1
-        if counter%100 == 0:
-            print("This is the "+ str(counter)+ "th iteration")
-        #print("The quesiton is "+line)
-        #print("Generated line "+generated_line)
-        #print("Vector extrema for this pair "+str(each_vector_extreme))
+            # Compute perplexity against ground-truth answer.
+            #this_perp = model.perplexity(softmaxes, answers[i], vocab)
+            #perplexities.append(this_perp)
 
+            # print("Forward prop took " + str(time.time() - start) )
+            
+            each_vector_extreme = model.vector_extrema_dist(answers[i+j], generated_line)
 
-        #states = forward_text(net, sess, states, vocab, '\n> ')
+            vector_extrema.append(each_vector_extreme)
+
+        print('%f %f' % (vector_extrema[i], vector_extrema[i+1]))
+        # counter+=1
+        # if counter%100 == 0:
+        #     print("This is the "+ str(counter)+ "th iteration")
 
 
        
     vector_extrema_value = np.sum(vector_extrema)/len(vector_extrema)
 
     print("The average cosine dist of the vector extrema is " + str(vector_extrema_value))
-
-    save_experiment_data = "experiment"
-    if not os.path.isdir(save_experiment_data):
-        os.mkdir(save_experiment_data)
-        print("create dir experiment")
-
-    experiment_log = open(save_experiment_data+"/small_experiment_log","a")
-    experiment_log.write("The experiment config is the following:\n")
-    experiment_log.write("The beam_width is "+str(args.beam_width)+"\n")
-    experiment_log.write("The temperature is "+str(args.temperature)+"\n")
-    experiment_log.write("The relevance is "+str(args.relevance)+"\n")
-    experiment_log.write("The vector extrema is "+str(vector_extrema_value)+"\n")
-    experiment_log.write("\n\n")
-    experiment_log.close()
-
-    print("one round of experiment done")
-
-
-
-
 
 
 
