@@ -39,7 +39,7 @@ def main():
                        'set to <0 to disable relevance masking')
     parser.add_argument('--embedding_model', type = str, default = 'embeddings/embeddings',
                         help = 'The word2vec embedding model for calculation of vector extrema'  )
-    parser.add_argument('--test_samples', type=int, default=100,
+    parser.add_argument('--test_samples', type=int, default=-1,
                         help='limit the number converstations too look at')
     args = parser.parse_args()
     sample_main(args)
@@ -180,10 +180,13 @@ def test_model(args, net, sess, chars, vocab):
     model = measures.Measure(args.embedding_model)
 
     # Accumulators
-    perplexities = []
+    # perplexities = []
     vector_extrema = []
 
     # counter = 0
+    
+    if args.test_samples == -1:
+        args.test_samples = int(len(questions) / 2)
 
     for i in range(args.test_samples):
         for j in [0,1]:
@@ -210,65 +213,27 @@ def test_model(args, net, sess, chars, vocab):
 
                 if c >= args.n: break
 
-            #print(i)
-            #print("")
-            #print(line)
-            #print(answers[i])
-            #print('--> ' + generated_line)
-            #print(np.sum(softmaxes,axis=1))
 
             # Compute perplexity against ground-truth answer.
             #this_perp = model.perplexity(softmaxes, answers[i], vocab)
-            #print(this_perp)
             #perplexities.append(this_perp)
-
-            # for vector extrema, we only need the reference sentence, e.g. the next line.
-            # Careful, we're working with the triples of our dataset here.
 
             # print("Forward prop took " + str(time.time() - start) )
             
             each_vector_extreme = model.vector_extrema_dist(answers[i+j], generated_line)
 
-            #print("The quesiton is "+line)
-            #print("Generated line "+generated_line)
             vector_extrema.append(each_vector_extreme)
 
         print('%f %f' % (vector_extrema[i], vector_extrema[i+1]))
         # counter+=1
         # if counter%100 == 0:
         #     print("This is the "+ str(counter)+ "th iteration")
-        #print("The quesiton is "+line)
-        #print("Generated line "+generated_line)
-        #print("Vector extrema for this pair "+str(each_vector_extreme))
-
-
-        #states = forward_text(net, sess, states, vocab, '\n> ')
 
 
        
     vector_extrema_value = np.sum(vector_extrema)/len(vector_extrema)
 
     print("The average cosine dist of the vector extrema is " + str(vector_extrema_value))
-
-    save_experiment_data = "experiment"
-    if not os.path.isdir(save_experiment_data):
-        os.mkdir(save_experiment_data)
-        print("create dir experiment")
-
-    experiment_log = open(save_experiment_data+"/small_experiment_log","a")
-    experiment_log.write("The experiment config is the following:\n")
-    experiment_log.write("The beam_width is "+str(args.beam_width)+"\n")
-    experiment_log.write("The temperature is "+str(args.temperature)+"\n")
-    experiment_log.write("The relevance is "+str(args.relevance)+"\n")
-    experiment_log.write("The vector extrema is "+str(vector_extrema_value)+"\n")
-    experiment_log.write("\n\n")
-    experiment_log.close()
-
-    print("one round of experiment done")
-
-
-
-
 
 
 
